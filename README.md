@@ -18,3 +18,14 @@ Preparation for build
 1. Run `dotnet restore dfs/dfs.sln` to install required .NET packages.
 
 Now you should be able to run all tests (from VS's Test > Test Explorer menu) and projects (for now, UI isn't bundled with the client, and is run from a dev server).
+
+## Debugging
+
+The 'start node' option should launch both the development server (for React UI) and the client;
+you can use VS's internal debugger for C# code and Edge DevTools (press F12 in the client form)
+for TS code.
+
+**NOTE**: when trying to test UI changes on release builds, rebuild the `node` project completely -
+this runs both the resource packing script and makes sure that VS actually updates resources.
+
+This is because ![alt text](docs/image.png)

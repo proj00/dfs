@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "start node (debug)",
+    "Projects": [
+      {
+        "Path": "ui\\ui.esproj",
+        "Action": "Start",
+        "DebugTarget": "Launch via NPM"
+      },
+      {
+        "Path": "node\\node.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  }
+]
