@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Web.WebView2.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,14 +13,16 @@ namespace node
 {
     public partial class UI : Form
     {
+        private CoreWebView2 coreWebView;
+
         public UI()
         {
             InitializeComponent();
-#if DEBUG
-            webView.Source = new Uri("localhost:59102", UriKind.Absolute);
-#else
+            //#if DEBUG
+            //webView.Source = new Uri("localhost:59102", UriKind.Absolute);
+            //#else
             webView.Source = new Uri("https://www.google.com", UriKind.Absolute);
-#endif
+            //#endif
             ((System.ComponentModel.ISupportInitialize)webView).EndInit();
             ResumeLayout(false);
         }

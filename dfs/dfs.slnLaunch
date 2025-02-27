@@ -1,6 +1,6 @@
 [
   {
-    "Name": "start node",
+    "Name": "start node (debug)",
     "Projects": [
       {
         "Path": "ui\\ui.esproj",

@@ -7,4 +7,8 @@ export default defineConfig({
   server: {
     port: 59102,
   },
+  build: {
+    outDir: "./../node/UiResources",
+    emptyOutDir: true,
+  },
 });
