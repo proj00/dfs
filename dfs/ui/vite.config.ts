@@ -11,4 +11,5 @@ export default defineConfig({
     outDir: "./../node/UiResources",
     emptyOutDir: true,
   },
+  base: "http://ui.resources/",
 });

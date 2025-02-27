@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
@@ -24,9 +24,11 @@
 
   <ItemGroup>
     <EmbeddedResource Update="UiResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>UiResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="py pack_resources.py" />
+  </Target>
 
 </Project>

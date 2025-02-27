@@ -14,7 +14,7 @@ def main():
     stuffToAdd = []
     for folder, subs, files in os.walk(".\\UiResources"):
         for file in files:
-            stuffToAdd.append(folder[2:] + "\\" + file)
+            stuffToAdd.append(folder[2:] + "/" + file)
 
     tree = et.parse("UiResources.resx")
     root = tree.getroot()

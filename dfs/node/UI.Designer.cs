@@ -48,6 +48,9 @@
             Controls.Add(webView);
             Name = "UI";
             Text = "UI";
+
+            ((System.ComponentModel.ISupportInitialize)webView).EndInit();
+            ResumeLayout(false);
         }
 
         #endregion

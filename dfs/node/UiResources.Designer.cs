@@ -59,55 +59,5 @@ namespace node {
                 resourceCulture = value;
             }
         }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] assets_index_DiXh2NFf_js {
-            get {
-                object obj = ResourceManager.GetObject("assets\\index-DiXh2NFf.js", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] assets_index_n_ryQ3BS_css {
-            get {
-                object obj = ResourceManager.GetObject("assets\\index-n_ryQ3BS.css", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] assets_react_CqE24J1b_svg {
-            get {
-                object obj = ResourceManager.GetObject("assets\\react-CqE24J1b.svg", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] index_html {
-            get {
-                object obj = ResourceManager.GetObject("index.html", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] vite_svg {
-            get {
-                object obj = ResourceManager.GetObject("vite.svg", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
     }
 }
