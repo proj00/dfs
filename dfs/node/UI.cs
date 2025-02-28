@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Web.WebView2.Core;
+using node.IpcService;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,16 +17,21 @@ namespace node
 {
     public partial class UI : Form
     {
-        public UI()
+        private NodeService service;
+
+        public UI(NodeService _service)
         {
+            service = _service;
             InitializeComponent();
         }
 
         protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            await webView.EnsureCoreWebView2Async();
 
-#if DEBUG
+            webView.CoreWebView2.AddHostObjectToScript("service", service);
+#if false
             webView.Source = new Uri("localhost:59102", UriKind.Absolute);
 #else
             await LoadUiResources();
@@ -33,7 +40,6 @@ namespace node
 
         private async Task LoadUiResources()
         {
-            await webView.EnsureCoreWebView2Async();
             webView.CoreWebView2.AddWebResourceRequestedFilter("http://ui.resources/*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
 
             webView.CoreWebView2.WebResourceRequested +=
