@@ -19,7 +19,7 @@ namespace node
             NodeService service = new();
 
             CefSharpSettings.ConcurrentTaskExecution = true;
-#if DEBUG
+#if !DEBUG
             var settings = new CefSettings();
             settings.RegisterScheme(new CefCustomScheme()
             {
