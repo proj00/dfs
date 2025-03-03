@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.ObjectPool;
+﻿using CefSharp;
+using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -14,22 +15,21 @@ namespace node.IpcService
     public class NodeService
     {
         private int value;
-        private ExpandoObject? service;
+        private UiService? service;
 
         public NodeService()
         {
             value = -10;
         }
 
-        public void RegisterUiService(object service)
+        public void RegisterUiService(dynamic service)
         {
-            // this actually gets a COMException instead of an object :(
-            //Console.WriteLine(service);
+            this.service = new UiService(service);
         }
 
-        public string Hi()
+        public async Task<string> Hi()
         {
-            return $"hi {value}";
+            return $"hi {await service.getValue()}";
         }
     }
 }

@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.StaticFiles;
+﻿using CefSharp;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Web.WebView2.Core;
 using node.IpcService;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -28,51 +29,27 @@ namespace node
         protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
-            await webView.EnsureCoreWebView2Async();
 
-            webView.CoreWebView2.AddHostObjectToScript("service", service);
 #if false
-            webView.Source = new Uri("localhost:59102", UriKind.Absolute);
+            const string sourceUrl = "http://localhost:59102";
 #else
-            await LoadUiResources();
+            const string sourceUrl = "http://ui.resources/index.html";
 #endif
-        }
 
-        private async Task LoadUiResources()
-        {
-            webView.CoreWebView2.AddWebResourceRequestedFilter("http://ui.resources/*", CoreWebView2WebResourceContext.All, CoreWebView2WebResourceRequestSourceKinds.All);
-
-            webView.CoreWebView2.WebResourceRequested +=
-                (object? sender, CoreWebView2WebResourceRequestedEventArgs args) =>
+            browser.JavascriptObjectRepository.ResolveObject += (sender, e) =>
             {
-                string path = args.Request.Uri[20..];
-                var contents = GetContents(path);
-
-                Console.WriteLine($"{path} {(contents == null ? 404 : 200)}");
-
-                if (contents == null)
+                var repo = e.ObjectRepository;
+                if (!e.Url.StartsWith(sourceUrl) || e.ObjectName != "nodeService")
                 {
-                    args.Response = webView.CoreWebView2.Environment.CreateWebResourceResponse(new MemoryStream(), 404, "Not Found", "");
                     return;
                 }
 
-                List<string> headers = ["Access-Control-Allow-Origin: *"];
-
-                new FileExtensionContentTypeProvider().TryGetContentType(path, out string? contentType);
-                headers.Add($"Content-Type: {contentType ?? "application/octet-stream"}");
-
-                var headerField = headers.Aggregate((p, h) => $"{p}\r\n{h}");
-                var response = webView.CoreWebView2.Environment.CreateWebResourceResponse(new MemoryStream(contents), 200, "OK", headerField);
-                args.Response = response;
+                repo.NameConverter = null;
+                repo.Register("nodeService", service);
             };
 
-            webView.NavigateToString(Encoding.UTF8.GetString(GetContents("index.html") ?? throw new Exception(">:(")));
-        }
-
-        private static byte[]? GetContents(string resourceName)
-        {
-            object? contents = UiResources.ResourceManager.GetObject(resourceName, UiResources.Culture);
-            return contents == null ? null : (byte[])contents;
+            await browser.LoadUrlAsync(sourceUrl);
+            browser.ShowDevTools();
         }
     }
 }

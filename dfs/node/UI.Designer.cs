@@ -28,33 +28,31 @@
         /// </summary>
         private void InitializeComponent()
         {
-            webView = new Microsoft.Web.WebView2.WinForms.WebView2();
-            webView.AllowExternalDrop = true;
-            webView.CreationProperties = null;
-            webView.DefaultBackgroundColor = Color.White;
-            webView.Location = new Point(0, 0);
-            webView.Name = "webView";
-            webView.Size = new Size(797, 450);
-            webView.TabIndex = 0;
-            webView.ZoomFactor = 1D;
-            ((System.ComponentModel.ISupportInitialize)webView).BeginInit();
+            browser = new CefSharp.WinForms.ChromiumWebBrowser();
             SuspendLayout();
+            //
+            // browser
+            //
+            browser.ActivateBrowserOnCreation = false;
+            browser.Dock = DockStyle.Fill;
+            browser.Location = new Point(0, 0);
+            browser.Name = "browser";
+            browser.Size = new Size(800, 450);
+            browser.TabIndex = 0;
             //
             // UI
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(webView);
+            Controls.Add(browser);
             Name = "UI";
             Text = "UI";
-
-            ((System.ComponentModel.ISupportInitialize)webView).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
 
-        private Microsoft.Web.WebView2.WinForms.WebView2 webView;
+        private CefSharp.WinForms.ChromiumWebBrowser browser;
     }
 }
