@@ -1,12 +1,12 @@
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
-import { GetNodeService } from "./IpcService/INodeService";
+import { GetNodeService, INodeService } from "./IpcService/INodeService";
 import { useEffect, useState } from "react";
 import { UiService } from "./IpcService/UiService";
 
-const nodeService = GetNodeService();
-const uiService = new UiService(nodeService);
+let nodeService: INodeService;
+let uiService: UiService;
 
 function App() {
   const [hi, setHi] = useState("");
@@ -14,7 +14,11 @@ function App() {
 
   useEffect(() => {
     const init = async () => {
-      nodeService.RegisterUiService({ item1: "value1", item2: 1234 });
+      nodeService = await GetNodeService();
+      uiService = new UiService(nodeService);
+      uiService.setValue(1);
+
+      await nodeService.RegisterUiService(uiService.getCefSharpWrapper());
       return await nodeService.Hi();
     };
 
@@ -35,8 +39,9 @@ function App() {
       <div className="card">
         <button
           onClick={async () => {
-            setCount(count + 1);
-            uiService.setValue(count);
+            const newCount = count + 1;
+            setCount(newCount);
+            uiService.setValue(newCount);
             setHi(await nodeService.Hi());
           }}
         >

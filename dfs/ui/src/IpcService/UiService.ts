@@ -17,6 +17,14 @@ export class UiService {
   }
 
   public async callExample() {
-    await this.nodeService.Hi();
+    return await this.nodeService.Hi();
+  }
+
+  public getCefSharpWrapper() {
+    return {
+      getValue: () => this.getValue(),
+      setValue: (value: number) => this.setValue(value),
+      callExample: async () => this.callExample(),
+    };
   }
 }

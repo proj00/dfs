@@ -1,19 +1,17 @@
-import { HostObjectAsyncProxy } from "../types/webView2";
+import { ICefSharp } from "../types/ICefSharp";
 
-export interface INodeService extends HostObjectAsyncProxy {
+// make TS shut up (UI::browser makes this available)
+declare let CefSharp: ICefSharp;
+
+export interface INodeService {
   RegisterUiService: (service: any) => Promise<void>;
   Hi: () => Promise<string>;
 }
 
-let serviceInstance: INodeService | null = null;
+// make TS shut up (again; UI::browser makes this available after BindObjectAsync)
+declare let nodeService: INodeService;
 
-export const GetNodeService = (): INodeService => {
-  if (serviceInstance == null) {
-    serviceInstance = window.chrome.webview.hostObjects
-      .service as INodeService | null;
-  }
-  if (serviceInstance == null) {
-    throw new Error("NodeService host object not found");
-  }
-  return serviceInstance;
+export const GetNodeService = async (): Promise<INodeService> => {
+  await CefSharp.BindObjectAsync("nodeService");
+  return nodeService;
 };
