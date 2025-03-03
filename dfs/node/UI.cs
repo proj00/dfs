@@ -30,7 +30,7 @@ namespace node
         {
             base.OnShown(e);
 
-#if false
+#if DEBUG
             const string sourceUrl = "http://localhost:59102";
 #else
             const string sourceUrl = "http://ui.resources/index.html";
