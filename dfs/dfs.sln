@@ -6,14 +6,24 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "ui", "ui\ui.esproj", "{C3DBD3D1-2954-4348-8396-286DB1BDBF90}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "node", "node\node.csproj", "{2176CF42-580C-4472-8832-FC7EE9286E08}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C3DBD3D1-2954-4348-8396-286DB1BDBF90} = {C3DBD3D1-2954-4348-8396-286DB1BDBF90}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracker", "tracker\tracker.csproj", "{87F63146-382D-41F8-9E06-DD51995E278D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "node-unit-tests", "node-unit-tests\node-unit-tests.csproj", "{413EF885-5A68-4412-ABA5-74F43B37E9E4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2176CF42-580C-4472-8832-FC7EE9286E08} = {2176CF42-580C-4472-8832-FC7EE9286E08}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracker-unit-tests", "tracker-unit-tests\tracker-unit-tests.csproj", "{3BB36704-44D3-487E-9342-9E0A99BEDEC1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "integration-tests", "integration-tests\integration-tests.csproj", "{B477E7A6-E27C-4186-96A0-884ECB298501}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2176CF42-580C-4472-8832-FC7EE9286E08} = {2176CF42-580C-4472-8832-FC7EE9286E08}
+		{87F63146-382D-41F8-9E06-DD51995E278D} = {87F63146-382D-41F8-9E06-DD51995E278D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

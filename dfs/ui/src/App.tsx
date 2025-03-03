@@ -1,10 +1,29 @@
-import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
+import { GetNodeService, INodeService } from "./IpcService/INodeService";
+import { useEffect, useState } from "react";
+import { UiService } from "./IpcService/UiService";
+
+let nodeService: INodeService;
+let uiService: UiService;
 
 function App() {
+  const [hi, setHi] = useState("");
   const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const init = async () => {
+      nodeService = await GetNodeService();
+      uiService = new UiService(nodeService);
+      uiService.setValue(1);
+
+      await nodeService.RegisterUiService(uiService.getCefSharpWrapper());
+      return await nodeService.Hi();
+    };
+
+    init().then((data) => setHi(data));
+  }, []);
 
   return (
     <>
@@ -16,9 +35,16 @@ function App() {
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>
-      <h1>Vite + React</h1>
+      <h1>Vite + React + {hi}</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button
+          onClick={async () => {
+            const newCount = count + 1;
+            setCount(newCount);
+            uiService.setValue(newCount);
+            setHi(await nodeService.Hi());
+          }}
+        >
           count is {count}
         </button>
         <p>

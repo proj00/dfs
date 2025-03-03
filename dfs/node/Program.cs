@@ -1,8 +1,13 @@
 using static System.Net.Mime.MediaTypeNames;
 using System.Windows.Forms;
+using node.IpcService;
+using CefSharp.WinForms;
+using CefSharp;
+using node.UiResourceLoading;
 
 namespace node
 {
+
     internal static class Program
     {
         /// <summary>
@@ -11,12 +16,26 @@ namespace node
         [STAThread]
         static void Main()
         {
+            NodeService service = new();
+
+            CefSharpSettings.ConcurrentTaskExecution = true;
+#if DEBUG
+            var settings = new CefSettings();
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeName = "http",
+                DomainName = "ui.resources",
+                SchemeHandlerFactory = new UiResourceHandlerFactory(),
+            });
+            Cef.Initialize(settings);
+#endif
+
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             global::System.Windows.Forms.Application.EnableVisualStyles();
             global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
             global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            System.Windows.Forms.Application.Run(new UI());
+            System.Windows.Forms.Application.Run(new UI(service));
         }
     }
 }
