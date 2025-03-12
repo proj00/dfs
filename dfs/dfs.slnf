@@ -6,7 +6,8 @@
       "node-unit-tests\\node-unit-tests.csproj",
       "node\\node.csproj",
       "tracker-unit-tests\\tracker-unit-tests.csproj",
-      "tracker\\tracker.csproj"
+      "tracker\\tracker.csproj",
+      "common\\common.csproj"
     ]
   }
 }

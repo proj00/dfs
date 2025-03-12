@@ -1,0 +1,25 @@
+﻿syntax = "proto3";
+
+package tracker;
+
+import "fs/filesystem.proto";
+import "google/rpc/status.proto";
+
+service Tracker
+{
+	rpc Publish(stream fs.FileSystemObject) returns (google.rpc.Status);
+	rpc MarkReachable(stream fs.ChunkHashes) returns (google.rpc.Status);
+	rpc MarkUnreachable(stream fs.ChunkHashes) returns (google.rpc.Status);
+	rpc GetPeerList(PeerRequest) returns (stream PeerList);
+}
+
+message PeerRequest
+{
+	string chunk_hash = 1;
+	int32 max_peer_count = 2;
+}
+
+message PeerList
+{
+	repeated string peers = 1;
+}
