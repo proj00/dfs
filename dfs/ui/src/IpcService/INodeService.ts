@@ -5,7 +5,8 @@ declare let CefSharp: ICefSharp;
 
 export interface INodeService {
   RegisterUiService: (service: any) => Promise<void>;
-  Hi: () => Promise<string>;
+  PickObjectPath: (folder: boolean) => Promise<string>;
+  ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<void>;
 }
 
 // make TS shut up (again; UI::browser makes this available after BindObjectAsync)
