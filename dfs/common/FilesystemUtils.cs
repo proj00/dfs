@@ -25,10 +25,15 @@ namespace common
 
             using var stream = new FileStream(path, FileMode.Open);
             var buffer = new byte[chunkSize];
-            for (int i = 0; i < obj.File.Size / chunkSize + obj.File.Size % chunkSize; i++)
+            for (int i = 0; i < obj.File.Size / chunkSize + (obj.File.Size % chunkSize == 0 ? 0 : 1); i++)
             {
                 int actualRead = stream.Read(buffer, 0, chunkSize);
-                var hash = HashUtils.GetHash(new ReadOnlySpan<byte>(buffer, 0, actualRead));
+                if (actualRead < chunkSize)
+                {
+                    Array.Fill<byte>(buffer, 0, actualRead, chunkSize - actualRead);
+                }
+
+                var hash = HashUtils.GetHash(buffer);
                 obj.File.Hashes.Hash.Add(hash);
             }
 

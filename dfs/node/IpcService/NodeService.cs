@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Tracker;
 
 namespace node.IpcService
 {
@@ -86,6 +87,42 @@ namespace node.IpcService
             }
 
             throw new Exception("Invalid path");
+        }
+
+        public async Task PublishToTracker(string[] hashes, string trackerUri)
+        {
+            foreach (var hash in hashes)
+            {
+                if (!state.objectByHash.ContainsKey(hash))
+                {
+                    throw new Exception("invalid hash");
+                }
+            }
+
+            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri) || uri == null)
+            {
+                throw new Exception("invalid uri");
+            }
+
+            var client = state.GetTrackerClient(uri);
+
+            using var call = client.Publish();
+            foreach (var hash in hashes)
+            {
+                var objWithHash = new ObjectWithHash();
+                objWithHash.Hash = hash;
+                objWithHash.Obj = state.objectByHash[hash];
+
+                await call.RequestStream.WriteAsync(objWithHash);
+            }
+            await call.RequestStream.CompleteAsync();
+
+            var response = await call;
+
+            if (response.Code != 0)
+            {
+                throw new Exception($"gRPC call Tracker.Publish() failed: code {response.Code} {response.Message}");
+            }
         }
     }
 }
