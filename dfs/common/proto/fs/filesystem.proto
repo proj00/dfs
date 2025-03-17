@@ -32,5 +32,5 @@ message Directory
 
 message Link
 {
-	string target_hash = 1;
+	string target_path = 1; // (for now) we can't target hashes in some cases (e.g., linking to ancestor causes a cycle), so this will have to do
 }

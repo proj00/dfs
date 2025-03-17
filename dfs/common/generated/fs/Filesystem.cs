@@ -31,7 +31,7 @@ namespace Fs {
             "CgRzaXplGAEgASgDEh8KBmhhc2hlcxgCIAEoCzIPLmZzLkNodW5rSGFzaGVz",
             "Ii4KC0NodW5rSGFzaGVzEhEKCWNodW5rU2l6ZRgBIAEoBRIMCgRoYXNoGAIg",
             "AygJIhwKCURpcmVjdG9yeRIPCgdlbnRyaWVzGAEgAygJIhsKBExpbmsSEwoL",
-            "dGFyZ2V0X2hhc2gYASABKAliBnByb3RvMw=="));
+            "dGFyZ2V0X3BhdGgYASABKAliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -39,7 +39,7 @@ namespace Fs {
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.File), global::Fs.File.Parser, new[]{ "Size", "Hashes" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.ChunkHashes), global::Fs.ChunkHashes.Parser, new[]{ "ChunkSize", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.Directory), global::Fs.Directory.Parser, new[]{ "Entries" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Fs.Link), global::Fs.Link.Parser, new[]{ "TargetHash" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Fs.Link), global::Fs.Link.Parser, new[]{ "TargetPath" }, null, null, null, null)
           }));
     }
     #endregion
@@ -1157,7 +1157,7 @@ namespace Fs {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public Link(Link other) : this() {
-      targetHash_ = other.targetHash_;
+      targetPath_ = other.targetPath_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1167,15 +1167,18 @@ namespace Fs {
       return new Link(this);
     }
 
-    /// <summary>Field number for the "target_hash" field.</summary>
-    public const int TargetHashFieldNumber = 1;
-    private string targetHash_ = "";
+    /// <summary>Field number for the "target_path" field.</summary>
+    public const int TargetPathFieldNumber = 1;
+    private string targetPath_ = "";
+    /// <summary>
+    /// (for now) we can't target hashes in some cases (e.g., linking to ancestor causes a cycle), so this will have to do
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string TargetHash {
-      get { return targetHash_; }
+    public string TargetPath {
+      get { return targetPath_; }
       set {
-        targetHash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        targetPath_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -1194,7 +1197,7 @@ namespace Fs {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (TargetHash != other.TargetHash) return false;
+      if (TargetPath != other.TargetPath) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1202,7 +1205,7 @@ namespace Fs {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (TargetHash.Length != 0) hash ^= TargetHash.GetHashCode();
+      if (TargetPath.Length != 0) hash ^= TargetPath.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1221,9 +1224,9 @@ namespace Fs {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (TargetHash.Length != 0) {
+      if (TargetPath.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(TargetHash);
+        output.WriteString(TargetPath);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -1235,9 +1238,9 @@ namespace Fs {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (TargetHash.Length != 0) {
+      if (TargetPath.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(TargetHash);
+        output.WriteString(TargetPath);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -1249,8 +1252,8 @@ namespace Fs {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (TargetHash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetHash);
+      if (TargetPath.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TargetPath);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1264,8 +1267,8 @@ namespace Fs {
       if (other == null) {
         return;
       }
-      if (other.TargetHash.Length != 0) {
-        TargetHash = other.TargetHash;
+      if (other.TargetPath.Length != 0) {
+        TargetPath = other.TargetPath;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1287,7 +1290,7 @@ namespace Fs {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            TargetHash = input.ReadString();
+            TargetPath = input.ReadString();
             break;
           }
         }
@@ -1310,7 +1313,7 @@ namespace Fs {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            TargetHash = input.ReadString();
+            TargetPath = input.ReadString();
             break;
           }
         }
