@@ -46,7 +46,7 @@ namespace Tracker {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Fs.FileSystemObject> __Marshaller_fs_FileSystemObject = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.FileSystemObject.Parser));
+    static readonly grpc::Marshaller<global::Tracker.ObjectsToPublish> __Marshaller_tracker_ObjectsToPublish = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ObjectsToPublish.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Google.Rpc.Status> __Marshaller_google_rpc_Status = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Google.Rpc.Status.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -57,11 +57,11 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::Tracker.PeerList> __Marshaller_tracker_PeerList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerList.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Fs.FileSystemObject, global::Google.Rpc.Status> __Method_Publish = new grpc::Method<global::Fs.FileSystemObject, global::Google.Rpc.Status>(
+    static readonly grpc::Method<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> __Method_Publish = new grpc::Method<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "Publish",
-        __Marshaller_fs_FileSystemObject,
+        __Marshaller_tracker_ObjectsToPublish,
         __Marshaller_google_rpc_Status);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -99,7 +99,7 @@ namespace Tracker {
     public abstract partial class TrackerBase
     {
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> Publish(grpc::IAsyncStreamReader<global::Fs.FileSystemObject> requestStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> Publish(grpc::IAsyncStreamReader<global::Tracker.ObjectsToPublish> requestStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -152,12 +152,12 @@ namespace Tracker {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.FileSystemObject, global::Google.Rpc.Status> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Publish(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.FileSystemObject, global::Google.Rpc.Status> Publish(grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> Publish(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Publish, null, options);
       }
@@ -218,7 +218,7 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, TrackerBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.FileSystemObject, global::Google.Rpc.Status>(serviceImpl.Publish));
+      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status>(serviceImpl.Publish));
       serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ChunkHashes, global::Google.Rpc.Status>(serviceImpl.MarkReachable));
       serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ChunkHashes, global::Google.Rpc.Status>(serviceImpl.MarkUnreachable));
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerList>(serviceImpl.GetPeerList));

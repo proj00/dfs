@@ -2,6 +2,7 @@ import { INodeService } from "./INodeService";
 
 export class UiService {
   private value = 0;
+  //@ts-ignore
   private nodeService: INodeService;
 
   public constructor(nodeService: INodeService) {
@@ -17,7 +18,7 @@ export class UiService {
   }
 
   public async callExample() {
-    return await this.nodeService.Hi();
+    return "hi";
   }
 
   public getCefSharpWrapper() {

@@ -7,7 +7,7 @@ import "google/rpc/status.proto";
 
 service Tracker
 {
-	rpc Publish(stream fs.FileSystemObject) returns (google.rpc.Status);
+	rpc Publish(stream ObjectsToPublish) returns (google.rpc.Status);
 	rpc MarkReachable(stream fs.ChunkHashes) returns (google.rpc.Status);
 	rpc MarkUnreachable(stream fs.ChunkHashes) returns (google.rpc.Status);
 	rpc GetPeerList(PeerRequest) returns (stream PeerList);
@@ -17,6 +17,17 @@ message PeerRequest
 {
 	string chunk_hash = 1;
 	int32 max_peer_count = 2;
+}
+
+message ObjectWithHash
+{
+	fs.FileSystemObject obj = 1;
+	string hash = 2;
+}
+
+message ObjectsToPublish
+{
+	repeated ObjectWithHash objects = 1;
 }
 
 message PeerList

@@ -16,7 +16,8 @@ namespace node
         [STAThread]
         static void Main()
         {
-            NodeService service = new();
+            NodeState state = new();
+            NodeService service = new(state);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG

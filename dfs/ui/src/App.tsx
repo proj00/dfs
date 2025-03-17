@@ -19,7 +19,7 @@ function App() {
       uiService.setValue(1);
 
       await nodeService.RegisterUiService(uiService.getCefSharpWrapper());
-      return await nodeService.Hi();
+      return "hi";
     };
 
     init().then((data) => setHi(data));
@@ -42,7 +42,7 @@ function App() {
             const newCount = count + 1;
             setCount(newCount);
             uiService.setValue(newCount);
-            setHi(await nodeService.Hi());
+            setHi(hi);
           }}
         >
           count is {count}
