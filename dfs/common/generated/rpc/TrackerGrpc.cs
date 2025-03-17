@@ -46,38 +46,46 @@ namespace Tracker {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Tracker.ObjectsToPublish> __Marshaller_tracker_ObjectsToPublish = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ObjectsToPublish.Parser));
+    static readonly grpc::Marshaller<global::Tracker.ObjectWithHash> __Marshaller_tracker_ObjectWithHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ObjectWithHash.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Google.Rpc.Status> __Marshaller_google_rpc_Status = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Google.Rpc.Status.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Fs.ChunkHashes> __Marshaller_fs_ChunkHashes = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ChunkHashes.Parser));
+    static readonly grpc::Marshaller<global::Tracker.Hash> __Marshaller_tracker_Hash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.Hash.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.PeerRequest> __Marshaller_tracker_PeerRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.PeerList> __Marshaller_tracker_PeerList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerList.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> __Method_Publish = new grpc::Method<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status>(
+    static readonly grpc::Method<global::Tracker.ObjectWithHash, global::Google.Rpc.Status> __Method_Publish = new grpc::Method<global::Tracker.ObjectWithHash, global::Google.Rpc.Status>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "Publish",
-        __Marshaller_tracker_ObjectsToPublish,
+        __Marshaller_tracker_ObjectWithHash,
         __Marshaller_google_rpc_Status);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Fs.ChunkHashes, global::Google.Rpc.Status> __Method_MarkReachable = new grpc::Method<global::Fs.ChunkHashes, global::Google.Rpc.Status>(
+    static readonly grpc::Method<global::Tracker.Hash, global::Tracker.ObjectWithHash> __Method_GetObjectTree = new grpc::Method<global::Tracker.Hash, global::Tracker.ObjectWithHash>(
+        grpc::MethodType.ServerStreaming,
+        __ServiceName,
+        "GetObjectTree",
+        __Marshaller_tracker_Hash,
+        __Marshaller_tracker_ObjectWithHash);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.Hash, global::Google.Rpc.Status> __Method_MarkReachable = new grpc::Method<global::Tracker.Hash, global::Google.Rpc.Status>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "MarkReachable",
-        __Marshaller_fs_ChunkHashes,
+        __Marshaller_tracker_Hash,
         __Marshaller_google_rpc_Status);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Fs.ChunkHashes, global::Google.Rpc.Status> __Method_MarkUnreachable = new grpc::Method<global::Fs.ChunkHashes, global::Google.Rpc.Status>(
+    static readonly grpc::Method<global::Tracker.Hash, global::Google.Rpc.Status> __Method_MarkUnreachable = new grpc::Method<global::Tracker.Hash, global::Google.Rpc.Status>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "MarkUnreachable",
-        __Marshaller_fs_ChunkHashes,
+        __Marshaller_tracker_Hash,
         __Marshaller_google_rpc_Status);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -99,19 +107,25 @@ namespace Tracker {
     public abstract partial class TrackerBase
     {
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> Publish(grpc::IAsyncStreamReader<global::Tracker.ObjectsToPublish> requestStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> Publish(grpc::IAsyncStreamReader<global::Tracker.ObjectWithHash> requestStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> MarkReachable(grpc::IAsyncStreamReader<global::Fs.ChunkHashes> requestStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task GetObjectTree(global::Tracker.Hash request, grpc::IServerStreamWriter<global::Tracker.ObjectWithHash> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> MarkUnreachable(grpc::IAsyncStreamReader<global::Fs.ChunkHashes> requestStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> MarkReachable(grpc::IAsyncStreamReader<global::Tracker.Hash> requestStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Google.Rpc.Status> MarkUnreachable(grpc::IAsyncStreamReader<global::Tracker.Hash> requestStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -152,32 +166,42 @@ namespace Tracker {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectWithHash, global::Google.Rpc.Status> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Publish(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status> Publish(grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectWithHash, global::Google.Rpc.Status> Publish(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Publish, null, options);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ChunkHashes, global::Google.Rpc.Status> MarkReachable(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Tracker.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetObjectTree(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncServerStreamingCall<global::Tracker.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_GetObjectTree, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.Hash, global::Google.Rpc.Status> MarkReachable(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return MarkReachable(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ChunkHashes, global::Google.Rpc.Status> MarkReachable(grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.Hash, global::Google.Rpc.Status> MarkReachable(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_MarkReachable, null, options);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ChunkHashes, global::Google.Rpc.Status> MarkUnreachable(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.Hash, global::Google.Rpc.Status> MarkUnreachable(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return MarkUnreachable(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ChunkHashes, global::Google.Rpc.Status> MarkUnreachable(grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.Hash, global::Google.Rpc.Status> MarkUnreachable(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_MarkUnreachable, null, options);
       }
@@ -206,6 +230,7 @@ namespace Tracker {
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_Publish, serviceImpl.Publish)
+          .AddMethod(__Method_GetObjectTree, serviceImpl.GetObjectTree)
           .AddMethod(__Method_MarkReachable, serviceImpl.MarkReachable)
           .AddMethod(__Method_MarkUnreachable, serviceImpl.MarkUnreachable)
           .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList).Build();
@@ -218,9 +243,10 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, TrackerBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.ObjectsToPublish, global::Google.Rpc.Status>(serviceImpl.Publish));
-      serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ChunkHashes, global::Google.Rpc.Status>(serviceImpl.MarkReachable));
-      serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ChunkHashes, global::Google.Rpc.Status>(serviceImpl.MarkUnreachable));
+      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.ObjectWithHash, global::Google.Rpc.Status>(serviceImpl.Publish));
+      serviceBinder.AddMethod(__Method_GetObjectTree, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.Hash, global::Tracker.ObjectWithHash>(serviceImpl.GetObjectTree));
+      serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Google.Rpc.Status>(serviceImpl.MarkReachable));
+      serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Google.Rpc.Status>(serviceImpl.MarkUnreachable));
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerList>(serviceImpl.GetPeerList));
     }
 
