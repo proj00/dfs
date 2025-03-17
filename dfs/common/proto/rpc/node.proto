@@ -14,5 +14,5 @@ message ChunkRequest
 
 message ChunkResponse
 {
-	bytes content = 1;
+	bytes response = 1;
 }

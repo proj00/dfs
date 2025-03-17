@@ -17,7 +17,8 @@ namespace node
         static void Main()
         {
             NodeState state = new(TimeSpan.FromMinutes(1));
-            NodeService service = new(state);
+            NodeRpc rpc = new(state);
+            NodeService service = new(state, rpc);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG

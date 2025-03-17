@@ -104,15 +104,15 @@ namespace common
             return obj;
         }
 
-        public static Dictionary<string, Fs.FileSystemObject> GetRecursiveDirectoryObject(string path, int chunkSize, Dictionary<string, string>? pathsByHash = null)
+        public static Dictionary<string, Fs.FileSystemObject> GetRecursiveDirectoryObject(string path, int chunkSize, Action<string, string>? appendHashAndPath = null)
         {
             Dictionary<string, Fs.FileSystemObject> found = [];
 
             void Add(string hash, string path)
             {
-                if (pathsByHash != null)
+                if (appendHashAndPath != null)
                 {
-                    pathsByHash[hash] = path;
+                    appendHashAndPath(hash, path);
                 }
             }
 
@@ -153,6 +153,7 @@ namespace common
                 var currentHash = HashUtils.GetHash(current);
 
                 found[currentHash] = current;
+                Add(currentHash, info.FullName);
                 return currentHash;
             }
 

@@ -1,4 +1,5 @@
 ﻿using CefSharp;
+using CefSharp.DevTools.Network;
 using common;
 using Microsoft.Extensions.ObjectPool;
 using System;
@@ -18,10 +19,12 @@ namespace node.IpcService
     {
         private UiService? service;
         private NodeState state;
+        private NodeRpc rpc;
 
-        public NodeService(NodeState state)
+        public NodeService(NodeState state, NodeRpc rpc)
         {
             this.state = state;
+            this.rpc = rpc;
         }
 
         public void RegisterUiService(dynamic service)
@@ -77,7 +80,23 @@ namespace node.IpcService
 
             if (Directory.Exists(path))
             {
-                var entries = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, state.pathByHash);
+                var entries = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path) =>
+                {
+                    var obj = state.objectByHash[hash];
+                    state.pathByHash[hash] = path;
+
+                    if (obj.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
+                    {
+                        return;
+                    }
+
+                    foreach (var chunk in obj.File.Hashes.Hash)
+                    {
+                        state.chunkParents[chunk].Add(hash);
+                    }
+                });
+
+
                 foreach (var entry in entries)
                 {
                     state.objectByHash[entry.Key] = entry.Value;
