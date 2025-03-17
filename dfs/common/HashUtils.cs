@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Google.Protobuf;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -17,6 +18,29 @@ namespace common
             return hex;
         }
 
+        public static string GetHash(Stream data)
+        {
+            var hash = SHA3_512.HashData(data);
+            var hex = Convert.ToHexStringLower(hash);
+
+            return hex;
+        }
+
+        public static string GetHash(ReadOnlySpan<byte> data)
+        {
+            var hash = SHA3_512.HashData(data);
+            var hex = Convert.ToHexStringLower(hash);
+
+            return hex;
+        }
+
+        public static string GetHash(Fs.FileSystemObject obj)
+        {
+            var hash = SHA3_512.HashData(obj.ToByteArray());
+            var hex = Convert.ToHexStringLower(hash);
+
+            return hex;
+        }
         public static string CombineHashes(string[] hashes)
         {
             var data = hashes.Select(hash => Convert.FromHexString(hash));
