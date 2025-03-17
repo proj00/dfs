@@ -5,7 +5,6 @@ package fs;
 message FileSystemObject
 {
 	string name = 1;
-	string hash = 2;
 
 	oneof type {
 		File file = 3;

@@ -24,18 +24,18 @@ namespace Fs {
     static FilesystemReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChNmcy9maWxlc3lzdGVtLnByb3RvEgJmcyKOAQoQRmlsZVN5c3RlbU9iamVj",
-            "dBIMCgRuYW1lGAEgASgJEgwKBGhhc2gYAiABKAkSGAoEZmlsZRgDIAEoCzII",
-            "LmZzLkZpbGVIABIiCglkaXJlY3RvcnkYBCABKAsyDS5mcy5EaXJlY3RvcnlI",
-            "ABIYCgRsaW5rGAUgASgLMgguZnMuTGlua0gAQgYKBHR5cGUiNQoERmlsZRIM",
-            "CgRzaXplGAEgASgDEh8KBmhhc2hlcxgCIAEoCzIPLmZzLkNodW5rSGFzaGVz",
-            "Ii4KC0NodW5rSGFzaGVzEhEKCWNodW5rU2l6ZRgBIAEoBRIMCgRoYXNoGAIg",
-            "AygJIhwKCURpcmVjdG9yeRIPCgdlbnRyaWVzGAEgAygJIhsKBExpbmsSEwoL",
-            "dGFyZ2V0X3BhdGgYASABKAliBnByb3RvMw=="));
+            "ChNmcy9maWxlc3lzdGVtLnByb3RvEgJmcyKAAQoQRmlsZVN5c3RlbU9iamVj",
+            "dBIMCgRuYW1lGAEgASgJEhgKBGZpbGUYAyABKAsyCC5mcy5GaWxlSAASIgoJ",
+            "ZGlyZWN0b3J5GAQgASgLMg0uZnMuRGlyZWN0b3J5SAASGAoEbGluaxgFIAEo",
+            "CzIILmZzLkxpbmtIAEIGCgR0eXBlIjUKBEZpbGUSDAoEc2l6ZRgBIAEoAxIf",
+            "CgZoYXNoZXMYAiABKAsyDy5mcy5DaHVua0hhc2hlcyIuCgtDaHVua0hhc2hl",
+            "cxIRCgljaHVua1NpemUYASABKAUSDAoEaGFzaBgCIAMoCSIcCglEaXJlY3Rv",
+            "cnkSDwoHZW50cmllcxgBIAMoCSIbCgRMaW5rEhMKC3RhcmdldF9wYXRoGAEg",
+            "ASgJYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Fs.FileSystemObject), global::Fs.FileSystemObject.Parser, new[]{ "Name", "Hash", "File", "Directory", "Link" }, new[]{ "Type" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Fs.FileSystemObject), global::Fs.FileSystemObject.Parser, new[]{ "Name", "File", "Directory", "Link" }, new[]{ "Type" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.File), global::Fs.File.Parser, new[]{ "Size", "Hashes" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.ChunkHashes), global::Fs.ChunkHashes.Parser, new[]{ "ChunkSize", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Fs.Directory), global::Fs.Directory.Parser, new[]{ "Entries" }, null, null, null, null),
@@ -82,7 +82,6 @@ namespace Fs {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public FileSystemObject(FileSystemObject other) : this() {
       name_ = other.name_;
-      hash_ = other.hash_;
       switch (other.TypeCase) {
         case TypeOneofCase.File:
           File = other.File.Clone();
@@ -113,18 +112,6 @@ namespace Fs {
       get { return name_; }
       set {
         name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "hash" field.</summary>
-    public const int HashFieldNumber = 2;
-    private string hash_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Hash {
-      get { return hash_; }
-      set {
-        hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -202,7 +189,6 @@ namespace Fs {
         return true;
       }
       if (Name != other.Name) return false;
-      if (Hash != other.Hash) return false;
       if (!object.Equals(File, other.File)) return false;
       if (!object.Equals(Directory, other.Directory)) return false;
       if (!object.Equals(Link, other.Link)) return false;
@@ -215,7 +201,6 @@ namespace Fs {
     public override int GetHashCode() {
       int hash = 1;
       if (Name.Length != 0) hash ^= Name.GetHashCode();
-      if (Hash.Length != 0) hash ^= Hash.GetHashCode();
       if (typeCase_ == TypeOneofCase.File) hash ^= File.GetHashCode();
       if (typeCase_ == TypeOneofCase.Directory) hash ^= Directory.GetHashCode();
       if (typeCase_ == TypeOneofCase.Link) hash ^= Link.GetHashCode();
@@ -241,10 +226,6 @@ namespace Fs {
       if (Name.Length != 0) {
         output.WriteRawTag(10);
         output.WriteString(Name);
-      }
-      if (Hash.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Hash);
       }
       if (typeCase_ == TypeOneofCase.File) {
         output.WriteRawTag(26);
@@ -272,10 +253,6 @@ namespace Fs {
         output.WriteRawTag(10);
         output.WriteString(Name);
       }
-      if (Hash.Length != 0) {
-        output.WriteRawTag(18);
-        output.WriteString(Hash);
-      }
       if (typeCase_ == TypeOneofCase.File) {
         output.WriteRawTag(26);
         output.WriteMessage(File);
@@ -301,9 +278,6 @@ namespace Fs {
       if (Name.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
-      if (Hash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hash);
-      }
       if (typeCase_ == TypeOneofCase.File) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(File);
       }
@@ -327,9 +301,6 @@ namespace Fs {
       }
       if (other.Name.Length != 0) {
         Name = other.Name;
-      }
-      if (other.Hash.Length != 0) {
-        Hash = other.Hash;
       }
       switch (other.TypeCase) {
         case TypeOneofCase.File:
@@ -373,10 +344,6 @@ namespace Fs {
             break;
           case 10: {
             Name = input.ReadString();
-            break;
-          }
-          case 18: {
-            Hash = input.ReadString();
             break;
           }
           case 26: {
@@ -427,10 +394,6 @@ namespace Fs {
             break;
           case 10: {
             Name = input.ReadString();
-            break;
-          }
-          case 18: {
-            Hash = input.ReadString();
             break;
           }
           case 26: {
