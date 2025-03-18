@@ -1,5 +1,3 @@
-"use client"
-
 import { ChevronRight, Clock, Computer, HardDrive, Share, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { mockFolders } from "@/lib/mock-data"
