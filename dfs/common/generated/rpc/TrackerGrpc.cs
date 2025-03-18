@@ -54,7 +54,7 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.PeerRequest> __Marshaller_tracker_PeerRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Tracker.PeerList> __Marshaller_tracker_PeerList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerList.Parser));
+    static readonly grpc::Marshaller<global::Tracker.PeerResponse> __Marshaller_tracker_PeerResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerResponse.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Tracker.ObjectWithHash, global::Google.Rpc.Status> __Method_Publish = new grpc::Method<global::Tracker.ObjectWithHash, global::Google.Rpc.Status>(
@@ -89,12 +89,12 @@ namespace Tracker {
         __Marshaller_google_rpc_Status);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Tracker.PeerRequest, global::Tracker.PeerList> __Method_GetPeerList = new grpc::Method<global::Tracker.PeerRequest, global::Tracker.PeerList>(
+    static readonly grpc::Method<global::Tracker.PeerRequest, global::Tracker.PeerResponse> __Method_GetPeerList = new grpc::Method<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "GetPeerList",
         __Marshaller_tracker_PeerRequest,
-        __Marshaller_tracker_PeerList);
+        __Marshaller_tracker_PeerResponse);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -131,7 +131,7 @@ namespace Tracker {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task GetPeerList(global::Tracker.PeerRequest request, grpc::IServerStreamWriter<global::Tracker.PeerList> responseStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task GetPeerList(global::Tracker.PeerRequest request, grpc::IServerStreamWriter<global::Tracker.PeerResponse> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -206,12 +206,12 @@ namespace Tracker {
         return CallInvoker.AsyncClientStreamingCall(__Method_MarkUnreachable, null, options);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Tracker.PeerList> GetPeerList(global::Tracker.PeerRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Tracker.PeerResponse> GetPeerList(global::Tracker.PeerRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetPeerList(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Tracker.PeerList> GetPeerList(global::Tracker.PeerRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncServerStreamingCall<global::Tracker.PeerResponse> GetPeerList(global::Tracker.PeerRequest request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_GetPeerList, null, options, request);
       }
@@ -247,7 +247,7 @@ namespace Tracker {
       serviceBinder.AddMethod(__Method_GetObjectTree, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.Hash, global::Tracker.ObjectWithHash>(serviceImpl.GetObjectTree));
       serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Google.Rpc.Status>(serviceImpl.MarkReachable));
       serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Google.Rpc.Status>(serviceImpl.MarkUnreachable));
-      serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerList>(serviceImpl.GetPeerList));
+      serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(serviceImpl.GetPeerList));
     }
 
   }

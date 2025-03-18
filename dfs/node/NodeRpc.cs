@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using Google.Protobuf;
+using Grpc.Core;
 using Node;
 using System;
 using System.Collections.Generic;
@@ -19,12 +20,12 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (!state.chunkParents.ContainsKey(request.Hash))
+            if (!state.chunkParents.TryGetValue(request.Hash, out HashSet<string>? parent))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
-            var parentHash = state.chunkParents[request.Hash].First();
+            var parentHash = parent.First();
             var parentObj = state.objectByHash[parentHash];
             if (parentObj == null)
             {
@@ -34,10 +35,20 @@ namespace node
             var size = parentObj.File.Hashes.ChunkSize;
             var offset = parentObj.File.Hashes.Hash.IndexOf(request.Hash) * size;
 
-            var buffer = new byte[size];
-
             using var stream = new FileStream(state.pathByHash[parentHash], FileMode.Open);
-            stream.Read(buffer, offset, size);
+
+            var buffer = new byte[size];
+            var total = stream.Read(buffer, offset, size);
+            var subchunk = Math.Max(1, (int)Math.Sqrt(size));
+
+            for (int i = 0; i < total; i += subchunk)
+            {
+                await responseStream.WriteAsync(new ChunkResponse()
+                {
+                    Response = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - subchunk * i))
+                });
+            }
+
         }
     }
 }

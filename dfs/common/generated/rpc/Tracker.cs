@@ -28,22 +28,22 @@ namespace Tracker {
             "cm90bxoXZ29vZ2xlL3JwYy9zdGF0dXMucHJvdG8iOQoLUGVlclJlcXVlc3QS",
             "EgoKY2h1bmtfaGFzaBgBIAEoCRIWCg5tYXhfcGVlcl9jb3VudBgCIAEoBSIT",
             "CgRIYXNoEgsKA2hleBgBIAEoCSJBCg5PYmplY3RXaXRoSGFzaBIhCgNvYmoY",
-            "ASABKAsyFC5mcy5GaWxlU3lzdGVtT2JqZWN0EgwKBGhhc2gYAiABKAkiGQoI",
-            "UGVlckxpc3QSDQoFcGVlcnMYASADKAkypgIKB1RyYWNrZXISOAoHUHVibGlz",
-            "aBIXLnRyYWNrZXIuT2JqZWN0V2l0aEhhc2gaEi5nb29nbGUucnBjLlN0YXR1",
-            "cygBEjkKDUdldE9iamVjdFRyZWUSDS50cmFja2VyLkhhc2gaFy50cmFja2Vy",
-            "Lk9iamVjdFdpdGhIYXNoMAESNAoNTWFya1JlYWNoYWJsZRINLnRyYWNrZXIu",
-            "SGFzaBoSLmdvb2dsZS5ycGMuU3RhdHVzKAESNgoPTWFya1VucmVhY2hhYmxl",
-            "Eg0udHJhY2tlci5IYXNoGhIuZ29vZ2xlLnJwYy5TdGF0dXMoARI4CgtHZXRQ",
-            "ZWVyTGlzdBIULnRyYWNrZXIuUGVlclJlcXVlc3QaES50cmFja2VyLlBlZXJM",
-            "aXN0MAFiBnByb3RvMw=="));
+            "ASABKAsyFC5mcy5GaWxlU3lzdGVtT2JqZWN0EgwKBGhhc2gYAiABKAkiHAoM",
+            "UGVlclJlc3BvbnNlEgwKBHBlZXIYASABKAkyqgIKB1RyYWNrZXISOAoHUHVi",
+            "bGlzaBIXLnRyYWNrZXIuT2JqZWN0V2l0aEhhc2gaEi5nb29nbGUucnBjLlN0",
+            "YXR1cygBEjkKDUdldE9iamVjdFRyZWUSDS50cmFja2VyLkhhc2gaFy50cmFj",
+            "a2VyLk9iamVjdFdpdGhIYXNoMAESNAoNTWFya1JlYWNoYWJsZRINLnRyYWNr",
+            "ZXIuSGFzaBoSLmdvb2dsZS5ycGMuU3RhdHVzKAESNgoPTWFya1VucmVhY2hh",
+            "YmxlEg0udHJhY2tlci5IYXNoGhIuZ29vZ2xlLnJwYy5TdGF0dXMoARI8CgtH",
+            "ZXRQZWVyTGlzdBIULnRyYWNrZXIuUGVlclJlcXVlc3QaFS50cmFja2VyLlBl",
+            "ZXJSZXNwb25zZTABYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Fs.FilesystemReflection.Descriptor, global::Google.Rpc.StatusReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.PeerRequest), global::Tracker.PeerRequest.Parser, new[]{ "ChunkHash", "MaxPeerCount" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.Hash), global::Tracker.Hash.Parser, new[]{ "Hex" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.ObjectWithHash), global::Tracker.ObjectWithHash.Parser, new[]{ "Obj", "Hash" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.PeerList), global::Tracker.PeerList.Parser, new[]{ "Peers" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.PeerResponse), global::Tracker.PeerResponse.Parser, new[]{ "Peer" }, null, null, null, null)
           }));
     }
     #endregion
@@ -728,16 +728,16 @@ namespace Tracker {
   }
 
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
-  public sealed partial class PeerList : pb::IMessage<PeerList>
+  public sealed partial class PeerResponse : pb::IMessage<PeerResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
   #endif
   {
-    private static readonly pb::MessageParser<PeerList> _parser = new pb::MessageParser<PeerList>(() => new PeerList());
+    private static readonly pb::MessageParser<PeerResponse> _parser = new pb::MessageParser<PeerResponse>(() => new PeerResponse());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<PeerList> Parser { get { return _parser; } }
+    public static pb::MessageParser<PeerResponse> Parser { get { return _parser; } }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -753,7 +753,7 @@ namespace Tracker {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PeerList() {
+    public PeerResponse() {
       OnConstruction();
     }
 
@@ -761,44 +761,45 @@ namespace Tracker {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PeerList(PeerList other) : this() {
-      peers_ = other.peers_.Clone();
+    public PeerResponse(PeerResponse other) : this() {
+      peer_ = other.peer_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public PeerList Clone() {
-      return new PeerList(this);
+    public PeerResponse Clone() {
+      return new PeerResponse(this);
     }
 
-    /// <summary>Field number for the "peers" field.</summary>
-    public const int PeersFieldNumber = 1;
-    private static readonly pb::FieldCodec<string> _repeated_peers_codec
-        = pb::FieldCodec.ForString(10);
-    private readonly pbc::RepeatedField<string> peers_ = new pbc::RepeatedField<string>();
+    /// <summary>Field number for the "peer" field.</summary>
+    public const int PeerFieldNumber = 1;
+    private string peer_ = "";
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> Peers {
-      get { return peers_; }
+    public string Peer {
+      get { return peer_; }
+      set {
+        peer_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
-      return Equals(other as PeerList);
+      return Equals(other as PeerResponse);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(PeerList other) {
+    public bool Equals(PeerResponse other) {
       if (ReferenceEquals(other, null)) {
         return false;
       }
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if(!peers_.Equals(other.peers_)) return false;
+      if (Peer != other.Peer) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -806,7 +807,7 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      hash ^= peers_.GetHashCode();
+      if (Peer.Length != 0) hash ^= Peer.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -825,7 +826,10 @@ namespace Tracker {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      peers_.WriteTo(output, _repeated_peers_codec);
+      if (Peer.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Peer);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -836,7 +840,10 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      peers_.WriteTo(ref output, _repeated_peers_codec);
+      if (Peer.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Peer);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -847,7 +854,9 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      size += peers_.CalculateSize(_repeated_peers_codec);
+      if (Peer.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Peer);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -856,11 +865,13 @@ namespace Tracker {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(PeerList other) {
+    public void MergeFrom(PeerResponse other) {
       if (other == null) {
         return;
       }
-      peers_.Add(other.peers_);
+      if (other.Peer.Length != 0) {
+        Peer = other.Peer;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -881,7 +892,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            peers_.AddEntriesFrom(input, _repeated_peers_codec);
+            Peer = input.ReadString();
             break;
           }
         }
@@ -904,7 +915,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            peers_.AddEntriesFrom(ref input, _repeated_peers_codec);
+            Peer = input.ReadString();
             break;
           }
         }
