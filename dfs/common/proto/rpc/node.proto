@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+
+package node;
+
+service Node
+{
+	rpc GetChunk (ChunkRequest) returns (stream ChunkResponse);
+}
+
+message ChunkRequest
+{
+	string hash = 1;
+}
+
+message ChunkResponse
+{
+	bytes response = 1;
+}

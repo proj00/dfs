@@ -1,0 +1,35 @@
+﻿syntax = "proto3";
+
+package fs;
+
+message FileSystemObject
+{
+	string name = 1;
+
+	oneof type {
+		File file = 3;
+		Directory directory = 4;
+		Link link = 5;
+	}
+}
+
+message File
+{
+	int64 size = 1;
+	ChunkHashes hashes = 2;
+}
+
+message ChunkHashes {
+	int32 chunkSize = 1;
+	repeated string hash = 2;
+}
+
+message Directory
+{
+	repeated string entries = 1;
+}
+
+message Link
+{
+	string target_path = 1; // (for now) we can't target hashes in some cases (e.g., linking to ancestor causes a cycle), so this will have to do
+}
