@@ -1,11 +1,7 @@
 import { Drive } from "./components/drive"
 
 function App() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Drive />
-    </div>
-  )
+  return <Drive />
 }
 
 export default App
