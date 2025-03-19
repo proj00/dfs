@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracker", "tracker\tracker.
 		{E15E491A-E872-91D8-DF7A-CA59C792F064} = {E15E491A-E872-91D8-DF7A-CA59C792F064}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "common-test", "common-test\common-test.csproj", "{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +68,10 @@ Global
 		{7E381A0D-D1B0-4647-81C0-EC75BDCBB9F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E381A0D-D1B0-4647-81C0-EC75BDCBB9F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E381A0D-D1B0-4647-81C0-EC75BDCBB9F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
