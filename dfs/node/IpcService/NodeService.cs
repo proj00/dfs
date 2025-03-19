@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Tracker;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 
 namespace node.IpcService
 {
@@ -62,7 +63,7 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public void ImportObjectFromDisk(string path, int chunkSize)
+        public string ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
@@ -76,15 +77,19 @@ namespace node.IpcService
 
                 state.pathByHash[hash] = path;
                 state.objectByHash[hash] = obj;
+                foreach (var chunk in obj.File.Hashes.Hash)
+                {
+                    state.SetChunkParent(chunk, hash);
+                }
 
-                return;
+                return hash;
             }
 
             if (Directory.Exists(path))
             {
-                var entries = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path) =>
+                return FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
                 {
-                    var obj = state.objectByHash[hash];
+                    state.objectByHash[hash] = obj;
                     state.pathByHash[hash] = path;
 
                     if (obj.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
@@ -94,23 +99,20 @@ namespace node.IpcService
 
                     foreach (var chunk in obj.File.Hashes.Hash)
                     {
-                        state.chunkParents[chunk].Add(hash);
+                        state.SetChunkParent(chunk, hash);
                     }
                 });
-
-
-                foreach (var entry in entries)
-                {
-                    state.objectByHash[entry.Key] = entry.Value;
-                }
-
-                return;
             }
 
             throw new Exception("Invalid path");
         }
 
-        public async Task PublishToTracker(string[] hashes, string trackerUri)
+        public async Task PublishToTracker(string[] hashes, string uri)
+        {
+            await PublishToTracker(hashes, new TrackerWrapper(uri, state));
+        }
+
+        public async Task PublishToTracker(string[] hashes, ITrackerWrapper tracker)
         {
             foreach (var hash in hashes)
             {
@@ -120,25 +122,16 @@ namespace node.IpcService
                 }
             }
 
-            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri) || uri == null)
+            var response = await tracker.Publish(hashes.Select(hash => new ObjectWithHash { Hash = hash, Obj = state.objectByHash[hash] }).ToList());
+            foreach (var file in hashes
+                .Select(hash => state.objectByHash[hash])
+                .Where(obj => obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File))
             {
-                throw new Exception("invalid uri");
+                foreach (var chunk in file.File.Hashes.Hash)
+                {
+                    await tracker.MarkReachable(chunk);
+                }
             }
-
-            var client = state.GetTrackerClient(uri);
-
-            using var call = client.Publish();
-            foreach (var hash in hashes)
-            {
-                var objWithHash = new ObjectWithHash();
-                objWithHash.Hash = hash;
-                objWithHash.Obj = state.objectByHash[hash];
-
-                await call.RequestStream.WriteAsync(objWithHash);
-            }
-            await call.RequestStream.CompleteAsync();
-
-            var response = await call;
 
             if (response.Code != 0)
             {
@@ -146,40 +139,37 @@ namespace node.IpcService
             }
         }
 
-        public async Task DownloadObjectByHash(string hash, string trackerUri, string destinationDir)
+        public async Task DownloadObjectByHash(string hash, string uri, string destinationDir)
         {
-            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri) || uri == null)
+            await DownloadObjectByHash(hash, new TrackerWrapper(uri, state), destinationDir);
+        }
+
+        public async Task DownloadObjectByHash(string hash, ITrackerWrapper tracker, string destinationDir)
+        {
+            List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
+            foreach (var message in objects)
             {
-                throw new Exception("invalid uri");
-            }
-
-            var client = state.GetTrackerClient(uri);
-
-            var call = client.GetObjectTree(new Hash() { Hex = hash });
-
-            List<ObjectWithHash> objects = [];
-            await foreach (var message in call.ResponseStream.ReadAllAsync())
-            {
-                objects.Add(message);
                 state.objectByHash[message.Hash] = message.Obj;
             }
 
             var fileTasks = objects
                 .Where(obj => obj.Obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
-                .Select(obj => DownloadFile(obj, uri, destinationDir + "\\" + obj.Hash));
+                .Select(obj => DownloadFile(obj, tracker, destinationDir));
 
             await Task.WhenAll(fileTasks);
         }
 
-        private async Task DownloadFile(ObjectWithHash obj, Uri uri, string destinationDir)
+        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir)
         {
             List<Task> chunkTasks = [];
 
-            using var stream = new FileStream(destinationDir + "\\" + obj.Obj.Name, FileMode.Create);
+            var dir = @"\\?\" + destinationDir + "\\" + obj.Hash;
+            Directory.CreateDirectory(dir);
+            using var stream = new FileStream(dir + "\\" + obj.Obj.Name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             var i = 0;
             foreach (var hash in obj.Obj.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Obj.File.Hashes.ChunkSize, i, uri, stream));
+                chunkTasks.Add(DownloadChunk(hash, obj.Obj.File.Hashes.ChunkSize, i, tracker, stream));
                 i++;
             }
 
@@ -187,21 +177,14 @@ namespace node.IpcService
 
             foreach (var hash in obj.Obj.File.Hashes.Hash)
             {
-                state.chunkParents[hash].Add(obj.Hash);
+                state.SetChunkParent(hash, obj.Hash);
             }
             state.pathByHash[obj.Hash] = destinationDir + "\\" + obj.Obj.Name;
         }
 
-        private async Task DownloadChunk(string hash, int chunkSize, int chunkIndex, Uri uri, FileStream stream)
+        private async Task DownloadChunk(string hash, int chunkSize, int chunkIndex, ITrackerWrapper tracker, FileStream stream)
         {
-            var trackerClient = state.GetTrackerClient(uri);
-
-            var call = trackerClient.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
-            List<string> peers = [];
-            await foreach (var message in call.ResponseStream.ReadAllAsync())
-            {
-                peers.Add(message.Peer);
-            }
+            List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
 
             // for now, pick a random peer
             var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
@@ -214,18 +197,17 @@ namespace node.IpcService
             await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
             {
                 var response = message.Response.ToByteArray();
-                Array.Copy(response, 0, buffer, chunkIndex * chunkSize + written, response.Length);
+                Array.Copy(response, 0, buffer, written, response.Length);
                 written += response.Length;
             }
 
             lock (stream)
             {
-                stream.Write(buffer, chunkIndex * chunkSize, written);
+                stream.Seek(chunkIndex * chunkSize, SeekOrigin.Begin);
+                stream.Write(buffer, 0, written);
             }
 
-            var markCall = trackerClient.MarkReachable();
-            await markCall.RequestStream.WriteAsync(new Hash() { Hex = hash });
-            await markCall.RequestStream.CompleteAsync();
+            await tracker.MarkReachable(hash);
         }
     }
 }

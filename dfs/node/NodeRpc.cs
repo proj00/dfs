@@ -33,19 +33,21 @@ namespace node
             }
 
             var size = parentObj.File.Hashes.ChunkSize;
-            var offset = parentObj.File.Hashes.Hash.IndexOf(request.Hash) * size;
+            var chunkIndex = parentObj.File.Hashes.Hash.IndexOf(request.Hash);
+            var offset = chunkIndex * size;
 
-            using var stream = new FileStream(state.pathByHash[parentHash], FileMode.Open);
+            using var stream = new FileStream(state.pathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             var buffer = new byte[size];
-            var total = stream.Read(buffer, offset, size);
+            stream.Seek(offset, SeekOrigin.Begin);
+            var total = stream.Read(buffer, 0, size);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
 
             for (int i = 0; i < total; i += subchunk)
             {
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
-                    Response = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - subchunk * i))
+                    Response = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i))
                 });
             }
 

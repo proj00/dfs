@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Tracker;
 
 namespace common
 {
@@ -20,10 +21,11 @@ namespace common
                 Name = info.Name
             };
 
+            obj.File.Hashes = new Fs.ChunkHashes();
             obj.File.Size = info.Length;
             obj.File.Hashes.ChunkSize = chunkSize;
 
-            using var stream = new FileStream(path, FileMode.Open);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var buffer = new byte[chunkSize];
             for (int i = 0; i < obj.File.Size / chunkSize + (obj.File.Size % chunkSize == 0 ? 0 : 1); i++)
             {
@@ -104,30 +106,24 @@ namespace common
             return obj;
         }
 
-        public static Dictionary<string, Fs.FileSystemObject> GetRecursiveDirectoryObject(string path, int chunkSize, Action<string, string>? appendHashAndPath = null)
+        public static string GetRecursiveDirectoryObject(string path, int chunkSize, Action<string, string, Fs.FileSystemObject> appendHashPathObj)
         {
-            Dictionary<string, Fs.FileSystemObject> found = [];
-
-            void Add(string hash, string path)
+            void Add(string hash, string path, Fs.FileSystemObject obj)
             {
-                if (appendHashAndPath != null)
-                {
-                    appendHashAndPath(hash, path);
-                }
+                appendHashPathObj(hash, path, obj);
             }
 
-            string GetInternal(DirectoryInfo info)
+            ObjectWithHash GetInternal(DirectoryInfo info)
             {
-                List<string> children = [];
+                List<ObjectWithHash> children = [];
 
                 foreach (var file in info.GetFiles())
                 {
                     var obj = GetLinkTarget(file.FullName) == null ? GetFileObject(file.FullName, chunkSize) : GetLinkObject(file.FullName);
                     var hash = HashUtils.GetHash(obj);
 
-                    children.Add(hash);
-                    found[hash] = obj;
-                    Add(hash, file.FullName);
+                    children.Add(new ObjectWithHash { Hash = hash, Obj = obj });
+                    Add(hash, file.FullName, obj);
                 }
 
                 foreach (var dir in info.GetDirectories())
@@ -137,28 +133,25 @@ namespace common
                         var obj = GetLinkObject(dir.FullName);
                         var hash = HashUtils.GetHash(obj);
 
-                        children.Add(hash);
-                        found[hash] = obj;
-                        Add(hash, dir.FullName);
+                        children.Add(new ObjectWithHash { Hash = hash, Obj = obj });
+                        Add(hash, dir.FullName, obj);
 
                         continue;
                     }
 
-                    var childHash = GetInternal(dir);
-                    children.Add(childHash);
-                    Add(childHash, dir.FullName);
+                    var o = GetInternal(dir);
+                    children.Add(o);
+                    Add(o.Hash, dir.FullName, o.Obj);
                 }
 
-                var current = GetDirectoryObject(info.FullName, children);
+                var current = GetDirectoryObject(info.FullName, children.Select(a => a.Hash).ToList());
                 var currentHash = HashUtils.GetHash(current);
 
-                found[currentHash] = current;
-                Add(currentHash, info.FullName);
-                return currentHash;
+                Add(currentHash, info.FullName, current);
+                return new ObjectWithHash { Hash = currentHash, Obj = current };
             }
 
-            _ = GetInternal(new DirectoryInfo(path));
-            return found;
+            return GetInternal(new DirectoryInfo(path)).Hash;
         }
 
         private const int FSCTL_GET_REPARSE_POINT = 0x000900A8;
