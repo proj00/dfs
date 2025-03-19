@@ -39,5 +39,16 @@ namespace node
             var channel = trackerChannel.GetOrCreate(uri, options);
             return new TrackerClient(channel);
         }
+
+        public void SetChunkParent(string chunkHash, string parentHash)
+        {
+            if (chunkParents.TryGetValue(chunkHash, out HashSet<string>? parents))
+            {
+                parents.Add(parentHash);
+                return;
+            }
+
+            chunkParents[chunkHash] = [parentHash];
+        }
     }
 }
