@@ -49,7 +49,10 @@ namespace node
             };
 
             await browser.LoadUrlAsync(sourceUrl);
+
+#if DEBUG
             browser.ShowDevTools();
+#endif
         }
     }
 }
