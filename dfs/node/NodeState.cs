@@ -15,6 +15,7 @@ namespace node
     {
         public Dictionary<string, string> pathByHash { get; }
         public Dictionary<string, Fs.FileSystemObject> objectByHash { get; }
+        public Dictionary<string, HashSet<string>> chunkParents { get; }
         private ChannelCache nodeChannel { get; }
         private ChannelCache trackerChannel { get; }
 
@@ -22,6 +23,7 @@ namespace node
         {
             objectByHash = [];
             pathByHash = [];
+            chunkParents = [];
             nodeChannel = new ChannelCache(channelTtl);
             trackerChannel = new ChannelCache(channelTtl);
         }

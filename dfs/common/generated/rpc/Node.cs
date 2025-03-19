@@ -25,14 +25,14 @@ namespace Node {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cg5ycGMvbm9kZS5wcm90bxIEbm9kZSIcCgxDaHVua1JlcXVlc3QSDAoEaGFz",
-            "aBgBIAEoCSIgCg1DaHVua1Jlc3BvbnNlEg8KB2NvbnRlbnQYASABKAwyPQoE",
-            "Tm9kZRI1CghHZXRDaHVuaxISLm5vZGUuQ2h1bmtSZXF1ZXN0GhMubm9kZS5D",
-            "aHVua1Jlc3BvbnNlMAFiBnByb3RvMw=="));
+            "aBgBIAEoCSIhCg1DaHVua1Jlc3BvbnNlEhAKCHJlc3BvbnNlGAEgASgMMj0K",
+            "BE5vZGUSNQoIR2V0Q2h1bmsSEi5ub2RlLkNodW5rUmVxdWVzdBoTLm5vZGUu",
+            "Q2h1bmtSZXNwb25zZTABYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkRequest), global::Node.ChunkRequest.Parser, new[]{ "Hash" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkResponse), global::Node.ChunkResponse.Parser, new[]{ "Content" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkResponse), global::Node.ChunkResponse.Parser, new[]{ "Response" }, null, null, null, null)
           }));
     }
     #endregion
@@ -272,7 +272,7 @@ namespace Node {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ChunkResponse(ChunkResponse other) : this() {
-      content_ = other.content_;
+      response_ = other.response_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -282,15 +282,15 @@ namespace Node {
       return new ChunkResponse(this);
     }
 
-    /// <summary>Field number for the "content" field.</summary>
-    public const int ContentFieldNumber = 1;
-    private pb::ByteString content_ = pb::ByteString.Empty;
+    /// <summary>Field number for the "response" field.</summary>
+    public const int ResponseFieldNumber = 1;
+    private pb::ByteString response_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pb::ByteString Content {
-      get { return content_; }
+    public pb::ByteString Response {
+      get { return response_; }
       set {
-        content_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        response_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -309,7 +309,7 @@ namespace Node {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Content != other.Content) return false;
+      if (Response != other.Response) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -317,7 +317,7 @@ namespace Node {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Content.Length != 0) hash ^= Content.GetHashCode();
+      if (Response.Length != 0) hash ^= Response.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -336,9 +336,9 @@ namespace Node {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Content.Length != 0) {
+      if (Response.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteBytes(Content);
+        output.WriteBytes(Response);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -350,9 +350,9 @@ namespace Node {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Content.Length != 0) {
+      if (Response.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteBytes(Content);
+        output.WriteBytes(Response);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -364,8 +364,8 @@ namespace Node {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Content.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Content);
+      if (Response.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Response);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -379,8 +379,8 @@ namespace Node {
       if (other == null) {
         return;
       }
-      if (other.Content.Length != 0) {
-        Content = other.Content;
+      if (other.Response.Length != 0) {
+        Response = other.Response;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -402,7 +402,7 @@ namespace Node {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Content = input.ReadBytes();
+            Response = input.ReadBytes();
             break;
           }
         }
@@ -425,7 +425,7 @@ namespace Node {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Content = input.ReadBytes();
+            Response = input.ReadBytes();
             break;
           }
         }

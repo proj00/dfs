@@ -16,8 +16,6 @@
   <ItemGroup>
     <PackageReference Include="CefSharp.Common.NETCore" Version="133.4.21" />
     <PackageReference Include="CefSharp.WinForms.NETCore" Version="133.4.21" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
   </ItemGroup>
 
   <ItemGroup>

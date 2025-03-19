@@ -1,24 +1,33 @@
-var builder = WebApplication.CreateBuilder(args);
+﻿using Grpc.Core;
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace tracker
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
+                new Grpc.Core.Logging.ConsoleLogger(),
+                Grpc.Core.Logging.LogLevel.Debug));
+
+            TrackerRpc rpc = new();
+            var server = new Grpc.Core.Server
+            {
+                Services = { Tracker.Tracker.BindService(rpc) },
+                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
+            };
+
+            Console.WriteLine("Running...");
+
+            server.Start();
+
+            foreach (var port in server.Ports)
+            {
+                Console.WriteLine($"Server is listening on {port.Host}:{port.BoundPort}");
+            }
+
+            Console.ReadKey();
+            server.ShutdownAsync().Wait();
+        }
+    }
 }
-
-app.MapGet("/empty", () =>
-{
-    return "";
-})
-.WithName("GetEmpty")
-.WithOpenApi();
-
-app.Run();

@@ -11,7 +11,7 @@ service Tracker
 	rpc GetObjectTree(Hash) returns (stream ObjectWithHash);
 	rpc MarkReachable(stream Hash) returns (google.rpc.Status);
 	rpc MarkUnreachable(stream Hash) returns (google.rpc.Status);
-	rpc GetPeerList(PeerRequest) returns (stream PeerList);
+	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
 }
 
 message PeerRequest
@@ -31,7 +31,7 @@ message ObjectWithHash
 	string hash = 2;
 }
 
-message PeerList
+message PeerResponse
 {
-	repeated string peers = 1;
+	string peer = 1;
 }

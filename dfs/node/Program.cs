@@ -4,6 +4,8 @@ using node.IpcService;
 using CefSharp.WinForms;
 using CefSharp;
 using node.UiResourceLoading;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace node
 {
@@ -17,7 +19,11 @@ namespace node
         static void Main()
         {
             NodeState state = new(TimeSpan.FromMinutes(1));
-            NodeService service = new(state);
+            NodeRpc rpc = new(state);
+            var server = new Grpc.Core.Server() { Services = { Node.Node.BindService(rpc) } };
+            server.Start();
+
+            NodeService service = new(state, rpc);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG
@@ -31,12 +37,12 @@ namespace node
             Cef.Initialize(settings);
 #endif
 
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             global::System.Windows.Forms.Application.EnableVisualStyles();
             global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
             global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
             System.Windows.Forms.Application.Run(new UI(service));
+
+            server.ShutdownAsync().Wait();
         }
     }
 }
