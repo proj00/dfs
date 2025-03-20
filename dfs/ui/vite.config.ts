@@ -8,6 +8,11 @@ export default defineConfig({
     server: {
         port: 59102,
     },
+    build: {
+        outDir: "./../node/UiResources",
+        emptyOutDir: true,
+    },
+    base: "http://ui.resources/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
