@@ -63,13 +63,10 @@
 	<data name="vite.svg" type="System.Resources.ResXFileRef, System.Windows.Forms">
 		<value>UiResources/vite.svg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
-	<data name="assets/index-BYuNAs6p.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/index-BYuNAs6p.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	<data name="assets/index-BeHChQM8.css" type="System.Resources.ResXFileRef, System.Windows.Forms">
+		<value>UiResources\assets/index-BeHChQM8.css;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
-	<data name="assets/index-n_ryQ3BS.css" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/index-n_ryQ3BS.css;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</data>
-	<data name="assets/react-C5kMDUDs.svg" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/react-C5kMDUDs.svg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	<data name="assets/index-CaxTI3a2.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
+		<value>UiResources\assets/index-CaxTI3a2.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
 </root>
