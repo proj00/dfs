@@ -1,0 +1,44 @@
+﻿attribute "fs_serializer";
+
+namespace fs;
+
+// error: fixed-length array in table must be wrapped in struct
+// so yeah...
+struct Hash {
+	data: [int64:8];
+}
+
+table HashRequest (fs_serializer:"Lazy") {
+	hash: Hash (required);
+}
+
+table File (fs_serializer:"Lazy") {
+  size: int64;
+  hashes: ChunkHashes (required);
+}
+
+table ChunkHashes (fs_serializer:"Lazy") {
+  chunk_size: int32;
+  hash: Hash (required);
+}
+
+table Directory (fs_serializer:"Lazy") {
+  entries: [Hash] (required);
+}
+
+table Link (fs_serializer:"Lazy") {
+  target_path: string (required);
+}
+
+union FileSystemType {
+  File,
+  Directory,
+  Link
+}
+
+table FileSystemObject (fs_serializer:"Lazy") {
+  name: string (required);
+  type: FileSystemType (required);
+}
+
+root_type FileSystemObject;

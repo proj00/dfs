@@ -43,7 +43,7 @@ namespace node
             NodeService service = new(state, rpc);
 
 
-            if (false) // mock for demo
+            if (true) // mock for demo
             {
                 var file = service.PickObjectPath(true);
                 var hash = service.ImportObjectFromDisk(file, 1024);
@@ -52,14 +52,14 @@ namespace node
                 tracker.peerId = $"http://127.0.0.1:{server.Ports.First().BoundPort}";
                 service.PublishToTracker(state.objectByHash.Keys.ToArray(), tracker).Wait();
 
-                if (Console.ReadLine() == "aa")
-                {
-                    var folder = service.PickObjectPath(true);
+                //if (Console.ReadLine() == "aa")
+                //{cd c
+                var folder = service.PickObjectPath(true);
 
-                    service.DownloadObjectByHash(hash, tracker, folder).Wait();
-                    Console.WriteLine("Press Enter to continue...");
-                    Console.ReadLine();
-                }
+                service.DownloadObjectByHash(hash, tracker, folder).Wait();
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
+                // }
             }
             else
             {
@@ -74,7 +74,6 @@ namespace node
                         });
                         Cef.Initialize(settings);
 #endif
-
                 global::System.Windows.Forms.Application.EnableVisualStyles();
                 global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
                 global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);

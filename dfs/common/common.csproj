@@ -8,8 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.1" />
-    <PackageReference Include="Google.Api.CommonProtos" Version="2.16.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.30.0" />
+    <PackageReference Include="FlatSharp.Compiler" Version="7.8.0" GeneratePathProperty="True">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FlatSharp.Runtime" Version="7.8.0" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.70.0" />
     <PackageReference Include="Grpc.Core" Version="2.46.6" />
     <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
@@ -19,9 +22,12 @@
     </PackageReference>
   </ItemGroup>
 
-	<ItemGroup>
-		<Protobuf Include="proto/rpc/*.proto" ProtoRoot="proto" AdditionalImportDirs="../../third_party/api-common-protos/" OutputDir=".\generated\" />
-		<Protobuf Include="proto/fs/*.proto" ProtoRoot="proto" GrpcServices="None" AdditionalImportDirs="../../third_party/api-common-protos/" OutputDir=".\generated\" />
-	</ItemGroup>
+    <ItemGroup>
+	    <Folder Include="generated\" />
+    </ItemGroup>
+
+    <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+      <Exec Command="$(PkgFlatSharp_Compiler)\tools\net9.0\FlatSharp.Compiler -i interfaces/fs.fbs;interfaces/tracker.fbs;interfaces/node.fbs -o generated" />
+    </Target>
 
 </Project>

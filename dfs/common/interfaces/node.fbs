@@ -1,0 +1,16 @@
+﻿include "fs.fbs";
+
+attribute "fs_serializer";
+attribute "fs_rpcInterface";
+
+namespace node;
+
+table ChunkResponse (fs_serializer:"Lazy")
+{
+  response: [ubyte] (required);
+}
+
+rpc_service Node (fs_rpcInterface)
+{
+  GetChunk(fs.HashRequest): ChunkResponse (streaming: "server");
+}
