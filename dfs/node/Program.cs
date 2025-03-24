@@ -56,7 +56,7 @@ namespace node
 
                 var folder = "C:\\Users\\as\\Documents\\test";
 
-                service.DownloadObjectByHash(hash, tracker, folder, 4).Wait();
+                service.DownloadObjectByHash(hash, tracker, folder, 1).Wait();
                 Console.WriteLine("Press Enter to continue...");
                 Console.ReadLine();
             }

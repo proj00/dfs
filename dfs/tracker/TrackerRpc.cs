@@ -20,17 +20,17 @@ namespace tracker
             throw new NotImplementedException();
         }
 
-        public override Task<Google.Rpc.Status> MarkReachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override Task<Empty> MarkReachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }
 
-        public override Task<Google.Rpc.Status> MarkUnreachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override Task<Empty> MarkUnreachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }
 
-        public override Task<Google.Rpc.Status> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
+        public override Task<Empty> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }

@@ -175,16 +175,14 @@ namespace node.IpcService
         private async Task DownloadChunk(ByteString hash, int chunkOffset, ITrackerWrapper tracker,
             FileStream stream, object streamLock, SemaphoreSlim semaphore)
         {
-            List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
-
-            // for now, pick a random peer
-            var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
-            var peerClient = state.GetNodeClient(new Uri(peers[index]));
-
-
             await semaphore.WaitAsync();
             try
             {
+                List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
+
+                // for now, pick a random peer
+                var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
+                var peerClient = state.GetNodeClient(new Uri(peers[index]));
                 var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash });
 
                 List<Node.ChunkResponse> response = [];
