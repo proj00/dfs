@@ -1,4 +1,4 @@
-import type { File, Folder } from "./types"
+import type { File, Folder } from "./types";
 
 export const mockFolders: Folder[] = [
   {
@@ -49,7 +49,7 @@ export const mockFolders: Folder[] = [
     modifiedAt: "2023-03-25T12:15:00Z",
     hasChildren: false,
   },
-]
+];
 
 export const mockFiles: File[] = [
   {
@@ -154,5 +154,4 @@ export const mockFiles: File[] = [
     createdAt: "2023-03-01T10:10:00Z",
     modifiedAt: "2023-04-05T13:25:00Z",
   },
-]
-
+];
