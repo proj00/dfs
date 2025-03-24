@@ -1,8 +1,7 @@
-import { Drive } from "./components/drive"
+import { Drive } from "./components/drive";
 
 function App() {
-  return <Drive />
+  return <Drive />;
 }
 
-export default App
-
+export default App;
