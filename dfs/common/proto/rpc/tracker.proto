@@ -3,32 +3,36 @@
 package tracker;
 
 import "fs/filesystem.proto";
-import "google/rpc/status.proto";
 
 service Tracker
 {
-	rpc Publish(stream ObjectWithHash) returns (google.rpc.Status);
+	rpc Publish(stream ObjectWithHash) returns (Empty);
 	rpc GetObjectTree(Hash) returns (stream ObjectWithHash);
-	rpc MarkReachable(stream Hash) returns (google.rpc.Status);
-	rpc MarkUnreachable(stream Hash) returns (google.rpc.Status);
+	rpc MarkReachable(stream Hash) returns (Empty);
+	rpc MarkUnreachable(stream Hash) returns (Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
+}
+
+message Empty
+{
+	// :)
 }
 
 message PeerRequest
 {
-	string chunk_hash = 1;
+	bytes chunk_hash = 1;
 	int32 max_peer_count = 2;
 }
 
 message Hash
 {
-	string hex = 1;
+	bytes data = 1;
 }
 
 message ObjectWithHash
 {
 	fs.FileSystemObject obj = 1;
-	string hash = 2;
+	bytes hash = 2;
 }
 
 message PeerResponse

@@ -21,12 +21,12 @@ message File
 
 message ChunkHashes {
 	int32 chunkSize = 1;
-	repeated string hash = 2;
+	repeated bytes hash = 2;
 }
 
 message Directory
 {
-	repeated string entries = 1;
+	repeated bytes entries = 1;
 }
 
 message Link

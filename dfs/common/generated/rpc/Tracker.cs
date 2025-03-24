@@ -25,23 +25,23 @@ namespace Tracker {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChFycGMvdHJhY2tlci5wcm90bxIHdHJhY2tlchoTZnMvZmlsZXN5c3RlbS5w",
-            "cm90bxoXZ29vZ2xlL3JwYy9zdGF0dXMucHJvdG8iOQoLUGVlclJlcXVlc3QS",
-            "EgoKY2h1bmtfaGFzaBgBIAEoCRIWCg5tYXhfcGVlcl9jb3VudBgCIAEoBSIT",
-            "CgRIYXNoEgsKA2hleBgBIAEoCSJBCg5PYmplY3RXaXRoSGFzaBIhCgNvYmoY",
-            "ASABKAsyFC5mcy5GaWxlU3lzdGVtT2JqZWN0EgwKBGhhc2gYAiABKAkiHAoM",
-            "UGVlclJlc3BvbnNlEgwKBHBlZXIYASABKAkyqgIKB1RyYWNrZXISOAoHUHVi",
-            "bGlzaBIXLnRyYWNrZXIuT2JqZWN0V2l0aEhhc2gaEi5nb29nbGUucnBjLlN0",
-            "YXR1cygBEjkKDUdldE9iamVjdFRyZWUSDS50cmFja2VyLkhhc2gaFy50cmFj",
-            "a2VyLk9iamVjdFdpdGhIYXNoMAESNAoNTWFya1JlYWNoYWJsZRINLnRyYWNr",
-            "ZXIuSGFzaBoSLmdvb2dsZS5ycGMuU3RhdHVzKAESNgoPTWFya1VucmVhY2hh",
-            "YmxlEg0udHJhY2tlci5IYXNoGhIuZ29vZ2xlLnJwYy5TdGF0dXMoARI8CgtH",
-            "ZXRQZWVyTGlzdBIULnRyYWNrZXIuUGVlclJlcXVlc3QaFS50cmFja2VyLlBl",
-            "ZXJSZXNwb25zZTABYgZwcm90bzM="));
+            "cm90byIHCgVFbXB0eSI5CgtQZWVyUmVxdWVzdBISCgpjaHVua19oYXNoGAEg",
+            "ASgMEhYKDm1heF9wZWVyX2NvdW50GAIgASgFIhQKBEhhc2gSDAoEZGF0YRgB",
+            "IAEoDCJBCg5PYmplY3RXaXRoSGFzaBIhCgNvYmoYASABKAsyFC5mcy5GaWxl",
+            "U3lzdGVtT2JqZWN0EgwKBGhhc2gYAiABKAwiHAoMUGVlclJlc3BvbnNlEgwK",
+            "BHBlZXIYASABKAkyngIKB1RyYWNrZXISNAoHUHVibGlzaBIXLnRyYWNrZXIu",
+            "T2JqZWN0V2l0aEhhc2gaDi50cmFja2VyLkVtcHR5KAESOQoNR2V0T2JqZWN0",
+            "VHJlZRINLnRyYWNrZXIuSGFzaBoXLnRyYWNrZXIuT2JqZWN0V2l0aEhhc2gw",
+            "ARIwCg1NYXJrUmVhY2hhYmxlEg0udHJhY2tlci5IYXNoGg4udHJhY2tlci5F",
+            "bXB0eSgBEjIKD01hcmtVbnJlYWNoYWJsZRINLnRyYWNrZXIuSGFzaBoOLnRy",
+            "YWNrZXIuRW1wdHkoARI8CgtHZXRQZWVyTGlzdBIULnRyYWNrZXIuUGVlclJl",
+            "cXVlc3QaFS50cmFja2VyLlBlZXJSZXNwb25zZTABYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { global::Fs.FilesystemReflection.Descriptor, global::Google.Rpc.StatusReflection.Descriptor, },
+          new pbr::FileDescriptor[] { global::Fs.FilesystemReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.Empty), global::Tracker.Empty.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.PeerRequest), global::Tracker.PeerRequest.Parser, new[]{ "ChunkHash", "MaxPeerCount" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.Hash), global::Tracker.Hash.Parser, new[]{ "Hex" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.Hash), global::Tracker.Hash.Parser, new[]{ "Data" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.ObjectWithHash), global::Tracker.ObjectWithHash.Parser, new[]{ "Obj", "Hash" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Tracker.PeerResponse), global::Tracker.PeerResponse.Parser, new[]{ "Peer" }, null, null, null, null)
           }));
@@ -50,6 +50,170 @@ namespace Tracker {
 
   }
   #region Messages
+  /// <summary>
+  /// :)
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class Empty : pb::IMessage<Empty>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<Empty> _parser = new pb::MessageParser<Empty>(() => new Empty());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<Empty> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[0]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Empty() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Empty(Empty other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public Empty Clone() {
+      return new Empty(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as Empty);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(Empty other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(Empty other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+        }
+      }
+    }
+    #endif
+
+  }
+
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class PeerRequest : pb::IMessage<PeerRequest>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -65,7 +229,7 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[0]; }
+      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -98,10 +262,10 @@ namespace Tracker {
 
     /// <summary>Field number for the "chunk_hash" field.</summary>
     public const int ChunkHashFieldNumber = 1;
-    private string chunkHash_ = "";
+    private pb::ByteString chunkHash_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string ChunkHash {
+    public pb::ByteString ChunkHash {
       get { return chunkHash_; }
       set {
         chunkHash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
@@ -166,7 +330,7 @@ namespace Tracker {
     #else
       if (ChunkHash.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(ChunkHash);
+        output.WriteBytes(ChunkHash);
       }
       if (MaxPeerCount != 0) {
         output.WriteRawTag(16);
@@ -184,7 +348,7 @@ namespace Tracker {
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
       if (ChunkHash.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(ChunkHash);
+        output.WriteBytes(ChunkHash);
       }
       if (MaxPeerCount != 0) {
         output.WriteRawTag(16);
@@ -201,7 +365,7 @@ namespace Tracker {
     public int CalculateSize() {
       int size = 0;
       if (ChunkHash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(ChunkHash);
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(ChunkHash);
       }
       if (MaxPeerCount != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxPeerCount);
@@ -244,7 +408,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            ChunkHash = input.ReadString();
+            ChunkHash = input.ReadBytes();
             break;
           }
           case 16: {
@@ -271,7 +435,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            ChunkHash = input.ReadString();
+            ChunkHash = input.ReadBytes();
             break;
           }
           case 16: {
@@ -300,7 +464,7 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[1]; }
+      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[2]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -320,7 +484,7 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public Hash(Hash other) : this() {
-      hex_ = other.hex_;
+      data_ = other.data_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -330,15 +494,15 @@ namespace Tracker {
       return new Hash(this);
     }
 
-    /// <summary>Field number for the "hex" field.</summary>
-    public const int HexFieldNumber = 1;
-    private string hex_ = "";
+    /// <summary>Field number for the "data" field.</summary>
+    public const int DataFieldNumber = 1;
+    private pb::ByteString data_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Hex {
-      get { return hex_; }
+    public pb::ByteString Data {
+      get { return data_; }
       set {
-        hex_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+        data_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
       }
     }
 
@@ -357,7 +521,7 @@ namespace Tracker {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Hex != other.Hex) return false;
+      if (Data != other.Data) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -365,7 +529,7 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Hex.Length != 0) hash ^= Hex.GetHashCode();
+      if (Data.Length != 0) hash ^= Data.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -384,9 +548,9 @@ namespace Tracker {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Hex.Length != 0) {
+      if (Data.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Hex);
+        output.WriteBytes(Data);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -398,9 +562,9 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Hex.Length != 0) {
+      if (Data.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Hex);
+        output.WriteBytes(Data);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -412,8 +576,8 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Hex.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hex);
+      if (Data.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Data);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -427,8 +591,8 @@ namespace Tracker {
       if (other == null) {
         return;
       }
-      if (other.Hex.Length != 0) {
-        Hex = other.Hex;
+      if (other.Data.Length != 0) {
+        Data = other.Data;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -450,7 +614,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Hex = input.ReadString();
+            Data = input.ReadBytes();
             break;
           }
         }
@@ -473,7 +637,7 @@ namespace Tracker {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Hex = input.ReadString();
+            Data = input.ReadBytes();
             break;
           }
         }
@@ -498,7 +662,7 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[3]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -543,10 +707,10 @@ namespace Tracker {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 2;
-    private string hash_ = "";
+    private pb::ByteString hash_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Hash {
+    public pb::ByteString Hash {
       get { return hash_; }
       set {
         hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
@@ -603,7 +767,7 @@ namespace Tracker {
       }
       if (Hash.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteString(Hash);
+        output.WriteBytes(Hash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -621,7 +785,7 @@ namespace Tracker {
       }
       if (Hash.Length != 0) {
         output.WriteRawTag(18);
-        output.WriteString(Hash);
+        output.WriteBytes(Hash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -637,7 +801,7 @@ namespace Tracker {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Obj);
       }
       if (Hash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hash);
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Hash);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -687,7 +851,7 @@ namespace Tracker {
             break;
           }
           case 18: {
-            Hash = input.ReadString();
+            Hash = input.ReadBytes();
             break;
           }
         }
@@ -717,7 +881,7 @@ namespace Tracker {
             break;
           }
           case 18: {
-            Hash = input.ReadString();
+            Hash = input.ReadBytes();
             break;
           }
         }
@@ -742,7 +906,7 @@ namespace Tracker {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Tracker.TrackerReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

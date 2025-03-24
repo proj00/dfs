@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32.SafeHandles;
+﻿using Google.Protobuf;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,12 +92,12 @@ namespace common
             return obj;
         }
 
-        public static Fs.FileSystemObject GetDirectoryObject(string path, List<string> hashes)
+        public static Fs.FileSystemObject GetDirectoryObject(string path, List<ByteString> hashes)
         {
             var obj = new Fs.FileSystemObject();
             obj.Name = Path.GetFileName(path);
 
-            hashes.Sort();
+            hashes.Sort(new HashUtils.ByteStringComparer());
             obj.Directory = new Fs.Directory();
             foreach (var hash in hashes.Distinct())
             {
@@ -106,9 +107,9 @@ namespace common
             return obj;
         }
 
-        public static string GetRecursiveDirectoryObject(string path, int chunkSize, Action<string, string, Fs.FileSystemObject> appendHashPathObj)
+        public static ByteString GetRecursiveDirectoryObject(string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
         {
-            void Add(string hash, string path, Fs.FileSystemObject obj)
+            void Add(ByteString hash, string path, Fs.FileSystemObject obj)
             {
                 appendHashPathObj(hash, path, obj);
             }

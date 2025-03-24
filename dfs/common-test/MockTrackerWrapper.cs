@@ -1,26 +1,26 @@
 ﻿using common;
 using Fs;
-using Google.Rpc;
+using Google.Protobuf;
 using Tracker;
 
 namespace common_test
 {
     public class MockTrackerWrapper : ITrackerWrapper
     {
-        public Dictionary<string, Fs.FileSystemObject> objects { get; set; }
-        public Dictionary<string, HashSet<string>> peers { get; set; }
+        public Dictionary<ByteString, Fs.FileSystemObject> objects { get; set; }
+        public Dictionary<ByteString, string[]> peers { get; set; }
         public string peerId { get; set; }
 
         public MockTrackerWrapper()
         {
-            this.objects = [];
-            this.peers = [];
+            this.objects = new(new HashUtils.ByteStringComparer());
+            this.peers = new(new HashUtils.ByteStringComparer());
             this.peerId = "";
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(string hash)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
         {
-            Dictionary<string, ObjectWithHash> obj = [];
+            Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
             void Traverse(ObjectWithHash o)
             {
                 obj[o.Hash] = o;
@@ -44,36 +44,36 @@ namespace common_test
             if (peers.ContainsKey(request.ChunkHash))
             {
                 var p = peers[request.ChunkHash];
-                return p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Count));
+                return p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Length));
             }
 
             return [];
         }
 
-        public async Task<Status> MarkReachable(string hash)
+        public async Task<Empty> MarkReachable(ByteString hash)
         {
             if (!peers.ContainsKey(hash))
             {
                 peers[hash] = [];
             }
-            peers[hash].Add(peerId);
-            return new Status();
+            peers[hash] = [peerId];
+            return new();
         }
 
-        public async Task<Status> MarkUnreachable(string hash)
+        public async Task<Empty> MarkUnreachable(ByteString hash)
         {
-            peers[hash].Remove(peerId);
-            return new Status();
+            peers[hash] = [];
+            return new();
         }
 
-        public async Task<Status> Publish(List<ObjectWithHash> objects)
+        public async Task<Empty> Publish(List<ObjectWithHash> objects)
         {
             foreach (var obj in objects)
             {
                 this.objects[obj.Hash] = obj.Obj;
             }
 
-            return new Status();
+            return new();
         }
     }
 }

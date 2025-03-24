@@ -43,23 +43,22 @@ namespace node
             NodeService service = new(state, rpc);
 
 
-            if (false) // mock for demo
+            if (true) // mock for demo
             {
-                var file = service.PickObjectPath(true);
+                var file = "C:\\Users\\as\\Documents\\paint.net App Files";
                 var hash = service.ImportObjectFromDisk(file, 1024);
 
-                var tracker = new MockTrackerWrapper();
-                tracker.peerId = $"http://127.0.0.1:{server.Ports.First().BoundPort}";
+                var tracker = new MockTrackerWrapper
+                {
+                    peerId = $"http://127.0.0.1:{server.Ports.First().BoundPort}"
+                };
                 service.PublishToTracker(state.objectByHash.Keys.ToArray(), tracker).Wait();
 
-                if (Console.ReadLine() == "aa")
-                {
-                    var folder = service.PickObjectPath(true);
+                var folder = "C:\\Users\\as\\Documents\\test";
 
-                    service.DownloadObjectByHash(hash, tracker, folder).Wait();
-                    Console.WriteLine("Press Enter to continue...");
-                    Console.ReadLine();
-                }
+                service.DownloadObjectByHash(hash, tracker, folder, 1).Wait();
+                Console.WriteLine("Press Enter to continue...");
+                Console.ReadLine();
             }
             else
             {

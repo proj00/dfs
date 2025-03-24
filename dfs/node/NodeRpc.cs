@@ -20,12 +20,12 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (!state.chunkParents.TryGetValue(request.Hash, out HashSet<string>? parent))
+            if (!state.chunkParents.TryGetValue(request.Hash, out ByteString[]? parent))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
-            var parentHash = parent.First();
+            var parentHash = parent[0];
             var parentObj = state.objectByHash[parentHash];
             if (parentObj == null)
             {
