@@ -1,18 +1,9 @@
-﻿using CefSharp;
-using CefSharp.DevTools.Network;
-using common;
+﻿using common;
+using Google.Protobuf;
 using Grpc.Core;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.ObjectPool;
-using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
+using Org.BouncyCastle.Utilities.Encoders;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using Tracker;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 
 namespace node.IpcService
 {
@@ -63,7 +54,7 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public string ImportObjectFromDisk(string path, int chunkSize)
+        public ByteString ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
@@ -107,12 +98,12 @@ namespace node.IpcService
             throw new Exception("Invalid path");
         }
 
-        public async Task PublishToTracker(string[] hashes, string uri)
+        public async Task PublishToTracker(ByteString[] hashes, string uri)
         {
             await PublishToTracker(hashes, new TrackerWrapper(uri, state));
         }
 
-        public async Task PublishToTracker(string[] hashes, ITrackerWrapper tracker)
+        public async Task PublishToTracker(ByteString[] hashes, ITrackerWrapper tracker)
         {
             foreach (var hash in hashes)
             {
@@ -132,19 +123,14 @@ namespace node.IpcService
                     await tracker.MarkReachable(chunk);
                 }
             }
-
-            if (response.Code != 0)
-            {
-                throw new Exception($"gRPC call Tracker.Publish() failed: code {response.Code} {response.Message}");
-            }
         }
 
-        public async Task DownloadObjectByHash(string hash, string uri, string destinationDir)
+        public async Task DownloadObjectByHash(ByteString hash, string uri, string destinationDir, int maxConcurrentChunks = 20)
         {
-            await DownloadObjectByHash(hash, new TrackerWrapper(uri, state), destinationDir);
+            await DownloadObjectByHash(hash, new TrackerWrapper(uri, state), destinationDir, maxConcurrentChunks);
         }
 
-        public async Task DownloadObjectByHash(string hash, ITrackerWrapper tracker, string destinationDir)
+        public async Task DownloadObjectByHash(ByteString hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
             foreach (var message in objects)
@@ -152,24 +138,28 @@ namespace node.IpcService
                 state.objectByHash[message.Hash] = message.Obj;
             }
 
+            var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
                 .Where(obj => obj.Obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
-                .Select(obj => DownloadFile(obj, tracker, destinationDir));
+                .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore));
 
             await Task.WhenAll(fileTasks);
         }
 
-        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir)
+        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore)
         {
             List<Task> chunkTasks = [];
 
-            var dir = @"\\?\" + destinationDir + "\\" + obj.Hash;
+            var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
             Directory.CreateDirectory(dir);
-            using var stream = new FileStream(dir + "\\" + obj.Obj.Name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+            dir = dir + "\\" + obj.Obj.Name;
+            using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+            object streamLock = new();
+
             var i = 0;
             foreach (var hash in obj.Obj.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Obj.File.Hashes.ChunkSize, i, tracker, stream));
+                chunkTasks.Add(DownloadChunk(hash, obj.Obj.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
                 i++;
             }
 
@@ -179,10 +169,11 @@ namespace node.IpcService
             {
                 state.SetChunkParent(hash, obj.Hash);
             }
-            state.pathByHash[obj.Hash] = destinationDir + "\\" + obj.Obj.Name;
+            state.pathByHash[obj.Hash] = dir;
         }
 
-        private async Task DownloadChunk(string hash, int chunkSize, int chunkIndex, ITrackerWrapper tracker, FileStream stream)
+        private async Task DownloadChunk(ByteString hash, int chunkOffset, ITrackerWrapper tracker,
+            FileStream stream, object streamLock, SemaphoreSlim semaphore)
         {
             List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
 
@@ -190,24 +181,33 @@ namespace node.IpcService
             var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
             var peerClient = state.GetNodeClient(new Uri(peers[index]));
 
-            var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash });
 
-            var buffer = new byte[chunkSize];
-            var written = 0;
-            await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
+            await semaphore.WaitAsync();
+            try
             {
-                var response = message.Response.ToByteArray();
-                Array.Copy(response, 0, buffer, written, response.Length);
-                written += response.Length;
-            }
+                var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash });
 
-            lock (stream)
+                List<Node.ChunkResponse> response = [];
+                await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
+                {
+                    response.Add(message);
+                }
+
+                lock (streamLock)
+                {
+                    stream.Seek(chunkOffset, SeekOrigin.Begin);
+                    foreach (var item in response)
+                    {
+                        stream.Write(item.Response.Span);
+                    }
+                }
+
+                await tracker.MarkReachable(hash);
+            }
+            finally
             {
-                stream.Seek(chunkIndex * chunkSize, SeekOrigin.Begin);
-                stream.Write(buffer, 0, written);
+                semaphore.Release();
             }
-
-            await tracker.MarkReachable(hash);
         }
     }
 }

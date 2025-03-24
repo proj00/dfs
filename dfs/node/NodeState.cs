@@ -1,5 +1,6 @@
 ﻿using common;
 using Fs;
+using Google.Protobuf;
 using Grpc.Net.Client;
 using System;
 using System.Collections.Generic;
@@ -13,17 +14,17 @@ namespace node
 {
     public class NodeState
     {
-        public Dictionary<string, string> pathByHash { get; }
-        public Dictionary<string, Fs.FileSystemObject> objectByHash { get; }
-        public Dictionary<string, HashSet<string>> chunkParents { get; }
+        public Dictionary<ByteString, string> pathByHash { get; }
+        public Dictionary<ByteString, Fs.FileSystemObject> objectByHash { get; }
+        public Dictionary<ByteString, ByteString[]> chunkParents { get; }
         private ChannelCache nodeChannel { get; }
         private ChannelCache trackerChannel { get; }
 
         public NodeState(TimeSpan channelTtl)
         {
-            objectByHash = [];
-            pathByHash = [];
-            chunkParents = [];
+            objectByHash = new(new HashUtils.ByteStringComparer());
+            pathByHash = new(new HashUtils.ByteStringComparer());
+            chunkParents = new(new HashUtils.ByteStringComparer());
             nodeChannel = new ChannelCache(channelTtl);
             trackerChannel = new ChannelCache(channelTtl);
         }
@@ -40,11 +41,11 @@ namespace node
             return new TrackerClient(channel);
         }
 
-        public void SetChunkParent(string chunkHash, string parentHash)
+        public void SetChunkParent(ByteString chunkHash, ByteString parentHash)
         {
-            if (chunkParents.TryGetValue(chunkHash, out HashSet<string>? parents))
+            if (chunkParents.TryGetValue(chunkHash, out ByteString[]? parents))
             {
-                parents.Add(parentHash);
+                chunkParents[chunkHash] = [.. parents, parentHash];
                 return;
             }
 

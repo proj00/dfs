@@ -8,8 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.1" />
-    <PackageReference Include="Google.Api.CommonProtos" Version="2.16.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.30.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.30.1" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.70.0" />
     <PackageReference Include="Grpc.Core" Version="2.46.6" />
     <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />

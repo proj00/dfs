@@ -9,7 +9,7 @@ service Node
 
 message ChunkRequest
 {
-	string hash = 1;
+	bytes hash = 1;
 }
 
 message ChunkResponse

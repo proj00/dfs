@@ -25,7 +25,7 @@ namespace Node {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cg5ycGMvbm9kZS5wcm90bxIEbm9kZSIcCgxDaHVua1JlcXVlc3QSDAoEaGFz",
-            "aBgBIAEoCSIhCg1DaHVua1Jlc3BvbnNlEhAKCHJlc3BvbnNlGAEgASgMMj0K",
+            "aBgBIAEoDCIhCg1DaHVua1Jlc3BvbnNlEhAKCHJlc3BvbnNlGAEgASgMMj0K",
             "BE5vZGUSNQoIR2V0Q2h1bmsSEi5ub2RlLkNodW5rUmVxdWVzdBoTLm5vZGUu",
             "Q2h1bmtSZXNwb25zZTABYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
@@ -86,10 +86,10 @@ namespace Node {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 1;
-    private string hash_ = "";
+    private pb::ByteString hash_ = pb::ByteString.Empty;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string Hash {
+    public pb::ByteString Hash {
       get { return hash_; }
       set {
         hash_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
@@ -140,7 +140,7 @@ namespace Node {
     #else
       if (Hash.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Hash);
+        output.WriteBytes(Hash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
@@ -154,7 +154,7 @@ namespace Node {
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
       if (Hash.Length != 0) {
         output.WriteRawTag(10);
-        output.WriteString(Hash);
+        output.WriteBytes(Hash);
       }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
@@ -167,7 +167,7 @@ namespace Node {
     public int CalculateSize() {
       int size = 0;
       if (Hash.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(Hash);
+        size += 1 + pb::CodedOutputStream.ComputeBytesSize(Hash);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -204,7 +204,7 @@ namespace Node {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 10: {
-            Hash = input.ReadString();
+            Hash = input.ReadBytes();
             break;
           }
         }
@@ -227,7 +227,7 @@ namespace Node {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
           case 10: {
-            Hash = input.ReadString();
+            Hash = input.ReadBytes();
             break;
           }
         }
