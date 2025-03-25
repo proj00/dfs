@@ -29,8 +29,8 @@ namespace Fs {
             "ZGlyZWN0b3J5GAQgASgLMg0uZnMuRGlyZWN0b3J5SAASGAoEbGluaxgFIAEo",
             "CzIILmZzLkxpbmtIAEIGCgR0eXBlIjUKBEZpbGUSDAoEc2l6ZRgBIAEoAxIf",
             "CgZoYXNoZXMYAiABKAsyDy5mcy5DaHVua0hhc2hlcyIuCgtDaHVua0hhc2hl",
-            "cxIRCgljaHVua1NpemUYASABKAUSDAoEaGFzaBgCIAMoCSIcCglEaXJlY3Rv",
-            "cnkSDwoHZW50cmllcxgBIAMoCSIbCgRMaW5rEhMKC3RhcmdldF9wYXRoGAEg",
+            "cxIRCgljaHVua1NpemUYASABKAUSDAoEaGFzaBgCIAMoDCIcCglEaXJlY3Rv",
+            "cnkSDwoHZW50cmllcxgBIAMoDCIbCgRMaW5rEhMKC3RhcmdldF9wYXRoGAEg",
             "ASgJYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
@@ -734,12 +734,12 @@ namespace Fs {
 
     /// <summary>Field number for the "hash" field.</summary>
     public const int HashFieldNumber = 2;
-    private static readonly pb::FieldCodec<string> _repeated_hash_codec
-        = pb::FieldCodec.ForString(18);
-    private readonly pbc::RepeatedField<string> hash_ = new pbc::RepeatedField<string>();
+    private static readonly pb::FieldCodec<pb::ByteString> _repeated_hash_codec
+        = pb::FieldCodec.ForBytes(18);
+    private readonly pbc::RepeatedField<pb::ByteString> hash_ = new pbc::RepeatedField<pb::ByteString>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> Hash {
+    public pbc::RepeatedField<pb::ByteString> Hash {
       get { return hash_; }
     }
 
@@ -945,12 +945,12 @@ namespace Fs {
 
     /// <summary>Field number for the "entries" field.</summary>
     public const int EntriesFieldNumber = 1;
-    private static readonly pb::FieldCodec<string> _repeated_entries_codec
-        = pb::FieldCodec.ForString(10);
-    private readonly pbc::RepeatedField<string> entries_ = new pbc::RepeatedField<string>();
+    private static readonly pb::FieldCodec<pb::ByteString> _repeated_entries_codec
+        = pb::FieldCodec.ForBytes(10);
+    private readonly pbc::RepeatedField<pb::ByteString> entries_ = new pbc::RepeatedField<pb::ByteString>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<string> Entries {
+    public pbc::RepeatedField<pb::ByteString> Entries {
       get { return entries_; }
     }
 

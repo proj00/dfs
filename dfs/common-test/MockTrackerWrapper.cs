@@ -1,41 +1,43 @@
 ﻿using common;
 using Fs;
-using Google.Rpc;
+using Google.Protobuf;
 using Tracker;
 
 namespace common_test
 {
     public class MockTrackerWrapper : ITrackerWrapper
     {
-        public Dictionary<string, Fs.FileSystemObject> objects { get; set; }
-        public Dictionary<string, HashSet<string>> peers { get; set; }
+        public Dictionary<ByteString, Fs.FileSystemObject> objects { get; set; }
+        public Dictionary<ByteString, string[]> peers { get; set; }
+        public Dictionary<Guid, ByteString> Container { get; }
         public string peerId { get; set; }
 
         public MockTrackerWrapper()
         {
-            this.objects = [];
-            this.peers = [];
+            this.objects = new(new HashUtils.ByteStringComparer());
+            this.peers = new(new HashUtils.ByteStringComparer());
             this.peerId = "";
+            Container = [];
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(string hash)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
         {
-            Dictionary<string, ObjectWithHash> obj = [];
+            Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
             void Traverse(ObjectWithHash o)
             {
                 obj[o.Hash] = o;
-                if (o.Obj.TypeCase != FileSystemObject.TypeOneofCase.Directory)
+                if (o.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
                 {
                     return;
                 }
 
-                foreach (var next in o.Obj.Directory.Entries)
+                foreach (var next in o.Object.Directory.Entries)
                 {
-                    Traverse(new ObjectWithHash() { Hash = next, Obj = objects[next] });
+                    Traverse(new ObjectWithHash() { Hash = next, Object = objects[next] });
                 }
             }
 
-            Traverse(new ObjectWithHash { Hash = hash, Obj = objects[hash] });
+            Traverse(new ObjectWithHash { Hash = hash, Object = objects[hash] });
             return obj.Values.ToList();
         }
 
@@ -44,36 +46,48 @@ namespace common_test
             if (peers.ContainsKey(request.ChunkHash))
             {
                 var p = peers[request.ChunkHash];
-                return p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Count));
+                return p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Length));
             }
 
             return [];
         }
 
-        public async Task<Status> MarkReachable(string hash)
+        public async Task<Empty> MarkReachable(ByteString hash)
         {
             if (!peers.ContainsKey(hash))
             {
                 peers[hash] = [];
             }
-            peers[hash].Add(peerId);
-            return new Status();
+            peers[hash] = [peerId];
+            return new();
         }
 
-        public async Task<Status> MarkUnreachable(string hash)
+        public async Task<Empty> MarkUnreachable(ByteString hash)
         {
-            peers[hash].Remove(peerId);
-            return new Status();
+            peers[hash] = [];
+            return new();
         }
 
-        public async Task<Status> Publish(List<ObjectWithHash> objects)
+        public async Task<Empty> Publish(List<ObjectWithHash> objects)
         {
             foreach (var obj in objects)
             {
-                this.objects[obj.Hash] = obj.Obj;
+                this.objects[obj.Hash] = obj.Object;
             }
 
-            return new Status();
+            return new();
         }
+
+        public async Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        {
+            return Container[containerGuid];
+        }
+
+        public async Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
+        {
+            Container[containerGuid] = rootHash;
+            return new();
+        }
+
     }
 }

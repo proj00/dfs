@@ -1,13 +1,6 @@
 ﻿using common;
-using Google.Rpc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
+using Google.Protobuf;
 using Tracker;
-using static System.Windows.Forms.AxHost;
 using static Tracker.Tracker;
 
 namespace node
@@ -26,7 +19,7 @@ namespace node
             client = state.GetTrackerClient(uri);
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(string hash)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
         {
             throw new NotImplementedException();
         }
@@ -36,17 +29,17 @@ namespace node
             throw new NotImplementedException();
         }
 
-        public async Task<Status> MarkReachable(string hash)
+        public async Task<Empty> MarkReachable(ByteString hash)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<Status> MarkUnreachable(string hash)
+        public async Task<Empty> MarkUnreachable(ByteString hash)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<Status> Publish(List<ObjectWithHash> objects)
+        public async Task<Empty> Publish(List<ObjectWithHash> objects)
         {
             using var call = client.Publish();
             foreach (var obj in objects)
@@ -56,6 +49,16 @@ namespace node
             await call.RequestStream.CompleteAsync();
 
             return await call;
+        }
+
+        public Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
+        {
+            throw new NotImplementedException();
         }
     }
 }
