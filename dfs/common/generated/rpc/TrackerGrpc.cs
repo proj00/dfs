@@ -55,6 +55,10 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::Tracker.PeerRequest> __Marshaller_tracker_PeerRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.PeerResponse> __Marshaller_tracker_PeerResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.ContainerGuid> __Marshaller_tracker_ContainerGuid = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ContainerGuid.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.ContainerRootHash> __Marshaller_tracker_ContainerRootHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ContainerRootHash.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Tracker.ObjectWithHash, global::Tracker.Empty> __Method_Publish = new grpc::Method<global::Tracker.ObjectWithHash, global::Tracker.Empty>(
@@ -96,6 +100,22 @@ namespace Tracker {
         __Marshaller_tracker_PeerRequest,
         __Marshaller_tracker_PeerResponse);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.ContainerGuid, global::Tracker.Hash> __Method_GetContainerRootHash = new grpc::Method<global::Tracker.ContainerGuid, global::Tracker.Hash>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetContainerRootHash",
+        __Marshaller_tracker_ContainerGuid,
+        __Marshaller_tracker_Hash);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.ContainerRootHash, global::Tracker.Empty> __Method_SetContainerRootHash = new grpc::Method<global::Tracker.ContainerRootHash, global::Tracker.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "SetContainerRootHash",
+        __Marshaller_tracker_ContainerRootHash,
+        __Marshaller_tracker_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -132,6 +152,18 @@ namespace Tracker {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task GetPeerList(global::Tracker.PeerRequest request, grpc::IServerStreamWriter<global::Tracker.PeerResponse> responseStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.Hash> GetContainerRootHash(global::Tracker.ContainerGuid request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.Empty> SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -215,6 +247,46 @@ namespace Tracker {
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_GetPeerList, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Hash GetContainerRootHash(global::Tracker.ContainerGuid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetContainerRootHash(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Hash GetContainerRootHash(global::Tracker.ContainerGuid request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetContainerRootHash, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Hash> GetContainerRootHashAsync(global::Tracker.ContainerGuid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetContainerRootHashAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Hash> GetContainerRootHashAsync(global::Tracker.ContainerGuid request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetContainerRootHash, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Empty SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetContainerRootHash(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Empty SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_SetContainerRootHash, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Empty> SetContainerRootHashAsync(global::Tracker.ContainerRootHash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SetContainerRootHashAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Empty> SetContainerRootHashAsync(global::Tracker.ContainerRootHash request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_SetContainerRootHash, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override TrackerClient NewInstance(ClientBaseConfiguration configuration)
@@ -233,7 +305,9 @@ namespace Tracker {
           .AddMethod(__Method_GetObjectTree, serviceImpl.GetObjectTree)
           .AddMethod(__Method_MarkReachable, serviceImpl.MarkReachable)
           .AddMethod(__Method_MarkUnreachable, serviceImpl.MarkUnreachable)
-          .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList).Build();
+          .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList)
+          .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
+          .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -248,6 +322,8 @@ namespace Tracker {
       serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Tracker.Empty>(serviceImpl.MarkReachable));
       serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Tracker.Empty>(serviceImpl.MarkUnreachable));
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(serviceImpl.GetPeerList));
+      serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerGuid, global::Tracker.Hash>(serviceImpl.GetContainerRootHash));
+      serviceBinder.AddMethod(__Method_SetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerRootHash, global::Tracker.Empty>(serviceImpl.SetContainerRootHash));
     }
 
   }

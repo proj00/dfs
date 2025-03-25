@@ -10,6 +10,11 @@ namespace tracker
 {
     public class TrackerRpc : Tracker.Tracker.TrackerBase
     {
+        public override Task<Hash> GetContainerRootHash(ContainerGuid request, ServerCallContext context)
+        {
+            throw new NotImplementedException();
+        }
+
         public override Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
@@ -31,6 +36,11 @@ namespace tracker
         }
 
         public override Task<Empty> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
         {
             throw new NotImplementedException();
         }

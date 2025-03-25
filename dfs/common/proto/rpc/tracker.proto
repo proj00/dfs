@@ -11,11 +11,24 @@ service Tracker
 	rpc MarkReachable(stream Hash) returns (Empty);
 	rpc MarkUnreachable(stream Hash) returns (Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
+	rpc GetContainerRootHash(ContainerGuid) returns (Hash);
+	rpc SetContainerRootHash(ContainerRootHash) returns (Empty);
 }
 
 message Empty
 {
 	// :)
+}
+
+message ContainerGuid
+{
+	string guid = 1;
+}
+
+message ContainerRootHash
+{
+	string guid = 1;
+	Hash hash = 2;
 }
 
 message PeerRequest
@@ -31,7 +44,7 @@ message Hash
 
 message ObjectWithHash
 {
-	fs.FileSystemObject obj = 1;
+	fs.FileSystemObject object = 1;
 	bytes hash = 2;
 }
 
