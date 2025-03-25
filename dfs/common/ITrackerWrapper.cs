@@ -12,5 +12,8 @@ namespace common
         Task<Empty> MarkReachable(ByteString hash);
         Task<Empty> MarkUnreachable(ByteString hash);
 
+        Task<ByteString> GetContainerRootHash(Guid containerGuid);
+        Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash);
+
     }
 }

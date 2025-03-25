@@ -50,5 +50,15 @@ namespace node
 
             return await call;
         }
+
+        public Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
