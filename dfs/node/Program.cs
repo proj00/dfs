@@ -46,17 +46,17 @@ namespace node
             if (true) // mock for demo
             {
                 var file = "C:\\Users\\as\\Documents\\paint.net App Files";
-                var hash = service.ImportObjectFromDisk(file, 1024);
+                var guid = service.ImportObjectFromDisk(file, 1024);
 
                 var tracker = new MockTrackerWrapper
                 {
                     peerId = $"http://127.0.0.1:{server.Ports.First().BoundPort}"
                 };
-                service.PublishToTracker(state.objectByHash.Keys.ToArray(), tracker).Wait();
+                service.PublishToTracker(guid, tracker).Wait();
 
                 var folder = "C:\\Users\\as\\Documents\\test";
 
-                service.DownloadObjectByHash(hash, tracker, folder, 1).Wait();
+                service.DownloadObjectByHash(guid, tracker, folder, 1).Wait();
                 Console.WriteLine("Press Enter to continue...");
                 Console.ReadLine();
             }

@@ -2,6 +2,7 @@
 using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Tracker;
 
@@ -54,68 +55,60 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public ByteString ImportObjectFromDisk(string path, int chunkSize)
+        public Guid ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
                 throw new Exception("Invalid chunk size");
             }
 
+            ObjectWithHash[] objects = [];
+            ByteString rootHash = ByteString.Empty;
             if (File.Exists(path))
             {
                 var obj = FilesystemUtils.GetFileObject(path, chunkSize);
-                var hash = HashUtils.GetHash(obj);
-
-                state.pathByHash[hash] = path;
-                state.objectByHash[hash] = obj;
-                foreach (var chunk in obj.File.Hashes.Hash)
-                {
-                    state.SetChunkParent(chunk, hash);
-                }
-
-                return hash;
+                rootHash = HashUtils.GetHash(obj);
+                objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
             }
 
             if (Directory.Exists(path))
             {
-                return FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
+                List<ObjectWithHash> dirObjects = [];
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
                 {
-                    state.objectByHash[hash] = obj;
-                    state.pathByHash[hash] = path;
-
-                    if (obj.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
-                    {
-                        return;
-                    }
-
-                    foreach (var chunk in obj.File.Hashes.Hash)
-                    {
-                        state.SetChunkParent(chunk, hash);
-                    }
+                    dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
+                    state.PathByHash[hash] = path;
                 });
+
+                objects = dirObjects.ToArray();
             }
 
-            throw new Exception("Invalid path");
-        }
-
-        public async Task PublishToTracker(ByteString[] hashes, string uri)
-        {
-            await PublishToTracker(hashes, new TrackerWrapper(uri, state));
-        }
-
-        public async Task PublishToTracker(ByteString[] hashes, ITrackerWrapper tracker)
-        {
-            foreach (var hash in hashes)
+            if (rootHash == ByteString.Empty)
             {
-                if (!state.objectByHash.ContainsKey(hash))
-                {
-                    throw new Exception("invalid hash");
-                }
+                throw new Exception("Invalid path");
             }
 
-            var response = await tracker.Publish(hashes.Select(hash => new ObjectWithHash { Hash = hash, Obj = state.objectByHash[hash] }).ToList());
-            foreach (var file in hashes
-                .Select(hash => state.objectByHash[hash])
+            return state.Manager.CreateObjectContainer(objects, rootHash);
+        }
+
+        public async Task PublishToTracker(Guid container, string uri)
+        {
+            await PublishToTracker(container, new TrackerWrapper(uri, state));
+        }
+
+        public async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
+        {
+            if (!state.Manager.Container.ContainsKey(container))
+            {
+                throw new ArgumentException("Container not found");
+            }
+
+            var objects = state.Manager.GetContainerTree(container);
+
+            var response = await tracker.Publish(objects);
+            _ = await tracker.SetContainerRootHash(container, state.Manager.Container[container]);
+            foreach (var file in objects
+                .Select(o => o.Object)
                 .Where(obj => obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File))
             {
                 foreach (var chunk in file.File.Hashes.Hash)
@@ -125,22 +118,20 @@ namespace node.IpcService
             }
         }
 
-        public async Task DownloadObjectByHash(ByteString hash, string uri, string destinationDir, int maxConcurrentChunks = 20)
+        public async Task DownloadContainer(Guid container, string uri, string destinationDir, int maxConcurrentChunks = 20)
         {
-            await DownloadObjectByHash(hash, new TrackerWrapper(uri, state), destinationDir, maxConcurrentChunks);
+            await DownloadObjectByHash(container, new TrackerWrapper(uri, state), destinationDir, maxConcurrentChunks);
         }
 
-        public async Task DownloadObjectByHash(ByteString hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        public async Task DownloadObjectByHash(Guid container, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
+            var hash = await tracker.GetContainerRootHash(container);
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
-            foreach (var message in objects)
-            {
-                state.objectByHash[message.Hash] = message.Obj;
-            }
+            state.Manager.CreateObjectContainer(objects.ToArray(), hash);
 
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
-                .Where(obj => obj.Obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
+                .Where(obj => obj.Object.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
                 .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore));
 
             await Task.WhenAll(fileTasks);
@@ -152,24 +143,19 @@ namespace node.IpcService
 
             var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
             Directory.CreateDirectory(dir);
-            dir = dir + "\\" + obj.Obj.Name;
+            dir = dir + "\\" + obj.Object.Name;
             using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             object streamLock = new();
 
             var i = 0;
-            foreach (var hash in obj.Obj.File.Hashes.Hash)
+            foreach (var hash in obj.Object.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Obj.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
+                chunkTasks.Add(DownloadChunk(hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
                 i++;
             }
 
             await Task.WhenAll(chunkTasks);
-
-            foreach (var hash in obj.Obj.File.Hashes.Hash)
-            {
-                state.SetChunkParent(hash, obj.Hash);
-            }
-            state.pathByHash[obj.Hash] = dir;
+            state.PathByHash[obj.Hash] = dir;
         }
 
         private async Task DownloadChunk(ByteString hash, int chunkOffset, ITrackerWrapper tracker,
