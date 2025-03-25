@@ -14,42 +14,29 @@ namespace node
 {
     public class NodeState
     {
-        public Dictionary<ByteString, string> pathByHash { get; }
-        public Dictionary<ByteString, Fs.FileSystemObject> objectByHash { get; }
-        public Dictionary<ByteString, ByteString[]> chunkParents { get; }
-        private ChannelCache nodeChannel { get; }
-        private ChannelCache trackerChannel { get; }
+        public Dictionary<ByteString, string> PathByHash { get; }
+        public FilesystemManager Manager { get; }
+        private ChannelCache NodeChannel { get; }
+        private ChannelCache TrackerChannel { get; }
 
         public NodeState(TimeSpan channelTtl)
         {
-            objectByHash = new(new HashUtils.ByteStringComparer());
-            pathByHash = new(new HashUtils.ByteStringComparer());
-            chunkParents = new(new HashUtils.ByteStringComparer());
-            nodeChannel = new ChannelCache(channelTtl);
-            trackerChannel = new ChannelCache(channelTtl);
+            PathByHash = new(new HashUtils.ByteStringComparer());
+            NodeChannel = new ChannelCache(channelTtl);
+            TrackerChannel = new ChannelCache(channelTtl);
+            Manager = new FilesystemManager();
         }
 
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
         {
-            var channel = nodeChannel.GetOrCreate(uri, options);
+            var channel = NodeChannel.GetOrCreate(uri, options);
             return new NodeClient(channel);
         }
 
         public TrackerClient GetTrackerClient(Uri uri, GrpcChannelOptions? options = null)
         {
-            var channel = trackerChannel.GetOrCreate(uri, options);
+            var channel = TrackerChannel.GetOrCreate(uri, options);
             return new TrackerClient(channel);
-        }
-
-        public void SetChunkParent(ByteString chunkHash, ByteString parentHash)
-        {
-            if (chunkParents.TryGetValue(chunkHash, out ByteString[]? parents))
-            {
-                chunkParents[chunkHash] = [.. parents, parentHash];
-                return;
-            }
-
-            chunkParents[chunkHash] = [parentHash];
         }
     }
 }
