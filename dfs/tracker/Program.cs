@@ -14,7 +14,7 @@ namespace tracker
             var server = new Grpc.Core.Server
             {
                 Services = { Tracker.Tracker.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", 50330, ServerCredentials.Insecure) }
             };
 
             Console.WriteLine("Running...");
