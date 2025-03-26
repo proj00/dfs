@@ -18,6 +18,12 @@ namespace tracker
         private readonly HashSet<string> _reachableHashes = new();
 
         public override async Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
+        public override Task<Hash> GetContainerRootHash(ContainerGuid request, ServerCallContext context)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
         {
             try
             {
@@ -128,6 +134,9 @@ namespace tracker
             }
         }
 
+        public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
+        {
+            throw new NotImplementedException();
         private bool IsValidUtf8(string input)
         {
             try

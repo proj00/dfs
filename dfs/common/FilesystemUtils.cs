@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32.SafeHandles;
+﻿using Google.Protobuf;
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,12 +92,14 @@ namespace common
             return obj;
         }
 
-        public static Fs.FileSystemObject GetDirectoryObject(string path, List<string> hashes)
+        public static Fs.FileSystemObject GetDirectoryObject(string path, List<ByteString> hashes)
         {
-            var obj = new Fs.FileSystemObject();
-            obj.Name = Path.GetFileName(path);
+            var obj = new Fs.FileSystemObject
+            {
+                Name = Path.GetFileName(path)
+            };
 
-            hashes.Sort();
+            hashes.Sort(new HashUtils.ByteStringComparer());
             obj.Directory = new Fs.Directory();
             foreach (var hash in hashes.Distinct())
             {
@@ -106,9 +109,9 @@ namespace common
             return obj;
         }
 
-        public static string GetRecursiveDirectoryObject(string path, int chunkSize, Action<string, string, Fs.FileSystemObject> appendHashPathObj)
+        public static ByteString GetRecursiveDirectoryObject(string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
         {
-            void Add(string hash, string path, Fs.FileSystemObject obj)
+            void Add(ByteString hash, string path, Fs.FileSystemObject obj)
             {
                 appendHashPathObj(hash, path, obj);
             }
@@ -122,7 +125,7 @@ namespace common
                     var obj = GetLinkTarget(file.FullName) == null ? GetFileObject(file.FullName, chunkSize) : GetLinkObject(file.FullName);
                     var hash = HashUtils.GetHash(obj);
 
-                    children.Add(new ObjectWithHash { Hash = hash, Obj = obj });
+                    children.Add(new ObjectWithHash { Hash = hash, Object = obj });
                     Add(hash, file.FullName, obj);
                 }
 
@@ -133,7 +136,7 @@ namespace common
                         var obj = GetLinkObject(dir.FullName);
                         var hash = HashUtils.GetHash(obj);
 
-                        children.Add(new ObjectWithHash { Hash = hash, Obj = obj });
+                        children.Add(new ObjectWithHash { Hash = hash, Object = obj });
                         Add(hash, dir.FullName, obj);
 
                         continue;
@@ -141,14 +144,14 @@ namespace common
 
                     var o = GetInternal(dir);
                     children.Add(o);
-                    Add(o.Hash, dir.FullName, o.Obj);
+                    Add(o.Hash, dir.FullName, o.Object);
                 }
 
                 var current = GetDirectoryObject(info.FullName, children.Select(a => a.Hash).ToList());
                 var currentHash = HashUtils.GetHash(current);
 
                 Add(currentHash, info.FullName, current);
-                return new ObjectWithHash { Hash = currentHash, Obj = current };
+                return new ObjectWithHash { Hash = currentHash, Object = current };
             }
 
             return GetInternal(new DirectoryInfo(path)).Hash;

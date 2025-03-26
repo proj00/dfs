@@ -1,21 +1,19 @@
-﻿using Google.Rpc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Google.Protobuf;
 using Tracker;
 
 namespace common
 {
     public interface ITrackerWrapper
     {
-        Task<List<ObjectWithHash>> GetObjectTree(string hash);
-        Task<Status> Publish(List<ObjectWithHash> objects);
+        Task<List<ObjectWithHash>> GetObjectTree(ByteString hash);
+        Task<Empty> Publish(List<ObjectWithHash> objects);
         Task<List<string>> GetPeerList(PeerRequest request);
 
-        Task<Status> MarkReachable(string hash);
-        Task<Status> MarkUnreachable(string hash);
+        Task<Empty> MarkReachable(ByteString hash);
+        Task<Empty> MarkUnreachable(ByteString hash);
+
+        Task<ByteString> GetContainerRootHash(Guid containerGuid);
+        Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash);
 
     }
 }

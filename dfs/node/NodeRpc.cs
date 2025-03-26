@@ -20,13 +20,13 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (!state.chunkParents.TryGetValue(request.Hash, out HashSet<string>? parent))
+            if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out ByteString[]? parent))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
-            var parentHash = parent.First();
-            var parentObj = state.objectByHash[parentHash];
+            var parentHash = parent[0];
+            var parentObj = state.Manager.ObjectByHash[parentHash].Object;
             if (parentObj == null)
             {
                 throw new RpcException(new Status(StatusCode.Internal, "internal failure"));
@@ -36,7 +36,7 @@ namespace node
             var chunkIndex = parentObj.File.Hashes.Hash.IndexOf(request.Hash);
             var offset = chunkIndex * size;
 
-            using var stream = new FileStream(state.pathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = new FileStream(state.PathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             var buffer = new byte[size];
             stream.Seek(offset, SeekOrigin.Begin);
