@@ -16,20 +16,29 @@ namespace tracker
         private readonly ConcurrentDictionary<string, ObjectWithHash> _objects = new();
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly HashSet<string> _reachableHashes = new();
+        private readonly ConcurrentDictionary<string, Tracker.Hash> _containerRoots = new();
 
-        public override async Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
         public override Task<Hash> GetContainerRootHash(ContainerGuid request, ServerCallContext context)
         {
-            throw new NotImplementedException();
+            if (_containerRoots.TryGetValue(request.Guid, out var rootHash))
+            {
+                return Task.FromResult(rootHash);
+            }
+            throw new RpcException(new Status(StatusCode.NotFound, "Container root hash not found."));
         }
 
-        public override Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
+        public override async Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
         {
             try
             {
-                if (_objects.TryGetValue(request.Hex, out var rootObject))
+                string hashBase64 = request.Data.ToBase64();
+                if (_objects.TryGetValue(hashBase64, out var rootObject))
                 {
                     await responseStream.WriteAsync(rootObject);
+                }
+                else
+                {
+                    throw new RpcException(new Status(StatusCode.NotFound, "Object not found."));
                 }
             }
             catch (Exception ex)
@@ -43,7 +52,8 @@ namespace tracker
         {
             try
             {
-                if (_peers.TryGetValue(request.ChunkHash, out var peerList))
+                string chunkHashBase64 = request.ChunkHash.ToBase64();
+                if (_peers.TryGetValue(chunkHashBase64, out var peerList))
                 {
                     foreach (var peer in peerList)
                     {
@@ -58,96 +68,80 @@ namespace tracker
             }
         }
 
-        public override async Task<Google.Rpc.Status> MarkReachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkReachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
         {
             try
             {
                 await foreach (var hash in requestStream.ReadAllAsync())
                 {
+                    string hashBase64 = hash.Data.ToBase64();
                     lock (_reachableHashes)
                     {
-                        _reachableHashes.Add(hash.Hex);
+                        _reachableHashes.Add(hashBase64);
                     }
                 }
-                return new Google.Rpc.Status { Code = 0, Message = "Success" };
+                return new Empty();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in MarkReachable method: {ex.Message}");
-                return new Google.Rpc.Status { Code = 2, Message = "Unexpected error occurred." };
+                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
 
-        public override async Task<Google.Rpc.Status> MarkUnreachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkUnreachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
         {
             try
             {
                 await foreach (var hash in requestStream.ReadAllAsync())
                 {
+                    string hashBase64 = hash.Data.ToBase64();
                     lock (_reachableHashes)
                     {
-                        _reachableHashes.Remove(hash.Hex);
+                        _reachableHashes.Remove(hashBase64);
                     }
                 }
-                return new Google.Rpc.Status { Code = 0, Message = "Success" };
+                return new Empty();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in MarkUnreachable method: {ex.Message}");
-                return new Google.Rpc.Status { Code = 2, Message = "Unexpected error occurred." };
+                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
 
-        public override async Task<Google.Rpc.Status> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
+        public override async Task<Empty> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
         {
             try
             {
                 await foreach (var obj in requestStream.ReadAllAsync())
                 {
-                    // Validate UTF-8 encoding for the hash string
-                    if (!IsValidUtf8(obj.Hash))
-                    {
-                        throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
-                    }
-
-                    _objects[obj.Hash] = obj;
+                    string hashBase64 = obj.Hash.ToBase64();
+                    _objects[hashBase64] = obj;
                 }
-                return new Google.Rpc.Status { Code = 0, Message = "Success" };
+                return new Empty();
             }
             catch (InvalidProtocolBufferException ex)
             {
-                // Log the error and return a failure status
                 Console.WriteLine($"Error in Publish method: {ex.Message}");
-                return new Google.Rpc.Status { Code = 1, Message = "Invalid UTF-8 data received." };
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
             }
             catch (RpcException ex)
             {
-                // Log the error and return a failure status
                 Console.WriteLine($"Error in Publish method: {ex.Message}");
-                return new Google.Rpc.Status { Code = 1, Message = ex.Status.Detail };
+                throw;
             }
             catch (Exception ex)
             {
-                // Log unexpected errors
                 Console.WriteLine($"Unexpected error in Publish method: {ex.Message}");
-                return new Google.Rpc.Status { Code = 2, Message = "Unexpected error occurred." };
+                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
 
         public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
         {
-            throw new NotImplementedException();
-        private bool IsValidUtf8(string input)
-        {
-            try
-            {
-                Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(input));
-                return true;
-            }
-            catch (DecoderFallbackException)
-            {
-                return false;
-            }
+            _containerRoots[request.Guid] = request.Hash;
+            return Task.FromResult(new Empty());
         }
     }
 }

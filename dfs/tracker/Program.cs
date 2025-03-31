@@ -1,24 +1,28 @@
-﻿using Grpc.Core;
+﻿using System;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Logging;
 
 namespace tracker
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
-                new Grpc.Core.Logging.ConsoleLogger(),
-                Grpc.Core.Logging.LogLevel.Debug));
+            var serverCredentials = ServerCredentials.Insecure;
 
-            TrackerRpc rpc = new();
-            var server = new Grpc.Core.Server
+            GrpcEnvironment.SetLogger(new LogLevelFilterLogger(
+                new ConsoleLogger(),
+                LogLevel.Debug));
+
+            TrackerRpc rpc = new TrackerRpc();
+            var server = new Server
             {
                 Services = { Tracker.Tracker.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 50330, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", 50330, serverCredentials) }
             };
 
             Console.WriteLine("Running...");
-
             server.Start();
 
             foreach (var port in server.Ports)
@@ -26,8 +30,10 @@ namespace tracker
                 Console.WriteLine($"Server is listening on {port.Host}:{port.BoundPort}");
             }
 
+            Console.WriteLine("Paspauskite bet kurį mygtuką, kad išjungtumėte serverį...");
             Console.ReadKey();
-            server.ShutdownAsync().Wait();
+
+            await server.ShutdownAsync();
         }
     }
 }
