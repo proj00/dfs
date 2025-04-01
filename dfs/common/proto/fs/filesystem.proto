@@ -35,3 +35,8 @@ message ObjectWithHash
 	fs.FileSystemObject object = 1;
 	bytes hash = 2;
 }
+
+message ObjectArray
+{
+    repeated ObjectWithHash data = 1;
+}

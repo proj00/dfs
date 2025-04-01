@@ -72,10 +72,13 @@ namespace node.IpcService
             return state.FileProgress[ByteString.FromBase64(base64Hash)];
         }
 
-        public ObjectWithHash[] GetContainerObjects(string container)
+        public ByteString GetContainerObjects(string container)
         {
             var guid = Guid.Parse(container);
-            return state.Manager.GetContainerTree(guid).ToArray();
+            var contents = new ObjectArray();
+            contents.Data.AddRange(state.Manager.GetContainerTree(guid));
+
+            return contents.ToByteString();
         }
 
         public string GetContainerRootHash(string container)

@@ -1,4 +1,3 @@
-import { ObjectWithHash } from "@/types/filesystem_pb";
 import { ICefSharp } from "../types/ICefSharp";
 
 // make TS shut up (UI::browser makes this available)
@@ -10,7 +9,7 @@ export interface INodeService {
   GetObjectPath: (base64Hash: string) => Promise<string>;
   GetAllContainers: () => Promise<string[]>;
   GetDownloadProgress: (base64Hash: string) => Promise<any>;
-  GetContainerObjects: (container: string) => Promise<ObjectWithHash[]>;
+  GetContainerObjects: (container: string) => Promise<Uint8Array>;
   GetContainerRootHash: (container: string) => Promise<string>;
   ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<string>;
   PublishToTracker: (container: string, trackerUri: string) => Promise<void>;

@@ -63,10 +63,10 @@
 	<data name="vite.svg" type="System.Resources.ResXFileRef, System.Windows.Forms">
 		<value>UiResources/vite.svg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
-	<data name="assets/index-CTK_BBc6.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/index-CTK_BBc6.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-	</data>
 	<data name="assets/index-CuzvnK8q.css" type="System.Resources.ResXFileRef, System.Windows.Forms">
 		<value>UiResources\assets/index-CuzvnK8q.css;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</data>
+	<data name="assets/index-DdChiOFo.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
+		<value>UiResources\assets/index-DdChiOFo.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
 </root>
