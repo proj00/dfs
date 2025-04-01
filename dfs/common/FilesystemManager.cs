@@ -56,7 +56,7 @@ namespace common
                 }
             }
 
-            var guid = new Guid();
+            var guid = Guid.NewGuid();
             Container[guid] = rootObject;
             return guid;
         }

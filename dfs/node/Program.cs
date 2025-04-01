@@ -33,6 +33,7 @@ namespace node
             }
 
             NodeService service = new(state, rpc);
+            service.ImportObjectFromDisk(@"C:\\Users\\as\\Documents\\paint.net App Files", 1024);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG

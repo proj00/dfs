@@ -64,7 +64,7 @@ namespace node.IpcService
 
         public string[] GetAllContainers()
         {
-            return state.Manager.Container.Select(guid => guid.ToString()).ToArray();
+            return state.Manager.Container.Select(guid => guid.Key.ToString()).ToArray();
         }
 
         public (long current, long total) GetDownloadProgress(string base64Hash)
