@@ -47,3 +47,18 @@ export function formatDate(dateString: string): string {
     year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
   });
 }
+
+export function toBase64(array: Uint8Array): string {
+  return btoa(String.fromCharCode(...array));
+}
+
+export function wait<T>(promise: Promise<T>): T {
+  let result: T | undefined = undefined;
+
+  promise.then((value) => {
+    result = value;
+  });
+
+  while (result === undefined) {}
+  return result;
+}
