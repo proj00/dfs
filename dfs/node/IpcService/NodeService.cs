@@ -65,6 +65,12 @@ namespace node.IpcService
         {
             return state.Manager.Container.Select(guid => guid.ToString()).ToArray();
         }
+
+        public (long current, long total) GetDownloadProgress(string base64Hash)
+        {
+            return state.FileProgress[ByteString.FromBase64(base64Hash)];
+        }
+
         public ObjectWithHash[] GetContainerObjects(string container)
         {
             var guid = Guid.Parse(container);
@@ -165,10 +171,11 @@ namespace node.IpcService
             using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             object streamLock = new();
 
+            state.FileProgress[obj.Hash] = (0, obj.Object.File.Size);
             var i = 0;
             foreach (var hash in obj.Object.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
+                chunkTasks.Add(DownloadChunk(hash, obj.Hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
                 i++;
             }
 
@@ -176,7 +183,7 @@ namespace node.IpcService
             state.PathByHash[obj.Hash] = dir;
         }
 
-        private async Task DownloadChunk(ByteString hash, int chunkOffset, ITrackerWrapper tracker,
+        private async Task DownloadChunk(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
             FileStream stream, object streamLock, SemaphoreSlim semaphore)
         {
             await semaphore.WaitAsync();
@@ -201,6 +208,9 @@ namespace node.IpcService
                     foreach (var item in response)
                     {
                         stream.Write(item.Response.Span);
+                        (long current, long total) = state.FileProgress[fileHash];
+                        current += item.Response.Span.Length;
+                        state.FileProgress[fileHash] = (current, total);
                     }
                 }
 
