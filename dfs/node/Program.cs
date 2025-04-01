@@ -30,7 +30,7 @@ namespace node
             var server = new Grpc.Core.Server()
             {
                 Services = { Node.Node.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", 50331, ServerCredentials.Insecure) }
             };
 
             server.Start();
@@ -43,7 +43,7 @@ namespace node
             NodeService service = new(state, rpc);
 
 
-            if (true) // mock for demo
+            if (false) // mock for demo
             {
                 var file = "C:\\Users\\as\\Documents\\paint.net App Files";
                 var guid = service.ImportObjectFromDisk(file, 1024);

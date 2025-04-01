@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Logging;
+using common;
 
 namespace tracker
 {
@@ -10,12 +11,12 @@ namespace tracker
         static async Task Main(string[] args)
         {
             var serverCredentials = ServerCredentials.Insecure;
-
+            FilesystemManager filesystemManager = new FilesystemManager();
             GrpcEnvironment.SetLogger(new LogLevelFilterLogger(
                 new ConsoleLogger(),
                 LogLevel.Debug));
 
-            TrackerRpc rpc = new TrackerRpc();
+            TrackerRpc rpc = new TrackerRpc(filesystemManager);
             var server = new Server
             {
                 Services = { Tracker.Tracker.BindService(rpc) },

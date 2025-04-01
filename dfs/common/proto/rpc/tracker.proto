@@ -13,6 +13,7 @@ service Tracker
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
 	rpc GetContainerRootHash(ContainerGuid) returns (Hash);
 	rpc SetContainerRootHash(ContainerRootHash) returns (Empty);
+	rpc DeleteObjectHash(Hash) returns (Empty);
 }
 
 message Empty
