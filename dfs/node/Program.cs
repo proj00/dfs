@@ -13,6 +13,10 @@ namespace node
         [STAThread]
         static void Main()
         {
+            global::System.Windows.Forms.Application.EnableVisualStyles();
+            global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+            global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
+
             GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
                 new Grpc.Core.Logging.ConsoleLogger(),
                 Grpc.Core.Logging.LogLevel.Debug));
@@ -46,12 +50,7 @@ namespace node
             });
             Cef.Initialize(settings);
 #endif
-
-            global::System.Windows.Forms.Application.EnableVisualStyles();
-            global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-            global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
             System.Windows.Forms.Application.Run(new UI(service));
-
             server.ShutdownAsync().Wait();
         }
     }

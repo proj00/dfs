@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { mockFolders } from "../lib/mock-data";
 import {
   Dialog,
   DialogContent,
@@ -20,52 +19,69 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Label } from "./ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
+import { backendService } from "../services/BackendService";
+import type { Folder } from "../lib/types";
 
 interface SidebarProps {
   currentFolder: string | null;
   navigateToFolder: (folderId: string | null) => void;
+  folders: Folder[]; // Add folders prop
 }
 
-export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
-  // Get root folders
-  const rootFolders = mockFolders.filter((folder) => folder.parentId === null);
+export function Sidebar({
+  currentFolder,
+  navigateToFolder,
+  folders,
+}: SidebarProps) {
+  // Get root folders from the passed folders prop
+  const rootFolders = folders.filter((folder) => folder.parentId === null);
 
   // State for publish dialog
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [selectedContainer, setSelectedContainer] = useState<string>("");
   const [publishTrackerUri, setPublishTrackerUri] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // State for download dialog
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [downloadContainerGuid, setDownloadContainerGuid] = useState("");
   const [downloadTrackerUri, setDownloadTrackerUri] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Handle publish to tracker
-  const handlePublish = () => {
-    console.log(
-      `Publishing container ${selectedContainer} to tracker ${publishTrackerUri}`,
-    );
-    // Here you would call your backend service to publish the container
-    // For example: backendService.publishToTracker([selectedContainer], publishTrackerUri)
-    setPublishDialogOpen(false);
+  const handlePublish = async () => {
+    if (!selectedContainer || !publishTrackerUri) return;
+
+    setIsPublishing(true);
+    try {
+      await backendService.publishToTracker(
+        selectedContainer,
+        publishTrackerUri,
+      );
+      setPublishDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to publish:", error);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   // Handle download container
-  const handleDownload = () => {
-    console.log(
-      `Downloading container ${downloadContainerGuid} from tracker ${downloadTrackerUri}`,
-    );
-    // Here you would call your backend service to download the container
-    // For example: backendService.downloadContainer(downloadContainerGuid, downloadTrackerUri)
-    setDownloadDialogOpen(false);
+  const handleDownload = async () => {
+    if (!downloadContainerGuid || !downloadTrackerUri) return;
+
+    setIsDownloading(true);
+    try {
+      await backendService.downloadContainer(
+        downloadContainerGuid,
+        downloadTrackerUri,
+      );
+      setDownloadDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to download:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -113,25 +129,31 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
 
       <div className="mt-6">
         <h3 className="mb-2 text-sm font-medium">My folders</h3>
-        <div className="space-y-1">
-          {rootFolders.map((folder) => (
-            <Button
-              key={folder.id}
-              variant="ghost"
-              className={`w-full justify-start ${
-                currentFolder === folder.id ? "bg-muted" : ""
-              }`}
-              onClick={() => navigateToFolder(folder.id)}
-            >
-              {folder.hasChildren ? (
-                <ChevronRight className="mr-2 h-4 w-4" />
-              ) : (
-                <span className="mr-2 w-4" />
-              )}
-              {folder.name}
-            </Button>
-          ))}
-        </div>
+        {rootFolders.length === 0 ? (
+          <div className="py-2 px-3 text-sm text-muted-foreground italic">
+            No folders available
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {rootFolders.map((folder) => (
+              <Button
+                key={folder.id}
+                variant="ghost"
+                className={`w-full justify-start ${
+                  currentFolder === folder.id ? "bg-muted" : ""
+                }`}
+                onClick={() => navigateToFolder(folder.id)}
+              >
+                {folder.hasChildren ? (
+                  <ChevronRight className="mr-2 h-4 w-4" />
+                ) : (
+                  <span className="mr-2 w-4" />
+                )}
+                {folder.name}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Publish to Tracker Dialog */}
@@ -146,31 +168,23 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="container" className="text-right">
-                Container
-              </Label>
-              <Select
+              <div className="text-right text-sm font-medium">Container</div>
+              <select
                 value={selectedContainer}
-                onValueChange={setSelectedContainer}
+                onChange={(e) => setSelectedContainer(e.target.value)}
+                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a container" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rootFolders.map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Select a container</option>
+                {rootFolders.map((folder) => (
+                  <option key={folder.id} value={folder.id}>
+                    {folder.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="trackerUri" className="text-right">
-                Tracker URI
-              </Label>
+              <div className="text-right text-sm font-medium">Tracker URI</div>
               <Input
-                id="trackerUri"
                 value={publishTrackerUri}
                 onChange={(e) => setPublishTrackerUri(e.target.value)}
                 placeholder="Enter tracker URI"
@@ -182,9 +196,11 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
             <Button
               type="submit"
               onClick={handlePublish}
-              disabled={!selectedContainer || !publishTrackerUri}
+              disabled={
+                !selectedContainer || !publishTrackerUri || isPublishing
+              }
             >
-              Publish
+              {isPublishing ? "Publishing..." : "Publish"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -201,11 +217,10 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="containerGuid" className="text-right">
+              <div className="text-right text-sm font-medium">
                 Container GUID
-              </Label>
+              </div>
               <Input
-                id="containerGuid"
                 value={downloadContainerGuid}
                 onChange={(e) => setDownloadContainerGuid(e.target.value)}
                 placeholder="Enter container GUID"
@@ -213,11 +228,8 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="downloadTrackerUri" className="text-right">
-                Tracker URI
-              </Label>
+              <div className="text-right text-sm font-medium">Tracker URI</div>
               <Input
-                id="downloadTrackerUri"
                 value={downloadTrackerUri}
                 onChange={(e) => setDownloadTrackerUri(e.target.value)}
                 placeholder="Enter tracker URI"
@@ -229,9 +241,11 @@ export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
             <Button
               type="submit"
               onClick={handleDownload}
-              disabled={!downloadContainerGuid || !downloadTrackerUri}
+              disabled={
+                !downloadContainerGuid || !downloadTrackerUri || isDownloading
+              }
             >
-              Download
+              {isDownloading ? "Downloading..." : "Download"}
             </Button>
           </DialogFooter>
         </DialogContent>

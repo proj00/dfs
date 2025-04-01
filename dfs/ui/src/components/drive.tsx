@@ -49,8 +49,8 @@ export function Drive() {
   // Filter files based on current folder and search query
   const filteredFiles = files.filter((file) => {
     const matchesFolder = currentFolder
-      ? file.folderId === currentFolder
-      : file.folderId === null;
+      ? file.parentId.find((a) => a === currentFolder) !== undefined
+      : file.parentId === null;
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -60,7 +60,7 @@ export function Drive() {
   // Filter folders based on parent folder and search query
   const filteredFolders = folders.filter((folder) => {
     const matchesParent = currentFolder
-      ? folder.parentId === currentFolder
+      ? folder.parentId.find((a) => a === currentFolder) !== undefined
       : folder.parentId === null;
     const matchesSearch = folder.name
       .toLowerCase()
@@ -83,7 +83,8 @@ export function Drive() {
   const navigateToParent = () => {
     if (!currentFolder) return;
     const parentFolder =
-      folders.find((folder) => folder.id === currentFolder)?.parentId || null;
+      folders.find((folder) => folder.id === currentFolder)?.parentId.at(0) ||
+      null;
     setCurrentFolder(parentFolder);
   };
 
@@ -100,6 +101,7 @@ export function Drive() {
         <Sidebar
           currentFolder={currentFolder}
           navigateToFolder={navigateToFolder}
+          folders={folders} // Pass folders to Sidebar
         />
         <main className="flex-1 overflow-auto p-4">
           {error && (
