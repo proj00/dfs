@@ -55,7 +55,23 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public Guid ImportObjectFromDisk(string path, int chunkSize)
+        public string GetObjectDiskPath(string base64Hash)
+        {
+            var hash = ByteString.FromBase64(base64Hash);
+            return state.PathByHash[hash];
+        }
+
+        public string[] GetAllContainers()
+        {
+            return state.Manager.Container.Select(guid => guid.ToString()).ToArray();
+        }
+        public ObjectWithHash[] GetContainerObjects(string container)
+        {
+            var guid = Guid.Parse(container);
+            return state.Manager.GetContainerTree(guid).ToArray();
+        }
+
+        public string ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
@@ -88,15 +104,15 @@ namespace node.IpcService
                 throw new Exception("Invalid path");
             }
 
-            return state.Manager.CreateObjectContainer(objects, rootHash);
+            return state.Manager.CreateObjectContainer(objects, rootHash).ToString();
         }
 
-        public async Task PublishToTracker(Guid container, string uri)
+        public async Task PublishToTracker(string container, string uri)
         {
-            await PublishToTracker(container, new TrackerWrapper(uri, state));
+            await PublishToTracker(Guid.Parse(container), new TrackerWrapper(uri, state));
         }
 
-        public async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
+        private async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
         {
             if (!state.Manager.Container.ContainsKey(container))
             {
@@ -118,14 +134,16 @@ namespace node.IpcService
             }
         }
 
-        public async Task DownloadContainer(Guid container, string uri, string destinationDir, int maxConcurrentChunks = 20)
+        public async Task DownloadContainer(string container, string uri, string destinationDir, int maxConcurrentChunks = 20)
         {
-            await DownloadObjectByHash(container, new TrackerWrapper(uri, state), destinationDir, maxConcurrentChunks);
+            var tracker = new TrackerWrapper(uri, state);
+            var hash = await tracker.GetContainerRootHash(Guid.Parse(container));
+            await DownloadObjectByHash(hash.ToBase64(), tracker, destinationDir, maxConcurrentChunks);
         }
 
-        public async Task DownloadObjectByHash(Guid container, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHash(string base64Hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
-            var hash = await tracker.GetContainerRootHash(container);
+            var hash = ByteString.FromBase64(base64Hash);
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
             state.Manager.CreateObjectContainer(objects.ToArray(), hash);
 
