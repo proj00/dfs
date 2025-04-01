@@ -79,9 +79,19 @@ export function FileGrid({
                     <span className="sr-only">More</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigator.clipboard.writeText(folder.id)
+                                    // You could add a toast notification here
+                                    console.log(`Copied folder GUID: ${folder.id}`)
+                                }}
+                            >
+                                Copy container GUID
+                            </DropdownMenuItem>
                   <DropdownMenuItem>Rename</DropdownMenuItem>
-                  <DropdownMenuItem>Share</DropdownMenuItem>
+ 
                   <DropdownMenuItem>Move to</DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive">
                     Delete
@@ -173,9 +183,19 @@ export function FileGrid({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem>Open</DropdownMenuItem>
-                  <DropdownMenuItem>Download</DropdownMenuItem>
+                            <DropdownMenuItem>Download</DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    navigator.clipboard.writeText(file.id)
+                                    // You could add a toast notification here
+                                    console.log(`Copied file GUID: ${file.id}`)
+                                }}
+                            >
+                                Copy container GUID
+                            </DropdownMenuItem>
                   <DropdownMenuItem>Rename</DropdownMenuItem>
-                  <DropdownMenuItem>Share</DropdownMenuItem>
+
                   <DropdownMenuItem>Move to</DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive">
                     Delete
