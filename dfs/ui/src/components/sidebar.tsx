@@ -9,9 +9,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { useEffect, useState } from "react";
-import { getContents } from "@/lib/getData";
-import { Folder } from "@/lib/types";
+import { mockFolders } from "@/lib/mock-data";
 
 interface SidebarProps {
   currentFolder: string | null;
@@ -19,16 +17,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
-  const [rootFolders, setRootFolders] = useState<Folder[]>([]);
-
-  useEffect(() => {
-    getContents().then((c) => {
-      const roots = c.folders.filter(
-        (folder) => folder.parentId === null || folder.parentId.length === 0,
-      );
-      setRootFolders(roots);
-    });
-  }, []);
+  // Get root folders
+  const rootFolders = mockFolders.filter((folder) => folder.parentId === null);
 
   return (
     <div className="w-64 border-r bg-background p-4 hidden md:block">
