@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
-import { getContents, IStoredContents } from "@/lib/getData";
+import { getContents } from "@/lib/getData";
+import { Folder } from "@/lib/types";
 
 interface SidebarProps {
   currentFolder: string | null;
@@ -18,19 +19,16 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
-  const [contents, setContents] = useState<IStoredContents>({
-    folders: [],
-    files: [],
-  });
+  const [rootFolders, setRootFolders] = useState<Folder[]>([]);
 
   useEffect(() => {
-    getContents().then((c) => setContents(c));
+    getContents().then((c) => {
+      const roots = c.folders.filter(
+        (folder) => folder.parentId === null || folder.parentId.length === 0,
+      );
+      setRootFolders(roots);
+    });
   }, []);
-
-  // Get root folders
-  const rootFolders = contents.folders.filter(
-    (folder) => folder.parentId === null || folder.parentId.length === 0,
-  );
 
   return (
     <div className="w-64 border-r bg-background p-4 hidden md:block">

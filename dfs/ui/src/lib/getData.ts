@@ -15,7 +15,7 @@ export async function getContents(): Promise<IStoredContents> {
   const service = await GetNodeService();
   const containers = await service.GetAllContainers();
 
-  for (const container in containers) {
+  for (const container of containers) {
     const objects = await service.GetContainerObjects(container);
     const internalObjects = objects.map((object) =>
       FromObjectWithHash(object, objects, container),
