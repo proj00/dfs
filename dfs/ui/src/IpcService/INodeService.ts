@@ -1,3 +1,4 @@
+import { ObjectWithHash } from "@/types/filesystem_pb";
 import { ICefSharp } from "../types/ICefSharp";
 
 // make TS shut up (UI::browser makes this available)
@@ -5,9 +6,20 @@ declare let CefSharp: ICefSharp;
 
 export interface INodeService {
   RegisterUiService: (service: any) => Promise<void>;
-  PickObjectPath: (folder: boolean) => Promise<string>;
-  ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<void>;
-  PublishToTracker: (hashes: string[], trackerUri: string) => Promise<void>;
+  PickObjectPath: (pickFolder: boolean) => Promise<string>;
+  GetObjectPath: (base64Hash: string) => Promise<string>;
+  GetAllContainers: () => Promise<string[]>;
+  GetDownloadProgress: (base64Hash: string) => Promise<any>;
+  GetContainerObjects: (container: string) => Promise<ObjectWithHash[]>;
+  GetContainerRootHash: (container: string) => Promise<string>;
+  ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<string>;
+  PublishToTracker: (container: string, trackerUri: string) => Promise<void>;
+  DownloadContainer: (
+    container: string,
+    trackerUri: string,
+    destinationDir: string,
+    maxConcurrentChunks: number,
+  ) => Promise<void>;
 }
 
 // make TS shut up (again; UI::browser makes this available after BindObjectAsync)

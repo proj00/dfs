@@ -6,8 +6,8 @@ import "fs/filesystem.proto";
 
 service Tracker
 {
-	rpc Publish(stream ObjectWithHash) returns (Empty);
-	rpc GetObjectTree(Hash) returns (stream ObjectWithHash);
+	rpc Publish(stream fs.ObjectWithHash) returns (Empty);
+	rpc GetObjectTree(Hash) returns (stream fs.ObjectWithHash);
 	rpc MarkReachable(stream Hash) returns (Empty);
 	rpc MarkUnreachable(stream Hash) returns (Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
@@ -40,12 +40,6 @@ message PeerRequest
 message Hash
 {
 	bytes data = 1;
-}
-
-message ObjectWithHash
-{
-	fs.FileSystemObject object = 1;
-	bytes hash = 2;
 }
 
 message PeerResponse

@@ -46,7 +46,7 @@ namespace Tracker {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Tracker.ObjectWithHash> __Marshaller_tracker_ObjectWithHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ObjectWithHash.Parser));
+    static readonly grpc::Marshaller<global::Fs.ObjectWithHash> __Marshaller_fs_ObjectWithHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ObjectWithHash.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.Empty> __Marshaller_tracker_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.Empty.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -61,20 +61,20 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::Tracker.ContainerRootHash> __Marshaller_tracker_ContainerRootHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ContainerRootHash.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Tracker.ObjectWithHash, global::Tracker.Empty> __Method_Publish = new grpc::Method<global::Tracker.ObjectWithHash, global::Tracker.Empty>(
+    static readonly grpc::Method<global::Fs.ObjectWithHash, global::Tracker.Empty> __Method_Publish = new grpc::Method<global::Fs.ObjectWithHash, global::Tracker.Empty>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "Publish",
-        __Marshaller_tracker_ObjectWithHash,
+        __Marshaller_fs_ObjectWithHash,
         __Marshaller_tracker_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Tracker.Hash, global::Tracker.ObjectWithHash> __Method_GetObjectTree = new grpc::Method<global::Tracker.Hash, global::Tracker.ObjectWithHash>(
+    static readonly grpc::Method<global::Tracker.Hash, global::Fs.ObjectWithHash> __Method_GetObjectTree = new grpc::Method<global::Tracker.Hash, global::Fs.ObjectWithHash>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "GetObjectTree",
         __Marshaller_tracker_Hash,
-        __Marshaller_tracker_ObjectWithHash);
+        __Marshaller_fs_ObjectWithHash);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Tracker.Hash, global::Tracker.Empty> __Method_MarkReachable = new grpc::Method<global::Tracker.Hash, global::Tracker.Empty>(
@@ -127,13 +127,13 @@ namespace Tracker {
     public abstract partial class TrackerBase
     {
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Tracker.Empty> Publish(grpc::IAsyncStreamReader<global::Tracker.ObjectWithHash> requestStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.Empty> Publish(grpc::IAsyncStreamReader<global::Fs.ObjectWithHash> requestStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task GetObjectTree(global::Tracker.Hash request, grpc::IServerStreamWriter<global::Tracker.ObjectWithHash> responseStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task GetObjectTree(global::Tracker.Hash request, grpc::IServerStreamWriter<global::Fs.ObjectWithHash> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -198,22 +198,22 @@ namespace Tracker {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectWithHash, global::Tracker.Empty> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Fs.ObjectWithHash, global::Tracker.Empty> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Publish(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Tracker.ObjectWithHash, global::Tracker.Empty> Publish(grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Fs.ObjectWithHash, global::Tracker.Empty> Publish(grpc::CallOptions options)
       {
         return CallInvoker.AsyncClientStreamingCall(__Method_Publish, null, options);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Tracker.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Fs.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetObjectTree(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Tracker.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::CallOptions options)
+      public virtual grpc::AsyncServerStreamingCall<global::Fs.ObjectWithHash> GetObjectTree(global::Tracker.Hash request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_GetObjectTree, null, options, request);
       }
@@ -317,8 +317,8 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, TrackerBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.ObjectWithHash, global::Tracker.Empty>(serviceImpl.Publish));
-      serviceBinder.AddMethod(__Method_GetObjectTree, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.Hash, global::Tracker.ObjectWithHash>(serviceImpl.GetObjectTree));
+      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ObjectWithHash, global::Tracker.Empty>(serviceImpl.Publish));
+      serviceBinder.AddMethod(__Method_GetObjectTree, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.Hash, global::Fs.ObjectWithHash>(serviceImpl.GetObjectTree));
       serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Tracker.Empty>(serviceImpl.MarkReachable));
       serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.Hash, global::Tracker.Empty>(serviceImpl.MarkUnreachable));
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(serviceImpl.GetPeerList));

@@ -1,4 +1,5 @@
 ﻿using common;
+using Fs;
 using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
@@ -35,7 +36,7 @@ namespace node.IpcService
                 dialog.Multiselect = false;
                 var result = dialog.ShowDialog();
 
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && Directory.Exists(dialog.SelectedPath))
+                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && System.IO.Directory.Exists(dialog.SelectedPath))
                 {
                     return dialog.SelectedPath;
                 }
@@ -46,7 +47,7 @@ namespace node.IpcService
                 dialog.Multiselect = false;
                 var result = dialog.ShowDialog();
 
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && File.Exists(dialog.FileName))
+                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && System.IO.File.Exists(dialog.FileName))
                 {
                     return dialog.FileName;
                 }
@@ -55,7 +56,7 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public string GetObjectDiskPath(string base64Hash)
+        public string GetObjectPath(string base64Hash)
         {
             var hash = ByteString.FromBase64(base64Hash);
             return state.PathByHash[hash];
@@ -77,6 +78,11 @@ namespace node.IpcService
             return state.Manager.GetContainerTree(guid).ToArray();
         }
 
+        public string GetContainerRootHash(string container)
+        {
+            return state.Manager.Container[Guid.Parse(container)].ToBase64();
+        }
+
         public string ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
@@ -86,14 +92,14 @@ namespace node.IpcService
 
             ObjectWithHash[] objects = [];
             ByteString rootHash = ByteString.Empty;
-            if (File.Exists(path))
+            if (System.IO.File.Exists(path))
             {
                 var obj = FilesystemUtils.GetFileObject(path, chunkSize);
                 rootHash = HashUtils.GetHash(obj);
                 objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
             }
 
-            if (Directory.Exists(path))
+            if (System.IO.Directory.Exists(path))
             {
                 List<ObjectWithHash> dirObjects = [];
                 rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
@@ -166,7 +172,7 @@ namespace node.IpcService
             List<Task> chunkTasks = [];
 
             var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
-            Directory.CreateDirectory(dir);
+            System.IO.Directory.CreateDirectory(dir);
             dir = dir + "\\" + obj.Object.Name;
             using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             object streamLock = new();

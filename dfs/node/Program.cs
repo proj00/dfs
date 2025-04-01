@@ -1,14 +1,6 @@
-using static System.Net.Mime.MediaTypeNames;
-using System.Windows.Forms;
 using node.IpcService;
-using CefSharp.WinForms;
 using CefSharp;
-using node.UiResourceLoading;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using Grpc.Core;
-using System.Threading.Tasks;
-using common_test;
 
 namespace node
 {
@@ -42,27 +34,7 @@ namespace node
 
             NodeService service = new(state, rpc);
 
-
-            if (true) // mock for demo
-            {
-                var file = "C:\\Users\\as\\Documents\\paint.net App Files";
-                var guid = service.ImportObjectFromDisk(file, 1024);
-
-                var tracker = new MockTrackerWrapper
-                {
-                    peerId = $"http://127.0.0.1:{server.Ports.First().BoundPort}"
-                };
-                service.PublishToTracker(guid, tracker).Wait();
-
-                var folder = "C:\\Users\\as\\Documents\\test";
-
-                service.DownloadObjectByHash(guid, tracker, folder, 1).Wait();
-                Console.WriteLine("Press Enter to continue...");
-                Console.ReadLine();
-            }
-            else
-            {
-                CefSharpSettings.ConcurrentTaskExecution = true;
+            CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG
                         var settings = new CefSettings();
                         settings.RegisterScheme(new CefCustomScheme()
@@ -74,11 +46,10 @@ namespace node
                         Cef.Initialize(settings);
 #endif
 
-                global::System.Windows.Forms.Application.EnableVisualStyles();
-                global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-                global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
-                System.Windows.Forms.Application.Run(new UI(service));
-            }
+            global::System.Windows.Forms.Application.EnableVisualStyles();
+            global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+            global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            System.Windows.Forms.Application.Run(new UI(service));
 
             server.ShutdownAsync().Wait();
         }
