@@ -55,7 +55,29 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public Guid ImportObjectFromDisk(string path, int chunkSize)
+        public string GetObjectDiskPath(string base64Hash)
+        {
+            var hash = ByteString.FromBase64(base64Hash);
+            return state.PathByHash[hash];
+        }
+
+        public string[] GetAllContainers()
+        {
+            return state.Manager.Container.Select(guid => guid.ToString()).ToArray();
+        }
+
+        public (long current, long total) GetDownloadProgress(string base64Hash)
+        {
+            return state.FileProgress[ByteString.FromBase64(base64Hash)];
+        }
+
+        public ObjectWithHash[] GetContainerObjects(string container)
+        {
+            var guid = Guid.Parse(container);
+            return state.Manager.GetContainerTree(guid).ToArray();
+        }
+
+        public string ImportObjectFromDisk(string path, int chunkSize)
         {
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
@@ -88,15 +110,15 @@ namespace node.IpcService
                 throw new Exception("Invalid path");
             }
 
-            return state.Manager.CreateObjectContainer(objects, rootHash);
+            return state.Manager.CreateObjectContainer(objects, rootHash).ToString();
         }
 
-        public async Task PublishToTracker(Guid container, string uri)
+        public async Task PublishToTracker(string container, string uri)
         {
-            await PublishToTracker(container, new TrackerWrapper(uri, state));
+            await PublishToTracker(Guid.Parse(container), new TrackerWrapper(uri, state));
         }
 
-        public async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
+        private async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
         {
             if (!state.Manager.Container.ContainsKey(container))
             {
@@ -118,14 +140,16 @@ namespace node.IpcService
             }
         }
 
-        public async Task DownloadContainer(Guid container, string uri, string destinationDir, int maxConcurrentChunks = 20)
+        public async Task DownloadContainer(string container, string uri, string destinationDir, int maxConcurrentChunks = 20)
         {
-            await DownloadObjectByHash(container, new TrackerWrapper(uri, state), destinationDir, maxConcurrentChunks);
+            var tracker = new TrackerWrapper(uri, state);
+            var hash = await tracker.GetContainerRootHash(Guid.Parse(container));
+            await DownloadObjectByHash(hash.ToBase64(), tracker, destinationDir, maxConcurrentChunks);
         }
 
-        public async Task DownloadObjectByHash(Guid container, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHash(string base64Hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
-            var hash = await tracker.GetContainerRootHash(container);
+            var hash = ByteString.FromBase64(base64Hash);
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
             state.Manager.CreateObjectContainer(objects.ToArray(), hash);
 
@@ -147,10 +171,11 @@ namespace node.IpcService
             using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             object streamLock = new();
 
+            state.FileProgress[obj.Hash] = (0, obj.Object.File.Size);
             var i = 0;
             foreach (var hash in obj.Object.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
+                chunkTasks.Add(DownloadChunk(hash, obj.Hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
                 i++;
             }
 
@@ -158,7 +183,7 @@ namespace node.IpcService
             state.PathByHash[obj.Hash] = dir;
         }
 
-        private async Task DownloadChunk(ByteString hash, int chunkOffset, ITrackerWrapper tracker,
+        private async Task DownloadChunk(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
             FileStream stream, object streamLock, SemaphoreSlim semaphore)
         {
             await semaphore.WaitAsync();
@@ -183,6 +208,9 @@ namespace node.IpcService
                     foreach (var item in response)
                     {
                         stream.Write(item.Response.Span);
+                        (long current, long total) = state.FileProgress[fileHash];
+                        current += item.Response.Span.Length;
+                        state.FileProgress[fileHash] = (current, total);
                     }
                 }
 

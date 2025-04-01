@@ -18,13 +18,14 @@ namespace node
         public FilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
-
+        public Dictionary<ByteString, (long, long)> FileProgress { get; }
         public NodeState(TimeSpan channelTtl)
         {
             PathByHash = new(new HashUtils.ByteStringComparer());
             NodeChannel = new ChannelCache(channelTtl);
             TrackerChannel = new ChannelCache(channelTtl);
             Manager = new FilesystemManager();
+            FileProgress = new(new HashUtils.ByteStringComparer());
         }
 
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
