@@ -9,34 +9,23 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { IStoredContents } from "../lib/getData";
-import { use } from "react";
+import { mockFolders } from "../lib/mock-data";
 
 interface SidebarProps {
   currentFolder: string | null;
   navigateToFolder: (folderId: string | null) => void;
-  contentsPromise: Promise<IStoredContents>;
 }
 
-export function Sidebar({
-  currentFolder,
-  navigateToFolder,
-  contentsPromise,
-}: SidebarProps) {
-  const contents = use(contentsPromise);
+export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
   // Get root folders
-  const rootFolders = contents.folders.filter(
-    (folder) => folder.parentId === null || folder.parentId.length === 0,
-  );
+  const rootFolders = mockFolders.filter((folder) => folder.parentId === null);
 
   return (
     <div className="w-64 border-r bg-background p-4 hidden md:block">
       <div className="space-y-1">
         <Button
           variant="ghost"
-          className={`w-full justify-start ${
-            currentFolder === null ? "bg-muted" : ""
-          }`}
+          className={`w-full justify-start ${currentFolder === null ? "bg-muted" : ""}`}
           onClick={() => navigateToFolder(null)}
         >
           <HardDrive className="mr-2 h-4 w-4" />
@@ -66,9 +55,7 @@ export function Sidebar({
             <Button
               key={folder.id}
               variant="ghost"
-              className={`w-full justify-start ${
-                currentFolder === folder.id ? "bg-muted" : ""
-              }`}
+              className={`w-full justify-start ${currentFolder === folder.id ? "bg-muted" : ""}`}
               onClick={() => navigateToFolder(folder.id)}
             >
               {folder.hasChildren ? (

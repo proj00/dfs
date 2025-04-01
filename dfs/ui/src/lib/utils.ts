@@ -47,7 +47,3 @@ export function formatDate(dateString: string): string {
     year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
   });
 }
-
-export function toBase64(array: Uint8Array): string {
-  return btoa(String.fromCharCode(...array));
-}

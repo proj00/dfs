@@ -1,28 +1,22 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import { FileGrid } from "./file-grid";
 import { FileList } from "./file-list";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
-import { IStoredContents } from "../lib/getData";
+import { mockFiles, mockFolders } from "../lib/mock-data";
 
-export interface DriveProps {
-  contentsPromise: Promise<IStoredContents>;
-}
-
-export function Drive({ contentsPromise }: DriveProps) {
+export function Drive() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const contents = use(contentsPromise);
-
   // Filter files based on current folder and search query
-  const filteredFiles = contents.files.filter((file) => {
+  const filteredFiles = mockFiles.filter((file) => {
     const matchesFolder = currentFolder
-      ? file.parentId?.find((f) => f === currentFolder) !== undefined
-      : file.parentId === null;
+      ? file.folderId === currentFolder
+      : file.folderId === null;
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -30,9 +24,9 @@ export function Drive({ contentsPromise }: DriveProps) {
   });
 
   // Filter folders based on parent folder and search query
-  const filteredFolders = contents.folders.filter((folder) => {
+  const filteredFolders = mockFolders.filter((folder) => {
     const matchesParent = currentFolder
-      ? folder.parentId?.find((f) => f === currentFolder) !== undefined
+      ? folder.parentId === currentFolder
       : folder.parentId === null;
     const matchesSearch = folder.name
       .toLowerCase()
@@ -42,7 +36,7 @@ export function Drive({ contentsPromise }: DriveProps) {
 
   // Get current folder name
   const currentFolderName = currentFolder
-    ? contents.folders.find((folder) => folder.id === currentFolder)?.name ||
+    ? mockFolders.find((folder) => folder.id === currentFolder)?.name ||
       "Unknown Folder"
     : "My Drive";
 
@@ -55,9 +49,8 @@ export function Drive({ contentsPromise }: DriveProps) {
   const navigateToParent = () => {
     if (!currentFolder) return;
     const parentFolder =
-      contents.folders
-        .find((folder) => folder.id === currentFolder)
-        ?.parentId?.at(0) || null;
+      mockFolders.find((folder) => folder.id === currentFolder)?.parentId ||
+      null;
     setCurrentFolder(parentFolder);
   };
 
@@ -73,7 +66,6 @@ export function Drive({ contentsPromise }: DriveProps) {
         <Sidebar
           currentFolder={currentFolder}
           navigateToFolder={navigateToFolder}
-          contentsPromise={contentsPromise}
         />
         <main className="flex-1 overflow-auto p-4">
           {view === "grid" ? (

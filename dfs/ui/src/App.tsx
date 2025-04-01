@@ -1,8 +1,7 @@
 import { Drive } from "./components/drive";
-import { getContents } from "./lib/getData";
 
 function App() {
-  return <Drive contentsPromise={getContents()} />;
+  return <Drive />;
 }
 
 export default App;
