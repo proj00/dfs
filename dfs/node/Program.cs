@@ -37,14 +37,14 @@ namespace node
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG
-                        var settings = new CefSettings();
-                        settings.RegisterScheme(new CefCustomScheme()
-                        {
-                            SchemeName = "http",
-                            DomainName = "ui.resources",
-                            SchemeHandlerFactory = new UiResourceHandlerFactory(),
-                        });
-                        Cef.Initialize(settings);
+            var settings = new CefSettings();
+            settings.RegisterScheme(new CefCustomScheme()
+            {
+                SchemeName = "http",
+                DomainName = "ui.resources",
+                SchemeHandlerFactory = new UiResourceHandlerFactory(),
+            });
+            Cef.Initialize(settings);
 #endif
 
             global::System.Windows.Forms.Application.EnableVisualStyles();
