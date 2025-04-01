@@ -1,6 +1,7 @@
 ﻿using Fs;
 using Google.Protobuf;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,11 +12,11 @@ namespace common
 {
     public class FilesystemManager
     {
-        public Dictionary<ByteString, ObjectWithHash> ObjectByHash { get; }
-        public Dictionary<ByteString, ByteString[]> ChunkParents { get; }
-        public Dictionary<Guid, ByteString> Container { get; }
-        public Dictionary<ByteString, List<ByteString>> Parent { get; }
-        public Dictionary<ByteString, ByteString> NewerVersion { get; }
+        public ConcurrentDictionary<ByteString, ObjectWithHash> ObjectByHash { get; }
+        public ConcurrentDictionary<ByteString, ByteString[]> ChunkParents { get; }
+        public ConcurrentDictionary<Guid, ByteString> Container { get; }
+        public ConcurrentDictionary<ByteString, List<ByteString>> Parent { get; }
+        public ConcurrentDictionary<ByteString, ByteString> NewerVersion { get; }
 
         public FilesystemManager()
         {
@@ -116,5 +117,8 @@ namespace common
                 ChunkParents[chunkHash] = [parentHash];
             }
         }
+
+
+
     }
 }

@@ -30,7 +30,7 @@ namespace node
             var server = new Grpc.Core.Server()
             {
                 Services = { Node.Node.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", 50331, ServerCredentials.Insecure) }
             };
 
             server.Start();
