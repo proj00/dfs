@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { FileGrid } from "./file-grid";
 import { FileList } from "./file-list";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
-import { getContents } from "../lib/getData";
-import { wait } from "../lib/utils";
+import { IStoredContents } from "../lib/getData";
 
-export function Drive() {
+export interface DriveProps {
+  contentsPromise: Promise<IStoredContents>;
+}
+
+export function Drive({ contentsPromise }: DriveProps) {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const contents = wait(getContents());
+  const contents = use(contentsPromise);
 
   // Filter files based on current folder and search query
   const filteredFiles = contents.files.filter((file) => {
@@ -70,6 +73,7 @@ export function Drive() {
         <Sidebar
           currentFolder={currentFolder}
           navigateToFolder={navigateToFolder}
+          contentsPromise={contentsPromise}
         />
         <main className="flex-1 overflow-auto p-4">
           {view === "grid" ? (

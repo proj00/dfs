@@ -1,6 +1,8 @@
 using node.IpcService;
 using CefSharp;
 using Grpc.Core;
+using CefSharp.WinForms;
+using node.UiResourceLoading;
 
 namespace node
 {
@@ -33,6 +35,9 @@ namespace node
             }
 
             NodeService service = new(state, rpc);
+
+            // for testing
+            service.ImportObjectFromDisk(@"C:\\Users\\as\\Documents\\paint.net App Files", 1024);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG

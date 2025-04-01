@@ -9,16 +9,21 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { getContents } from "../lib/getData";
-import { wait } from "@/lib/utils";
+import { IStoredContents } from "../lib/getData";
+import { use } from "react";
 
 interface SidebarProps {
   currentFolder: string | null;
   navigateToFolder: (folderId: string | null) => void;
+  contentsPromise: Promise<IStoredContents>;
 }
 
-export function Sidebar({ currentFolder, navigateToFolder }: SidebarProps) {
-  const contents = wait(getContents());
+export function Sidebar({
+  currentFolder,
+  navigateToFolder,
+  contentsPromise,
+}: SidebarProps) {
+  const contents = use(contentsPromise);
   // Get root folders
   const rootFolders = contents.folders.filter(
     (folder) => folder.parentId === null || folder.parentId.length === 0,
