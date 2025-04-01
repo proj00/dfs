@@ -44,7 +44,26 @@ export function FileList({
                 </div>
 
                 {folders.length === 0 && files.length === 0 && (
-                    <div className="p-4 text-center text-muted-foreground">No items in this folder</div>
+                    <div className="p-8 text-center">
+                        <div className="text-muted-foreground mb-4">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="48"
+                                height="48"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="mx-auto mb-2"
+                            >
+                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                            </svg>
+                            <p>This folder is empty</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Files and folders you add to this location will appear here</p>
+                    </div>
                 )}
 
                 {folders.map((folder) => (

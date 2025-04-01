@@ -43,7 +43,7 @@ namespace node
             NodeService service = new(state, rpc);
 
 
-            if (true) // mock for demo
+            if (false) // mock for demo
             {
                 var file = "C:\\Users\\as\\Documents\\paint.net App Files";
                 var guid = service.ImportObjectFromDisk(file, 1024);
