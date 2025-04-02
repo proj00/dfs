@@ -5,9 +5,22 @@ declare let CefSharp: ICefSharp;
 
 export interface INodeService {
   RegisterUiService: (service: any) => Promise<void>;
-  PickObjectPath: (folder: boolean) => Promise<string>;
-  ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<void>;
-  PublishToTracker: (hashes: string[], trackerUri: string) => Promise<void>;
+  PickObjectPath: (pickFolder: boolean) => Promise<string>;
+  GetObjectPath: (base64Hash: string) => Promise<string>;
+  RevealObjectInExplorer: (base64Hash: string) => Promise<void>;
+  GetAllContainers: () => Promise<string[]>;
+  GetDownloadProgress: (base64Hash: string) => Promise<any>;
+  GetContainerObjects: (container: string) => Promise<Uint8Array>;
+  GetContainerRootHash: (container: string) => Promise<string>;
+  ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<string>;
+  PublishToTracker: (container: string, trackerUri: string) => Promise<void>;
+  DownloadContainer: (
+    container: string,
+    trackerUri: string,
+    destinationDir: string,
+    maxConcurrentChunks: number,
+  ) => Promise<void>;
+  CopyToClipboard: (str: string) => Promise<void>;
 }
 
 // make TS shut up (again; UI::browser makes this available after BindObjectAsync)

@@ -1,5 +1,7 @@
 ﻿using common;
+using Fs;
 using Google.Protobuf;
+using Grpc.Core;
 using Tracker;
 using static Tracker.Tracker;
 
@@ -21,22 +23,45 @@ namespace node
 
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
         {
-            throw new NotImplementedException();
+            using var response = client.GetObjectTree(new Hash { Data = hash });
+
+            List<ObjectWithHash> objects = [];
+            await foreach (var obj in response.ResponseStream.ReadAllAsync())
+            {
+                objects.Add(obj);
+            }
+            return objects;
         }
 
         public async Task<List<string>> GetPeerList(PeerRequest request)
         {
-            throw new NotImplementedException();
+            using var response = client.GetPeerList(request);
+
+            List<string> peers = [];
+            await foreach (var peer in response.ResponseStream.ReadAllAsync())
+            {
+                peers.Add(peer.Peer);
+            }
+
+            return peers;
         }
 
-        public async Task<Empty> MarkReachable(ByteString hash)
+        public async Task<Empty> MarkReachable(ByteString hash, string nodeURI)
         {
-            throw new NotImplementedException();
+            using var call = client.MarkReachable();
+            await call.RequestStream.WriteAsync(new MarkRequest { Hash = hash, Peer = nodeURI });
+            await call.RequestStream.CompleteAsync();
+
+            return await call;
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString hash)
+        public async Task<Empty> MarkUnreachable(ByteString hash, string nodeURI)
         {
-            throw new NotImplementedException();
+            using var call = client.MarkUnreachable();
+            await call.RequestStream.WriteAsync(new MarkRequest { Hash = hash, Peer = nodeURI });
+            await call.RequestStream.CompleteAsync();
+
+            return await call;
         }
 
         public async Task<Empty> Publish(List<ObjectWithHash> objects)
@@ -51,14 +76,19 @@ namespace node
             return await call;
         }
 
-        public Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        public async Task<ByteString> GetContainerRootHash(Guid containerGuid)
         {
-            throw new NotImplementedException();
+            var response = await client.GetContainerRootHashAsync(new ContainerGuid { Guid = containerGuid.ToString() });
+            return response.Data;
         }
 
-        public Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
+        public async Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
         {
-            throw new NotImplementedException();
+            return await client.SetContainerRootHashAsync(new ContainerRootHash
+            {
+                Guid = containerGuid.ToString(),
+                Hash = new Hash { Data = rootHash }
+            });
         }
     }
 }

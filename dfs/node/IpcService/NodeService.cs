@@ -1,8 +1,10 @@
 ﻿using common;
+using Fs;
 using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
 
@@ -15,11 +17,15 @@ namespace node.IpcService
         private UiService? service;
         private NodeState state;
         private NodeRpc rpc;
+        private Func<UI?> getUI;
+        private string nodeURI;
 
-        public NodeService(NodeState state, NodeRpc rpc)
+        public NodeService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
         {
             this.state = state;
             this.rpc = rpc;
+            this.getUI = getUI;
+            this.nodeURI = nodeURI;
         }
 
         public void RegisterUiService(dynamic service)
@@ -29,13 +35,30 @@ namespace node.IpcService
 
         public string PickObjectPath(bool folder)
         {
+            var ui = getUI();
+            if (ui == null)
+            {
+                throw new NullReferenceException();
+            }
+
+            string result = "";
+            ui.Invoke(() =>
+            {
+                result = PickObjectPathInternal(folder);
+            });
+
+            return result;
+        }
+
+        private static string PickObjectPathInternal(bool folder)
+        {
             if (folder)
             {
                 using var dialog = new FolderBrowserDialog();
                 dialog.Multiselect = false;
                 var result = dialog.ShowDialog();
 
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && Directory.Exists(dialog.SelectedPath))
+                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && System.IO.Directory.Exists(dialog.SelectedPath))
                 {
                     return dialog.SelectedPath;
                 }
@@ -46,7 +69,7 @@ namespace node.IpcService
                 dialog.Multiselect = false;
                 var result = dialog.ShowDialog();
 
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && File.Exists(dialog.FileName))
+                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && System.IO.File.Exists(dialog.FileName))
                 {
                     return dialog.FileName;
                 }
@@ -55,15 +78,35 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public string GetObjectDiskPath(string base64Hash)
+        public string GetObjectPath(string base64Hash)
         {
             var hash = ByteString.FromBase64(base64Hash);
             return state.PathByHash[hash];
         }
 
+        public void RevealObjectInExplorer(string base64Hash)
+        {
+            var path = GetObjectPath(base64Hash);
+            Process.Start("explorer.exe", path);
+        }
+
         public string[] GetAllContainers()
         {
-            return state.Manager.Container.Select(guid => guid.ToString()).ToArray();
+            return state.Manager.Container.Select(guid => guid.Key.ToString()).ToArray();
+        }
+
+        public void CopyToClipboard(string str)
+        {
+            var ui = getUI();
+            if (ui == null)
+            {
+                throw new NullReferenceException();
+            }
+
+            ui.Invoke(() =>
+            {
+                Clipboard.SetText(str);
+            });
         }
 
         public (long current, long total) GetDownloadProgress(string base64Hash)
@@ -71,10 +114,18 @@ namespace node.IpcService
             return state.FileProgress[ByteString.FromBase64(base64Hash)];
         }
 
-        public ObjectWithHash[] GetContainerObjects(string container)
+        public ByteString GetContainerObjects(string container)
         {
             var guid = Guid.Parse(container);
-            return state.Manager.GetContainerTree(guid).ToArray();
+            var contents = new ObjectArray();
+            contents.Data.AddRange(state.Manager.GetContainerTree(guid));
+
+            return contents.ToByteString();
+        }
+
+        public string GetContainerRootHash(string container)
+        {
+            return state.Manager.Container[Guid.Parse(container)].ToBase64();
         }
 
         public string ImportObjectFromDisk(string path, int chunkSize)
@@ -86,14 +137,14 @@ namespace node.IpcService
 
             ObjectWithHash[] objects = [];
             ByteString rootHash = ByteString.Empty;
-            if (File.Exists(path))
+            if (System.IO.File.Exists(path))
             {
                 var obj = FilesystemUtils.GetFileObject(path, chunkSize);
                 rootHash = HashUtils.GetHash(obj);
                 objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
             }
 
-            if (Directory.Exists(path))
+            if (System.IO.Directory.Exists(path))
             {
                 List<ObjectWithHash> dirObjects = [];
                 rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
@@ -135,7 +186,7 @@ namespace node.IpcService
             {
                 foreach (var chunk in file.File.Hashes.Hash)
                 {
-                    await tracker.MarkReachable(chunk);
+                    await tracker.MarkReachable(chunk, nodeURI);
                 }
             }
         }
@@ -144,14 +195,13 @@ namespace node.IpcService
         {
             var tracker = new TrackerWrapper(uri, state);
             var hash = await tracker.GetContainerRootHash(Guid.Parse(container));
-            await DownloadObjectByHash(hash.ToBase64(), tracker, destinationDir, maxConcurrentChunks);
+            await DownloadObjectByHash(hash, Guid.Parse(container), tracker, destinationDir, maxConcurrentChunks);
         }
 
-        private async Task DownloadObjectByHash(string base64Hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHash(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
-            var hash = ByteString.FromBase64(base64Hash);
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
-            state.Manager.CreateObjectContainer(objects.ToArray(), hash);
+            state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
 
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
@@ -166,7 +216,7 @@ namespace node.IpcService
             List<Task> chunkTasks = [];
 
             var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
-            Directory.CreateDirectory(dir);
+            System.IO.Directory.CreateDirectory(dir);
             dir = dir + "\\" + obj.Object.Name;
             using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             object streamLock = new();
@@ -214,7 +264,7 @@ namespace node.IpcService
                     }
                 }
 
-                await tracker.MarkReachable(hash);
+                await tracker.MarkReachable(hash, nodeURI);
             }
             finally
             {

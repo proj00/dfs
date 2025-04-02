@@ -50,9 +50,9 @@ namespace node
 
             await browser.LoadUrlAsync(sourceUrl);
 
-#if DEBUG
+            //#if DEBUG
             browser.ShowDevTools();
-#endif
+            //#endif
         }
     }
 }

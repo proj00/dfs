@@ -17,7 +17,6 @@ namespace tracker
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly HashSet<string> _reachableHashes = new();
         private readonly ConcurrentDictionary<string, Tracker.Hash> _containerRoots = new();
 
         public TrackerRpc(FilesystemManager filesystemManager)
@@ -38,10 +37,12 @@ namespace tracker
         {
             try
             {
-                string hashBase64 = request.Data.ToBase64();
-                if (_filesystemManager.ObjectByHash.TryGetValue(ByteString.FromBase64(hashBase64), out var rootObject))
+                if (_filesystemManager.ObjectByHash.ContainsKey(request.Data))
                 {
-                    await responseStream.WriteAsync(rootObject);
+                    foreach (var o in _filesystemManager.GetObjectTree(request.Data))
+                    {
+                        await responseStream.WriteAsync(o);
+                    }
                 }
                 else
                 {
@@ -75,16 +76,20 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> MarkReachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkReachable(IAsyncStreamReader<MarkRequest> requestStream, ServerCallContext context)
         {
             try
             {
-                await foreach (var hash in requestStream.ReadAllAsync())
+                await foreach (var req in requestStream.ReadAllAsync())
                 {
-                    string hashBase64 = hash.Data.ToBase64();
-                    lock (_reachableHashes)
+                    string hashBase64 = req.Hash.ToBase64();
+                    if (_peers.TryGetValue(hashBase64, out List<string>? value))
                     {
-                        _reachableHashes.Add(hashBase64);
+                        value.Add(req.Peer);
+                    }
+                    else
+                    {
+                        _peers[hashBase64] = [req.Peer];
                     }
                 }
                 return new Empty();
@@ -96,17 +101,14 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> MarkUnreachable(IAsyncStreamReader<Hash> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkUnreachable(IAsyncStreamReader<MarkRequest> requestStream, ServerCallContext context)
         {
             try
             {
-                await foreach (var hash in requestStream.ReadAllAsync())
+                await foreach (var req in requestStream.ReadAllAsync())
                 {
-                    string hashBase64 = hash.Data.ToBase64();
-                    lock (_reachableHashes)
-                    {
-                        _reachableHashes.Remove(hashBase64);
-                    }
+                    string hashBase64 = req.Hash.ToBase64();
+                    _peers[hashBase64].Remove(req.Peer);
                 }
                 return new Empty();
             }
