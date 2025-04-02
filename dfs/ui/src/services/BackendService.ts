@@ -19,21 +19,17 @@ export interface DriveData {
 }
 
 import { GetNodeService } from "@/IpcService/INodeService";
-// Import the types and mock data
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
 import { fs } from "@/types/filesystem";
 
-// Mock implementation for development
 class BackendService implements BackendServiceInterface {
   async publishToTracker(
     containerId: string,
     trackerUri: string,
   ): Promise<boolean> {
-    console.log(
-      `[MOCK] Publishing container ${containerId} to tracker ${trackerUri}`,
-    );
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log(`Publishing container ${containerId} to tracker ${trackerUri}`);
+    const service = await GetNodeService();
+    await service.PublishToTracker(containerId, trackerUri);
     return true;
   }
 
@@ -42,16 +38,13 @@ class BackendService implements BackendServiceInterface {
     trackerUri: string,
     destination?: string,
   ): Promise<boolean> {
+    destination = destination ?? "";
     console.log(
-      `[MOCK] Downloading container ${containerGuid} from tracker ${trackerUri}`,
+      `Downloading container ${containerGuid} from tracker ${trackerUri} into ${destination}`,
     );
-    if (destination) {
-      console.log(`[MOCK] Saving to destination: ${destination}`);
-    } else {
-      console.log(`[MOCK] Saving to default location`);
-    }
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const service = await GetNodeService();
+    await service.DownloadContainer(containerGuid, trackerUri, destination, 20);
     return true;
   }
 

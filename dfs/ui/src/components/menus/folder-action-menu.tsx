@@ -14,10 +14,10 @@ import type { Folder } from "../../lib/types";
 
 interface FolderActionMenuProps {
   folder: Folder;
-  onRenameClick?: (folder: Folder, e: React.MouseEvent) => void;
-  onMoveClick?: (folder: Folder, e: React.MouseEvent) => void;
-  onDeleteClick?: (folder: Folder, e: React.MouseEvent) => void;
-  onShareClick?: (folder: Folder, e: React.MouseEvent) => void;
+  onRenameClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
+  onMoveClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
+  onDeleteClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
+  onShareClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
 }
 
 export function FolderActionMenu({
@@ -38,44 +38,44 @@ export function FolderActionMenu({
       <DropdownMenuContent align="end">
         {onShareClick && (
           <DropdownMenuItem
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              onShareClick(folder, e);
+              if (onShareClick) await onShareClick(folder, e);
             }}
           >
             Share
           </DropdownMenuItem>
         )}
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            navigator.clipboard.writeText(folder.id);
-            console.log(`Copied folder GUID: ${folder.id}`);
+            await navigator.clipboard.writeText(folder.containerGuid);
+            console.log(`Copied folder GUID: ${folder.containerGuid}`);
           }}
         >
           Copy container GUID
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onRenameClick?.(folder, e);
+            if (onRenameClick) await onRenameClick(folder, e);
           }}
         >
           Rename
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onMoveClick?.(folder, e);
+            if (onMoveClick) await onMoveClick(folder, e);
           }}
         >
           Move to
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive"
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onDeleteClick?.(folder, e);
+            if (onDeleteClick) await onDeleteClick(folder, e);
           }}
         >
           Delete

@@ -17,11 +17,13 @@ namespace node.IpcService
         private UiService? service;
         private NodeState state;
         private NodeRpc rpc;
+        private Func<UI?> getUI;
 
-        public NodeService(NodeState state, NodeRpc rpc)
+        public NodeService(NodeState state, NodeRpc rpc, Func<UI?> getUI)
         {
             this.state = state;
             this.rpc = rpc;
+            this.getUI = getUI;
         }
 
         public void RegisterUiService(dynamic service)
@@ -30,6 +32,23 @@ namespace node.IpcService
         }
 
         public string PickObjectPath(bool folder)
+        {
+            var ui = getUI();
+            if (ui == null)
+            {
+                throw new NullReferenceException();
+            }
+
+            string result = "";
+            ui.Invoke(() =>
+            {
+                result = PickObjectPathInternal(folder);
+            });
+
+            return result;
+        }
+
+        private static string PickObjectPathInternal(bool folder)
         {
             if (folder)
             {

@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -10,7 +9,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { FolderUp } from "lucide-react";
-import { useRef } from "react";
+import { GetNodeService } from "@/IpcService/INodeService";
 
 interface UploadDialogProps {
   open: boolean;
@@ -18,21 +17,12 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // In a real app, you would handle the selected files here
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    console.log("Selected files:", files);
-
-    // Close the dialog after files are selected
-    if (files.length > 0) {
-      onOpenChange(false);
-    }
+  const handleFileSelect = async () => {
+    console.log("picking...");
+    const service = await GetNodeService();
+    const path = await service.PickObjectPath(true);
+    console.log(`got: ${path}`);
+    await service.ImportObjectFromDisk(path, 1024);
   };
 
   return (
@@ -59,13 +49,6 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
               <FolderUp className="mr-2 h-4 w-4" />
               Choose files
             </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              multiple
-              onChange={handleFileInputChange}
-            />
           </div>
         </div>
       </DialogContent>

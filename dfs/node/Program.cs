@@ -36,8 +36,9 @@ namespace node
                 Console.WriteLine($"Server is listening on {port.Host}:{port.BoundPort}");
             }
 
-            NodeService service = new(state, rpc);
-            service.ImportObjectFromDisk(@"C:\\Users\\as\\Documents\\paint.net App Files", 1024);
+            UI? ui = null;
+            NodeService service = new(state, rpc, () => ui);
+            ui = new UI(service);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
 #if !DEBUG
@@ -50,7 +51,7 @@ namespace node
             });
             Cef.Initialize(settings);
 #endif
-            System.Windows.Forms.Application.Run(new UI(service));
+            System.Windows.Forms.Application.Run(ui);
             server.ShutdownAsync().Wait();
         }
     }

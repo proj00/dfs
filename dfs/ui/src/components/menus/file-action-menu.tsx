@@ -14,17 +14,15 @@ import type { File } from "../../lib/types";
 
 interface FileActionMenuProps {
   file: File;
-  onOpenClick?: (file: File, e: React.MouseEvent) => void;
-  onDownloadClick?: (file: File, e: React.MouseEvent) => void;
-  onRenameClick?: (file: File, e: React.MouseEvent) => void;
-  onMoveClick?: (file: File, e: React.MouseEvent) => void;
-  onDeleteClick?: (file: File, e: React.MouseEvent) => void;
+  onOpenClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
+  onRenameClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
+  onMoveClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
+  onDeleteClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
 }
 
 export function FileActionMenu({
   file,
   onOpenClick,
-  onDownloadClick,
   onRenameClick,
   onMoveClick,
   onDeleteClick,
@@ -39,51 +37,43 @@ export function FileActionMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onOpenClick?.(file, e);
+            if (onOpenClick) await onOpenClick(file, e);
           }}
         >
           Open
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onDownloadClick?.(file, e);
-          }}
-        >
-          Download
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(file.id);
-            console.log(`Copied file GUID: ${file.id}`);
+            await navigator.clipboard.writeText(file.containerGuid);
+            console.log(`Copied file GUID: ${file.containerGuid}`);
           }}
         >
           Copy container GUID
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onRenameClick?.(file, e);
+            if (onRenameClick) await onRenameClick(file, e);
           }}
         >
           Rename
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onMoveClick?.(file, e);
+            if (onMoveClick) await onMoveClick(file, e);
           }}
         >
           Move to
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive"
-          onClick={(e) => {
+          onClick={async (e) => {
             e.stopPropagation();
-            onDeleteClick?.(file, e);
+            if (onDeleteClick) await onDeleteClick(file, e);
           }}
         >
           Delete

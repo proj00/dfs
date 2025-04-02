@@ -21,6 +21,7 @@ import {
 } from "./ui/dialog";
 import { backendService } from "../services/BackendService";
 import type { Folder } from "../lib/types";
+import { GetNodeService } from "@/IpcService/INodeService";
 
 interface SidebarProps {
   currentFolder: string | null;
@@ -180,7 +181,10 @@ export function Sidebar({
               >
                 <option value="">Select a container</option>
                 {rootFolders.map((folder) => (
-                  <option key={folder.id} value={folder.id}>
+                  <option
+                    key={folder.containerGuid}
+                    value={folder.containerGuid}
+                  >
                     {folder.name}
                   </option>
                 ))}
@@ -251,10 +255,12 @@ export function Sidebar({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={async () => {
                     // In a real app, this would open a directory picker
                     console.log("Opening directory picker...");
-                    setDownloadDestination("/selected/directory/path");
+                    const service = await GetNodeService();
+                    const path = await service.PickObjectPath(true);
+                    setDownloadDestination(path);
                   }}
                 >
                   Browse...

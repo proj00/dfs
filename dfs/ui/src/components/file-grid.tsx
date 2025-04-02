@@ -3,8 +3,15 @@
 import { ChevronLeft } from "lucide-react";
 import { Button } from "./ui/button";
 import type { File, Folder } from "../lib/types";
-import { FolderActionMenu } from "./menus/folder-action-menu";
 import { FileActionMenu } from "./menus/file-action-menu";
+import { FolderActionMenu } from "./menus/folder-action-menu";
+import {
+  handleRename,
+  handleMove,
+  handleDelete,
+  handleShare,
+  handleFileOpen,
+} from "@/lib/file-handlers";
 
 interface FileGridProps {
   files: File[];
@@ -23,37 +30,6 @@ export function FileGrid({
   navigateToFolder,
   navigateToParent,
 }: FileGridProps) {
-  // Example handlers for file and folder actions
-  const handleFileOpen = (file: File) => {
-    console.log(`Opening file: ${file.name} (${file.type})`);
-    // Implement file opening logic
-  };
-
-  const handleFileDownload = (file: File) => {
-    console.log(`Downloading file: ${file.name}, size: ${file.size} bytes`);
-    // Implement file download logic
-  };
-
-  const handleRename = (item: File | Folder) => {
-    console.log(`Renaming: ${item.name} (${item.id})`);
-    // Implement rename logic
-  };
-
-  const handleMove = (item: File | Folder) => {
-    console.log(`Moving: ${item.name} to a new location`);
-    // Implement move logic
-  };
-
-  const handleDelete = (item: File | Folder) => {
-    console.log(`Deleting: ${item.name} (${item.id})`);
-    // Implement delete logic
-  };
-
-  const handleShare = (folder: Folder) => {
-    console.log(`Sharing folder: ${folder.name} (${folder.id})`);
-    // Implement share logic
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center">
@@ -210,7 +186,6 @@ export function FileGrid({
                 <FileActionMenu
                   file={file}
                   onOpenClick={handleFileOpen}
-                  onDownloadClick={handleFileDownload}
                   onRenameClick={handleRename}
                   onMoveClick={handleMove}
                   onDeleteClick={handleDelete}
