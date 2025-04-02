@@ -31,13 +31,10 @@ namespace node
 
             server.Start();
 
-            foreach (var port in server.Ports)
-            {
-                Console.WriteLine($"Server is listening on {port.Host}:{port.BoundPort}");
-            }
-
+            ServerPort port = server.Ports.First();
             UI? ui = null;
-            NodeService service = new(state, rpc, () => ui);
+            NodeService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
+
             ui = new UI(service);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
