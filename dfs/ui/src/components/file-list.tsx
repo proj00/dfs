@@ -1,18 +1,32 @@
-"use client"
+"use client";
 
-import { ChevronLeft, MoreHorizontal } from "lucide-react"
-import { Button } from "./ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
-import type { File, Folder } from "../lib/types"
-import { formatFileSize, formatDate } from "../lib/utils"
+import { useState, useEffect } from "react";
+import { ChevronLeft, MoreHorizontal } from "lucide-react";
+import { Button } from "./ui/button";
+import { DownloadToast } from "./ui/download-toast";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import type { File, Folder } from "../lib/types";
+import { formatFileSize, formatDate } from "../lib/utils";
 
 interface FileListProps {
-    files: File[]
-    folders: Folder[]
-    currentFolder: string | null
-    currentFolderName: string
-    navigateToFolder: (folderId: string | null) => void
-    navigateToParent: () => void
+    files: File[];
+    folders: Folder[];
+    currentFolder: string | null;
+    currentFolderName: string;
+    navigateToFolder: (folderId: string | null) => void;
+    navigateToParent: () => void;
+}
+
+interface DownloadingFile {
+    id: string;
+    name: string;
+    sizeMB: number;
+    progress: number;
 }
 
 export function FileList({
@@ -23,6 +37,46 @@ export function FileList({
     navigateToFolder,
     navigateToParent,
 }: FileListProps) {
+    const [downloadingFiles, setDownloadingFiles] = useState<DownloadingFile[]>([]);
+
+    const handleDownload = (file: File) => {
+        if (!downloadingFiles.find((f) => f.id === file.id)) {
+            setDownloadingFiles((prev) => [
+                ...prev,
+                {
+                    id: file.id,
+                    name: file.name,
+                    sizeMB: file.size / (1024 * 1024),
+                    progress: 0,
+                },
+            ]);
+        }
+    };
+
+    const handleCloseToast = (fileId: string) => {
+        setDownloadingFiles((prev) => prev.filter((f) => f.id !== fileId));
+    };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDownloadingFiles((prev) =>
+                prev
+                    .map((file) => {
+                        const fakeSpeed = 0.2;
+                        const added = (fakeSpeed / file.sizeMB) * 100;
+                        const nextProgress = file.progress + added;
+                        return {
+                            ...file,
+                            progress: nextProgress >= 100 ? 100 : nextProgress,
+                        };
+                    })
+                    .filter((f) => f.progress < 100)
+            );
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="space-y-4">
             <div className="flex items-center">
@@ -62,7 +116,9 @@ export function FileList({
                             </svg>
                             <p>This folder is empty</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">Files and folders you add to this location will appear here</p>
+                        <p className="text-sm text-muted-foreground">
+                            Files and folders you add to this location will appear here
+                        </p>
                     </div>
                 )}
 
@@ -106,17 +162,18 @@ export function FileList({
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem
                                             onClick={(e) => {
-                                                e.stopPropagation()
-                                                navigator.clipboard.writeText(folder.id)
-                                                // You could add a toast notification here
-                                                console.log(`Copied folder GUID: ${folder.id}`)
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(folder.id);
+                                                console.log(`Copied folder GUID: ${folder.id}`);
                                             }}
                                         >
                                             Copy container GUID
                                         </DropdownMenuItem>
                                         <DropdownMenuItem>Rename</DropdownMenuItem>
                                         <DropdownMenuItem>Move to</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive">
+                                            Delete
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -131,66 +188,21 @@ export function FileList({
                     >
                         <div className="col-span-6 flex items-center">
                             <div className="h-10 w-10 flex items-center justify-center mr-3">
-                                {file.type === "image" ? (
-                                    <div className="h-10 w-10 bg-muted rounded overflow-hidden">
-                                        <img
-                                            src={file.thumbnail || "/placeholder.svg?height=40&width=40"}
-                                            alt={file.name}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                ) : file.type === "document" ? (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-6 w-6 text-blue-500"
-                                    >
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                ) : file.type === "spreadsheet" ? (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-6 w-6 text-green-500"
-                                    >
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                        <path d="M8 13h8" />
-                                        <path d="M8 17h8" />
-                                        <path d="M8 9h1" />
-                                    </svg>
-                                ) : (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="24"
-                                        height="24"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        className="h-6 w-6 text-gray-500"
-                                    >
-                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                )}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="h-6 w-6 text-gray-500"
+                                >
+                                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
                             </div>
                             <span className="truncate">{file.name}</span>
                         </div>
@@ -208,28 +220,39 @@ export function FileList({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem>Open</DropdownMenuItem>
-                                        <DropdownMenuItem>Download</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDownload(file)}>
+                                            Download
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={(e) => {
-                                                e.stopPropagation()
-                                                navigator.clipboard.writeText(file.id)
-                                                // You could add a toast notification here
-                                                console.log(`Copied file GUID: ${file.id}`)
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(file.id);
+                                                console.log(`Copied file GUID: ${file.id}`);
                                             }}
                                         >
                                             Copy container GUID
                                         </DropdownMenuItem>
                                         <DropdownMenuItem>Rename</DropdownMenuItem>
                                         <DropdownMenuItem>Move to</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive">
+                                            Delete
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                         </div>
                     </div>
                 ))}
+                {downloadingFiles.map((file) => (
+                    <DownloadToast
+                        key={file.id}
+                        filename={file.name}
+                        fileSizeMB={file.sizeMB}
+                        progress={file.progress}
+                        onClose={() => handleCloseToast(file.id)}
+                    />
+                ))}
             </div>
         </div>
-    )
+    );
 }
-
