@@ -1,3 +1,4 @@
+import { GetNodeService } from "@/IpcService/INodeService";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -50,4 +51,9 @@ export function formatDate(dateString: string): string {
 
 export function toBase64(array: Uint8Array): string {
   return btoa(String.fromCharCode(...array));
+}
+
+export async function copyToClipboard(str: string): Promise<void> {
+  const service = await GetNodeService();
+  await service.CopyToClipboard(str);
 }

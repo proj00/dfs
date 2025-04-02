@@ -95,6 +95,20 @@ namespace node.IpcService
             return state.Manager.Container.Select(guid => guid.Key.ToString()).ToArray();
         }
 
+        public void CopyToClipboard(string str)
+        {
+            var ui = getUI();
+            if (ui == null)
+            {
+                throw new NullReferenceException();
+            }
+
+            ui.Invoke(() =>
+            {
+                Clipboard.SetText(str);
+            });
+        }
+
         public (long current, long total) GetDownloadProgress(string base64Hash)
         {
             return state.FileProgress[ByteString.FromBase64(base64Hash)];

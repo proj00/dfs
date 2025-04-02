@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { File } from "../../lib/types";
+import { copyToClipboard } from "@/lib/utils";
 
 interface FileActionMenuProps {
   file: File;
@@ -47,7 +48,7 @@ export function FileActionMenu({
         <DropdownMenuItem
           onClick={async (e) => {
             e.stopPropagation();
-            await navigator.clipboard.writeText(file.containerGuid);
+            await copyToClipboard(file.containerGuid);
             console.log(`Copied file GUID: ${file.containerGuid}`);
           }}
         >

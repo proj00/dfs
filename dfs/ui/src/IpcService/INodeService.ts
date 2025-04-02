@@ -20,6 +20,7 @@ export interface INodeService {
     destinationDir: string,
     maxConcurrentChunks: number,
   ) => Promise<void>;
+  CopyToClipboard: (str: string) => Promise<void>;
 }
 
 // make TS shut up (again; UI::browser makes this available after BindObjectAsync)

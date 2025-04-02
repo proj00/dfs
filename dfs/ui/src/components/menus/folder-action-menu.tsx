@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { Folder } from "../../lib/types";
+import { copyToClipboard } from "@/lib/utils";
 
 interface FolderActionMenuProps {
   folder: Folder;
@@ -49,7 +50,7 @@ export function FolderActionMenu({
         <DropdownMenuItem
           onClick={async (e) => {
             e.stopPropagation();
-            await navigator.clipboard.writeText(folder.containerGuid);
+            await copyToClipboard(folder.containerGuid);
             console.log(`Copied folder GUID: ${folder.containerGuid}`);
           }}
         >
