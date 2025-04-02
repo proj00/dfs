@@ -8,15 +8,22 @@ using System.Text;
 using System.Threading.Tasks;
 using Tracker;
 using Google.Protobuf;
+using common;
+
 
 namespace tracker
 {
     public class TrackerRpc : Tracker.Tracker.TrackerBase
     {
-        private readonly ConcurrentDictionary<string, ObjectWithHash> _objects = new();
+        private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly HashSet<string> _reachableHashes = new();
         private readonly ConcurrentDictionary<string, Tracker.Hash> _containerRoots = new();
+
+        public TrackerRpc(FilesystemManager filesystemManager)
+        {
+            _filesystemManager = filesystemManager;
+        }
 
         public override Task<Hash> GetContainerRootHash(ContainerGuid request, ServerCallContext context)
         {
@@ -32,7 +39,7 @@ namespace tracker
             try
             {
                 string hashBase64 = request.Data.ToBase64();
-                if (_objects.TryGetValue(hashBase64, out var rootObject))
+                if (_filesystemManager.ObjectByHash.TryGetValue(ByteString.FromBase64(hashBase64), out var rootObject))
                 {
                     await responseStream.WriteAsync(rootObject);
                 }
@@ -117,7 +124,7 @@ namespace tracker
                 await foreach (var obj in requestStream.ReadAllAsync())
                 {
                     string hashBase64 = obj.Hash.ToBase64();
-                    _objects[hashBase64] = obj;
+                    _filesystemManager.ObjectByHash[ByteString.FromBase64(hashBase64)] = obj;
                 }
                 return new Empty();
             }
@@ -141,6 +148,13 @@ namespace tracker
         public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
         {
             _containerRoots[request.Guid] = request.Hash;
+            return Task.FromResult(new Empty());
+        }
+
+        public override Task<Empty> DeleteObjectHash(Hash request, ServerCallContext context)
+        {
+            string hashBase64 = request.Data.ToBase64();
+            _filesystemManager.ObjectByHash.TryRemove(ByteString.FromBase64(hashBase64), out _);
             return Task.FromResult(new Empty());
         }
     }

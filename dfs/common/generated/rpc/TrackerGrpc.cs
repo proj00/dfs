@@ -116,6 +116,14 @@ namespace Tracker {
         __Marshaller_tracker_ContainerRootHash,
         __Marshaller_tracker_Empty);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.Hash, global::Tracker.Empty> __Method_DeleteObjectHash = new grpc::Method<global::Tracker.Hash, global::Tracker.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "DeleteObjectHash",
+        __Marshaller_tracker_Hash,
+        __Marshaller_tracker_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -164,6 +172,12 @@ namespace Tracker {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::Tracker.Empty> SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.Empty> DeleteObjectHash(global::Tracker.Hash request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -287,6 +301,26 @@ namespace Tracker {
       {
         return CallInvoker.AsyncUnaryCall(__Method_SetContainerRootHash, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Empty DeleteObjectHash(global::Tracker.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return DeleteObjectHash(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.Empty DeleteObjectHash(global::Tracker.Hash request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_DeleteObjectHash, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Empty> DeleteObjectHashAsync(global::Tracker.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return DeleteObjectHashAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.Empty> DeleteObjectHashAsync(global::Tracker.Hash request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_DeleteObjectHash, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override TrackerClient NewInstance(ClientBaseConfiguration configuration)
@@ -307,7 +341,8 @@ namespace Tracker {
           .AddMethod(__Method_MarkUnreachable, serviceImpl.MarkUnreachable)
           .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList)
           .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
-          .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash).Build();
+          .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash)
+          .AddMethod(__Method_DeleteObjectHash, serviceImpl.DeleteObjectHash).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -324,6 +359,7 @@ namespace Tracker {
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(serviceImpl.GetPeerList));
       serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerGuid, global::Tracker.Hash>(serviceImpl.GetContainerRootHash));
       serviceBinder.AddMethod(__Method_SetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerRootHash, global::Tracker.Empty>(serviceImpl.SetContainerRootHash));
+      serviceBinder.AddMethod(__Method_DeleteObjectHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.Hash, global::Tracker.Empty>(serviceImpl.DeleteObjectHash));
     }
 
   }
