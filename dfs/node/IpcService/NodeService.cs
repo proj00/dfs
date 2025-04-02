@@ -181,14 +181,13 @@ namespace node.IpcService
         {
             var tracker = new TrackerWrapper(uri, state);
             var hash = await tracker.GetContainerRootHash(Guid.Parse(container));
-            await DownloadObjectByHash(hash.ToBase64(), tracker, destinationDir, maxConcurrentChunks);
+            await DownloadObjectByHash(hash, Guid.Parse(container), tracker, destinationDir, maxConcurrentChunks);
         }
 
-        private async Task DownloadObjectByHash(string base64Hash, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHash(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
-            var hash = ByteString.FromBase64(base64Hash);
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
-            state.Manager.CreateObjectContainer(objects.ToArray(), hash);
+            state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
 
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects

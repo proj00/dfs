@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FileGrid } from "./file-grid";
 import { FileList } from "./file-list";
 import { Header } from "./header";
@@ -21,7 +21,7 @@ export function Drive() {
   const POLLING_INTERVAL = 5000;
 
   // Function to fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setError(null);
       const data = await backendService.fetchDriveData();
@@ -33,7 +33,7 @@ export function Drive() {
       setError("Failed to load drive data. Please try again.");
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Initial data fetch
   useEffect(() => {
@@ -44,7 +44,7 @@ export function Drive() {
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchData]);
 
   // Filter files based on current folder and search query
   const filteredFiles = files.filter((file) => {
@@ -88,6 +88,18 @@ export function Drive() {
     setCurrentFolder(parentFolder);
   };
 
+  // Handle container download completion
+  const handleContainerDownloaded = useCallback(() => {
+    console.log("Container downloaded, refreshing data...");
+    fetchData();
+  }, [fetchData]);
+
+  // Handle container publish completion
+  const handleContainerPublished = useCallback(() => {
+    console.log("Container published, refreshing data...");
+    fetchData();
+  }, [fetchData]);
+
   return (
     <div className="flex h-screen flex-col">
       <Header
@@ -101,7 +113,9 @@ export function Drive() {
         <Sidebar
           currentFolder={currentFolder}
           navigateToFolder={navigateToFolder}
-          folders={folders} // Pass folders to Sidebar
+          folders={folders}
+          onContainerDownloaded={handleContainerDownloaded}
+          onContainerPublished={handleContainerPublished}
         />
         <main className="flex-1 overflow-auto p-4">
           {error && (

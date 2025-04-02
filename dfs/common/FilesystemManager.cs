@@ -27,7 +27,7 @@ namespace common
             NewerVersion = [];
         }
 
-        public Guid CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject)
+        public Guid CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid? guid = null)
         {
             foreach (var obj in objects)
             {
@@ -57,9 +57,9 @@ namespace common
                 }
             }
 
-            var guid = Guid.NewGuid();
-            Container[guid] = rootObject;
-            return guid;
+            var g = guid ?? Guid.NewGuid();
+            Container[g] = rootObject;
+            return g;
         }
 
         public List<ObjectWithHash> GetContainerTree(Guid containerGuid)

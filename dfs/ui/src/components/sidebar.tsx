@@ -26,16 +26,20 @@ import { GetNodeService } from "@/IpcService/INodeService";
 interface SidebarProps {
   currentFolder: string | null;
   navigateToFolder: (folderId: string | null) => void;
-  folders: Folder[]; // Add folders prop
+  folders: Folder[];
+  onContainerDownloaded?: () => void; // Add callback for container download
+  onContainerPublished?: () => void; // Add callback for container publish
 }
 
 export function Sidebar({
   currentFolder,
   navigateToFolder,
   folders,
+  onContainerDownloaded,
+  onContainerPublished,
 }: SidebarProps) {
   // Get root folders from the passed folders prop
-  const rootFolders = folders.filter((folder) => folder.parentId === null);
+  const rootFolders = folders.filter((folder) => folder.parentId.length === 0);
 
   // State for publish dialog
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -49,41 +53,77 @@ export function Sidebar({
   const [downloadTrackerUri, setDownloadTrackerUri] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadDestination, setDownloadDestination] = useState<string>("");
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean | null>(null);
+
+  // Add state for publish success/error
+  const [publishSuccess, setPublishSuccess] = useState<boolean | null>(null);
 
   // Handle publish to tracker
   const handlePublish = async () => {
     if (!selectedContainer || !publishTrackerUri) return;
 
     setIsPublishing(true);
+    setPublishSuccess(null);
+
     try {
       await backendService.publishToTracker(
         selectedContainer,
         publishTrackerUri,
       );
-      setPublishDialogOpen(false);
+      setPublishSuccess(true);
+
+      // Close dialog after a short delay to show success state
+      setTimeout(() => {
+        setPublishDialogOpen(false);
+        setSelectedContainer("");
+        setPublishTrackerUri("");
+        setPublishSuccess(null);
+
+        // Trigger refresh of container list
+        if (onContainerPublished) {
+          onContainerPublished();
+        }
+      }, 1500);
     } catch (error) {
       console.error("Failed to publish:", error);
+      setPublishSuccess(false);
     } finally {
       setIsPublishing(false);
     }
   };
-
-  // Update the handleDownload function to include the destination
 
   // Handle download container
   const handleDownload = async () => {
     if (!downloadContainerGuid || !downloadTrackerUri) return;
 
     setIsDownloading(true);
+    setDownloadSuccess(null);
+
     try {
       await backendService.downloadContainer(
         downloadContainerGuid,
         downloadTrackerUri,
         downloadDestination || undefined,
       );
-      setDownloadDialogOpen(false);
+
+      setDownloadSuccess(true);
+
+      // Close dialog after a short delay to show success state
+      setTimeout(() => {
+        setDownloadDialogOpen(false);
+        setDownloadContainerGuid("");
+        setDownloadTrackerUri("");
+        setDownloadDestination("");
+        setDownloadSuccess(null);
+
+        // Trigger refresh of container list
+        if (onContainerDownloaded) {
+          onContainerDownloaded();
+        }
+      }, 1500);
     } catch (error) {
       console.error("Failed to download:", error);
+      setDownloadSuccess(false);
     } finally {
       setIsDownloading(false);
     }
@@ -162,7 +202,17 @@ export function Sidebar({
       </div>
 
       {/* Publish to Tracker Dialog */}
-      <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+      <Dialog
+        open={publishDialogOpen}
+        onOpenChange={(open) => {
+          if (!isPublishing) {
+            setPublishDialogOpen(open);
+            if (!open) {
+              setPublishSuccess(null);
+            }
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Publish to Tracker</DialogTitle>
@@ -171,6 +221,43 @@ export function Sidebar({
               container.
             </DialogDescription>
           </DialogHeader>
+
+          {publishSuccess === true && (
+            <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Container published successfully!
+            </div>
+          )}
+
+          {publishSuccess === false && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Failed to publish container. Please try again.
+            </div>
+          )}
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <div className="text-right text-sm font-medium">Container</div>
@@ -178,6 +265,7 @@ export function Sidebar({
                 value={selectedContainer}
                 onChange={(e) => setSelectedContainer(e.target.value)}
                 className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                disabled={isPublishing}
               >
                 <option value="">Select a container</option>
                 {rootFolders.map((folder) => (
@@ -197,6 +285,7 @@ export function Sidebar({
                 onChange={(e) => setPublishTrackerUri(e.target.value)}
                 placeholder="Enter tracker URI"
                 className="col-span-3"
+                disabled={isPublishing}
               />
             </div>
           </div>
@@ -208,14 +297,50 @@ export function Sidebar({
                 !selectedContainer || !publishTrackerUri || isPublishing
               }
             >
-              {isPublishing ? "Publishing..." : "Publish"}
+              {isPublishing ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Publishing...
+                </span>
+              ) : (
+                "Publish"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Download Container Dialog */}
-      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+      <Dialog
+        open={downloadDialogOpen}
+        onOpenChange={(open) => {
+          if (!isDownloading) {
+            setDownloadDialogOpen(open);
+            if (!open) {
+              setDownloadSuccess(null);
+            }
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Download Container</DialogTitle>
@@ -223,6 +348,43 @@ export function Sidebar({
               Enter a container GUID and tracker URI to download a container.
             </DialogDescription>
           </DialogHeader>
+
+          {downloadSuccess === true && (
+            <div className="bg-green-50 text-green-700 p-3 rounded-md mb-4 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Container downloaded successfully!
+            </div>
+          )}
+
+          {downloadSuccess === false && (
+            <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Failed to download container. Please try again.
+            </div>
+          )}
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <div className="text-right text-sm font-medium">
@@ -233,6 +395,7 @@ export function Sidebar({
                 onChange={(e) => setDownloadContainerGuid(e.target.value)}
                 placeholder="Enter container GUID"
                 className="col-span-3"
+                disabled={isDownloading}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -242,6 +405,7 @@ export function Sidebar({
                 onChange={(e) => setDownloadTrackerUri(e.target.value)}
                 placeholder="Enter tracker URI"
                 className="col-span-3"
+                disabled={isDownloading}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -251,6 +415,7 @@ export function Sidebar({
                   value={downloadDestination || "Default location"}
                   readOnly
                   className="flex-1"
+                  disabled={isDownloading}
                 />
                 <Button
                   variant="outline"
@@ -261,7 +426,9 @@ export function Sidebar({
                     const service = await GetNodeService();
                     const path = await service.PickObjectPath(true);
                     setDownloadDestination(path);
+                    console.log(`picked: ${path}`);
                   }}
+                  disabled={isDownloading}
                 >
                   Browse...
                 </Button>
@@ -276,7 +443,33 @@ export function Sidebar({
                 !downloadContainerGuid || !downloadTrackerUri || isDownloading
               }
             >
-              {isDownloading ? "Downloading..." : "Download"}
+              {isDownloading ? (
+                <span className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Downloading...
+                </span>
+              ) : (
+                "Download"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

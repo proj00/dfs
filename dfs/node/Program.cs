@@ -1,6 +1,8 @@
 using node.IpcService;
 using CefSharp;
 using Grpc.Core;
+using CefSharp.WinForms;
+using node.UiResourceLoading;
 
 namespace node
 {
@@ -35,19 +37,21 @@ namespace node
             UI? ui = null;
             NodeService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
 
-            ui = new UI(service);
-
             CefSharpSettings.ConcurrentTaskExecution = true;
-#if !DEBUG
             var settings = new CefSettings();
+            settings.RootCachePath = AppDomain.CurrentDomain.BaseDirectory + "\\" + Guid.NewGuid();
+#if !DEBUG
             settings.RegisterScheme(new CefCustomScheme()
             {
                 SchemeName = "http",
                 DomainName = "ui.resources",
                 SchemeHandlerFactory = new UiResourceHandlerFactory(),
             });
-            Cef.Initialize(settings);
 #endif
+            Cef.Initialize(settings);
+
+            ui = new UI(service);
+
             System.Windows.Forms.Application.Run(ui);
             server.ShutdownAsync().Wait();
         }
