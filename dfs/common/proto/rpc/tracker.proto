@@ -8,8 +8,8 @@ service Tracker
 {
 	rpc Publish(stream fs.ObjectWithHash) returns (Empty);
 	rpc GetObjectTree(Hash) returns (stream fs.ObjectWithHash);
-	rpc MarkReachable(stream Hash) returns (Empty);
-	rpc MarkUnreachable(stream Hash) returns (Empty);
+	rpc MarkReachable(stream MarkRequest) returns (Empty);
+	rpc MarkUnreachable(stream MarkRequest) returns (Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
 	rpc GetContainerRootHash(ContainerGuid) returns (Hash);
 	rpc SetContainerRootHash(ContainerRootHash) returns (Empty);
@@ -46,4 +46,10 @@ message Hash
 message PeerResponse
 {
 	string peer = 1;
+}
+
+message MarkRequest
+{
+	string peer = 1;
+	bytes hash = 2;
 }

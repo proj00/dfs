@@ -172,7 +172,7 @@ namespace node.IpcService
             {
                 foreach (var chunk in file.File.Hashes.Hash)
                 {
-                    await tracker.MarkReachable(chunk);
+                    await tracker.MarkReachable(chunk, nodeURI);
                 }
             }
         }
@@ -251,7 +251,7 @@ namespace node.IpcService
                     }
                 }
 
-                await tracker.MarkReachable(hash);
+                await tracker.MarkReachable(hash, nodeURI);
             }
             finally
             {

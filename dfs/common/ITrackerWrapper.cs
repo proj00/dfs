@@ -10,8 +10,8 @@ namespace common
         Task<Empty> Publish(List<ObjectWithHash> objects);
         Task<List<string>> GetPeerList(PeerRequest request);
 
-        Task<Empty> MarkReachable(ByteString hash);
-        Task<Empty> MarkUnreachable(ByteString hash);
+        Task<Empty> MarkReachable(ByteString hash, string nodeURI);
+        Task<Empty> MarkUnreachable(ByteString hash, string nodeURI);
 
         Task<ByteString> GetContainerRootHash(Guid containerGuid);
         Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash);

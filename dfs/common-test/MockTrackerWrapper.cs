@@ -52,7 +52,7 @@ namespace common_test
             return [];
         }
 
-        public async Task<Empty> MarkReachable(ByteString hash)
+        public async Task<Empty> MarkReachable(ByteString hash, string nodeURI)
         {
             if (!peers.ContainsKey(hash))
             {
@@ -62,7 +62,7 @@ namespace common_test
             return new();
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString hash)
+        public async Task<Empty> MarkUnreachable(ByteString hash, string nodeURI)
         {
             peers[hash] = [];
             return new();
