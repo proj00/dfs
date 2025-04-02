@@ -7,6 +7,7 @@ export interface BackendServiceInterface {
   downloadContainer: (
     containerGuid: string,
     trackerUri: string,
+    destination?: string,
   ) => Promise<boolean>;
   fetchDriveData: () => Promise<DriveData>;
 }
@@ -39,10 +40,16 @@ class BackendService implements BackendServiceInterface {
   async downloadContainer(
     containerGuid: string,
     trackerUri: string,
+    destination?: string,
   ): Promise<boolean> {
     console.log(
       `[MOCK] Downloading container ${containerGuid} from tracker ${trackerUri}`,
     );
+    if (destination) {
+      console.log(`[MOCK] Saving to destination: ${destination}`);
+    } else {
+      console.log(`[MOCK] Saving to default location`);
+    }
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return true;

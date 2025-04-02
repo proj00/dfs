@@ -7,6 +7,7 @@ export interface INodeService {
   RegisterUiService: (service: any) => Promise<void>;
   PickObjectPath: (pickFolder: boolean) => Promise<string>;
   GetObjectPath: (base64Hash: string) => Promise<string>;
+  RevealObjectInExplorer: (base64Hash: string) => Promise<void>;
   GetAllContainers: () => Promise<string[]>;
   GetDownloadProgress: (base64Hash: string) => Promise<any>;
   GetContainerObjects: (container: string) => Promise<Uint8Array>;

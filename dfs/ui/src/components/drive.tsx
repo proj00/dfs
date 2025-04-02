@@ -50,7 +50,7 @@ export function Drive() {
   const filteredFiles = files.filter((file) => {
     const matchesFolder = currentFolder
       ? file.parentId.find((a) => a === currentFolder) !== undefined
-      : file.parentId === null;
+      : file.parentId.length === 0;
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -61,7 +61,7 @@ export function Drive() {
   const filteredFolders = folders.filter((folder) => {
     const matchesParent = currentFolder
       ? folder.parentId.find((a) => a === currentFolder) !== undefined
-      : folder.parentId === null;
+      : folder.parentId.length === 0;
     const matchesSearch = folder.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());

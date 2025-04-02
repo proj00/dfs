@@ -47,6 +47,7 @@ export function Sidebar({
   const [downloadContainerGuid, setDownloadContainerGuid] = useState("");
   const [downloadTrackerUri, setDownloadTrackerUri] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadDestination, setDownloadDestination] = useState<string>("");
 
   // Handle publish to tracker
   const handlePublish = async () => {
@@ -66,6 +67,8 @@ export function Sidebar({
     }
   };
 
+  // Update the handleDownload function to include the destination
+
   // Handle download container
   const handleDownload = async () => {
     if (!downloadContainerGuid || !downloadTrackerUri) return;
@@ -75,6 +78,7 @@ export function Sidebar({
       await backendService.downloadContainer(
         downloadContainerGuid,
         downloadTrackerUri,
+        downloadDestination || undefined,
       );
       setDownloadDialogOpen(false);
     } catch (error) {
@@ -235,6 +239,27 @@ export function Sidebar({
                 placeholder="Enter tracker URI"
                 className="col-span-3"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <div className="text-right text-sm font-medium">Destination</div>
+              <div className="col-span-3 flex gap-2">
+                <Input
+                  value={downloadDestination || "Default location"}
+                  readOnly
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // In a real app, this would open a directory picker
+                    console.log("Opening directory picker...");
+                    setDownloadDestination("/selected/directory/path");
+                  }}
+                >
+                  Browse...
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>

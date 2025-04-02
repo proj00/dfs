@@ -43,8 +43,9 @@ export function FromObjectWithHash(
         }
 
         return (
-          obj.directory.entries.find((hash) => hash === object.hash) !==
-          undefined
+          obj.directory.entries.find((hash) => {
+            return toBase64(hash) === toBase64(object.hash);
+          }) !== undefined
         );
       })
       .map((o) => toBase64(o.hash)),

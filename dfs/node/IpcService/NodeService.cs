@@ -4,6 +4,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
 
@@ -60,6 +61,12 @@ namespace node.IpcService
         {
             var hash = ByteString.FromBase64(base64Hash);
             return state.PathByHash[hash];
+        }
+
+        public void RevealObjectInExplorer(string base64Hash)
+        {
+            var path = GetObjectPath(base64Hash);
+            Process.Start("explorer.exe", path);
         }
 
         public string[] GetAllContainers()
