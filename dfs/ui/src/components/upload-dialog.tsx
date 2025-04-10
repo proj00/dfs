@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { FolderUp } from "lucide-react";
-import { GetNodeService } from "@/IpcService/INodeService";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
 
 interface UploadDialogProps {
   open: boolean;

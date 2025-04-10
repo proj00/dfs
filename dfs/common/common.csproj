@@ -19,8 +19,12 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="proto/rpc/*.proto" ProtoRoot="proto" AdditionalImportDirs="../../third_party/api-common-protos/" OutputDir=".\generated\" />
-		<Protobuf Include="proto/fs/*.proto" ProtoRoot="proto" GrpcServices="None" AdditionalImportDirs="../../third_party/api-common-protos/" OutputDir=".\generated\" />
+		<Protobuf Include="proto/rpc/*.proto" ProtoRoot="proto" OutputDir=".\generated\" />
+		<Protobuf Include="proto/fs/*.proto" ProtoRoot="proto" GrpcServices="None" OutputDir=".\generated\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Protobuf Include="proto\rpc_common.proto" GrpcServices="None" />
 	</ItemGroup>
 
 </Project>

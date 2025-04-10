@@ -18,7 +18,7 @@ export interface DriveData {
   folders: Folder[];
 }
 
-import { GetNodeService } from "@/IpcService/INodeService";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
 import { fs } from "@/types/filesystem";
 

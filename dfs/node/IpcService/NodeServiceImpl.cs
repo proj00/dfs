@@ -12,25 +12,19 @@ namespace node.IpcService
 {
     [ClassInterface(ClassInterfaceType.AutoDual)]
     [ComVisible(true)]
-    public class NodeService
+    public class NodeServiceImpl
     {
-        private UiService? service;
         private NodeState state;
         private NodeRpc rpc;
         private Func<UI?> getUI;
         private string nodeURI;
 
-        public NodeService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
+        public NodeServiceImpl(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
         {
             this.state = state;
             this.rpc = rpc;
             this.getUI = getUI;
             this.nodeURI = nodeURI;
-        }
-
-        public void RegisterUiService(dynamic service)
-        {
-            this.service = new UiService(service);
         }
 
         public string PickObjectPath(bool folder)

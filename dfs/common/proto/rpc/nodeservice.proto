@@ -1,0 +1,62 @@
+﻿syntax = "proto3";
+
+package NodeService;
+
+import "fs/filesystem.proto";
+import "rpc_common.proto";
+
+service NodeService
+{
+	rpc PickObjectPath(ObjectOptions) returns (Path);
+	rpc GetObjectPath(rpc_common.Hash) returns (Path);
+	rpc RevealObjectInExplorer(rpc_common.Hash) returns (rpc_common.Empty);
+	rpc GetAllContainers(rpc_common.Empty) returns (rpc_common.GuidList);
+	rpc GetDownloadProgress(rpc_common.Hash) returns (Progress);
+	rpc GetContainerObjects(rpc_common.Guid) returns (fs.ObjectList);
+	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
+	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (rpc_common.Guid);
+	rpc PublishToTracker(PublishingOptions) returns (rpc_common.Empty);
+	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
+	rpc CopyToClipboard(String) returns (rpc_common.Empty);
+}
+
+message ObjectOptions
+{
+	bool pickFolder = 1;
+}
+
+message Progress
+{
+	int64 current = 1;
+	int64 total = 2;
+}
+
+message Path
+{
+	string path = 1;
+}
+
+message String
+{
+	string value = 1;
+}
+
+message ObjectFromDiskOptions
+{
+	string path = 1;
+	int64 chunkSize = 2;
+}
+
+message PublishingOptions
+{
+	string containerGuid = 1;
+	string trackerUri = 2;
+}
+
+message DownloadContainerOptions
+{
+	string containerGuid = 1;
+	string trackerUri = 2;
+	string destinationDir = 3;
+	int32 maxConcurrentChunks = 4;
+}

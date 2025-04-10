@@ -1,0 +1,23 @@
+﻿syntax = "proto3";
+
+package rpc_common;
+
+message Empty
+{
+	// :)
+}
+
+message Guid
+{
+	string guid = 1;
+}
+
+message GuidList
+{
+	repeated string guid = 1;
+}
+
+message Hash
+{
+	bytes data = 1;
+}

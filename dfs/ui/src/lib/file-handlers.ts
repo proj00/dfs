@@ -1,4 +1,4 @@
-import { GetNodeService } from "@/IpcService/INodeService";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import type { File, Folder } from "./types";
 
 /**

@@ -21,7 +21,7 @@ import {
 } from "./ui/dialog";
 import { backendService } from "../services/BackendService";
 import type { Folder } from "../lib/types";
-import { GetNodeService } from "@/IpcService/INodeService";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
 
 interface SidebarProps {
   currentFolder: string | null;

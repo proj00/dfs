@@ -1,5 +1,6 @@
 ﻿using Fs;
 using Google.Protobuf;
+using RpcCommon;
 using Tracker;
 
 namespace common
@@ -13,8 +14,8 @@ namespace common
         Task<Empty> MarkReachable(ByteString hash, string nodeURI);
         Task<Empty> MarkUnreachable(ByteString hash, string nodeURI);
 
-        Task<ByteString> GetContainerRootHash(Guid containerGuid);
-        Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash);
+        Task<ByteString> GetContainerRootHash(RpcCommon.Guid containerGuid);
+        Task<Empty> SetContainerRootHash(RpcCommon.Guid containerGuid, ByteString rootHash);
 
     }
 }

@@ -36,7 +36,7 @@ message ObjectWithHash
 	bytes hash = 2;
 }
 
-message ObjectArray
+message ObjectList
 {
     repeated ObjectWithHash data = 1;
 }

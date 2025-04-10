@@ -1,4 +1,4 @@
-import { INodeService } from "./INodeService";
+import { INodeService } from "./NodeServiceClient";
 
 export class UiService {
   private value = 0;
