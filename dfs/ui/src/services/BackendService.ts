@@ -20,7 +20,6 @@ export interface DriveData {
 
 import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
-import { fs } from "@/types/filesystem";
 
 class BackendService implements BackendServiceInterface {
   async publishToTracker(
@@ -58,8 +57,7 @@ class BackendService implements BackendServiceInterface {
     const containers = await service.GetAllContainers();
 
     for (const container of containers) {
-      const bytes = await service.GetContainerObjects(container);
-      const objects = fs.ObjectArray.deserializeBinary(bytes);
+      const objects = await service.GetContainerObjects(container);
       const internalObjects = objects.data.map((object) =>
         FromObjectWithHash(object, objects.data, container),
       );
