@@ -1,6 +1,6 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 import { fs } from "@/types/fs/filesystem";
-import { NodeService } from "@/types/rpc/nodeservice";
+import { Ui } from "@/types/rpc/uiservice";
 import { rpc_common } from "@/types/rpc_common";
 import * as grpc from "@grpc/grpc-js";
 import { promisify } from "util";
@@ -40,7 +40,7 @@ export interface INodeService {
   GetObjectPath: (base64Hash: string) => Promise<string>;
   RevealObjectInExplorer: (base64Hash: string) => Promise<void>;
   GetAllContainers: () => Promise<string[]>;
-  GetDownloadProgress: (base64Hash: string) => Promise<NodeService.Progress>;
+  GetDownloadProgress: (base64Hash: string) => Promise<Ui.Progress>;
   GetContainerObjects: (container: string) => Promise<fs.ObjectList>;
   GetContainerRootHash: (container: string) => Promise<string>;
   ImportObjectFromDisk: (path: string, chunkSize: number) => Promise<string>;
@@ -55,9 +55,9 @@ export interface INodeService {
 }
 
 class NodeServiceClient implements INodeService {
-  private client: NodeService.NodeServiceClient;
+  private client: Ui.UiClient;
   constructor(channel: grpc.Channel) {
-    this.client = new NodeService.NodeServiceClient(
+    this.client = new Ui.UiClient(
       serviceUrl,
       grpc.credentials.createInsecure(),
       { channelOverride: channel },
@@ -80,7 +80,7 @@ class NodeServiceClient implements INodeService {
     return (
       await this.callGrpc(
         this.client.PickObjectPath,
-        new NodeService.ObjectOptions({ pickFolder }),
+        new Ui.ObjectOptions({ pickFolder }),
       )
     ).path;
   }
@@ -99,7 +99,7 @@ class NodeServiceClient implements INodeService {
       await this.callGrpc(this.client.GetAllContainers, new rpc_common.Empty())
     ).guid;
   }
-  async GetDownloadProgress(base64Hash: string): Promise<NodeService.Progress> {
+  async GetDownloadProgress(base64Hash: string): Promise<Ui.Progress> {
     return this.callGrpc(this.client.GetDownloadProgress, getHash(base64Hash));
   }
   async GetContainerObjects(container: string): Promise<fs.ObjectList> {
@@ -119,14 +119,14 @@ class NodeServiceClient implements INodeService {
     return (
       await this.callGrpc(
         this.client.ImportObjectFromDisk,
-        new NodeService.ObjectFromDiskOptions({ path, chunkSize }),
+        new Ui.ObjectFromDiskOptions({ path, chunkSize }),
       )
     ).guid;
   }
   async PublishToTracker(container: string, trackerUri: string): Promise<void> {
     await this.callGrpc(
       this.client.PublishToTracker,
-      new NodeService.PublishingOptions({
+      new Ui.PublishingOptions({
         containerGuid: container,
         trackerUri,
       }),
@@ -140,7 +140,7 @@ class NodeServiceClient implements INodeService {
   ): Promise<void> {
     await this.callGrpc(
       this.client.DownloadContainer,
-      new NodeService.DownloadContainerOptions({
+      new Ui.DownloadContainerOptions({
         containerGuid: container,
         trackerUri,
         destinationDir,
@@ -151,7 +151,7 @@ class NodeServiceClient implements INodeService {
   async CopyToClipboard(str: string): Promise<void> {
     await this.callGrpc(
       this.client.CopyToClipboard,
-      new NodeService.String({ value: str }),
+      new Ui.String({ value: str }),
     );
   }
 }

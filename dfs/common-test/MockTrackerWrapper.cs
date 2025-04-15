@@ -3,7 +3,7 @@ using Fs;
 using Google.Protobuf;
 using RpcCommon;
 using Tracker;
-using Guid = RpcCommon.Guid;
+using Guid = System.Guid;
 
 namespace common_test
 {

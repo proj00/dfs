@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Common.NETCore" Version="133.4.21" />
-    <PackageReference Include="CefSharp.WinForms.NETCore" Version="133.4.21" />
+    <PackageReference Include="CefSharp.Common.NETCore" Version="135.0.170" />
+    <PackageReference Include="CefSharp.WinForms.NETCore" Version="135.0.170" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,4 +38,16 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="py pack_resources.py" />
   </Target>
+
+  <ItemGroup>
+    <PackageReference Update="chromiumembeddedframework.runtime.win-arm64" Version="135.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="135.0.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="135.0.17" />
+  </ItemGroup>
 </Project>

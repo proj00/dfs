@@ -1,11 +1,11 @@
 ﻿syntax = "proto3";
 
-package NodeService;
+package Ui;
 
 import "fs/filesystem.proto";
 import "rpc_common.proto";
 
-service NodeService
+service Ui
 {
 	rpc PickObjectPath(ObjectOptions) returns (Path);
 	rpc GetObjectPath(rpc_common.Hash) returns (Path);
@@ -44,7 +44,7 @@ message String
 message ObjectFromDiskOptions
 {
 	string path = 1;
-	int64 chunkSize = 2;
+	int32 chunkSize = 2;
 }
 
 message PublishingOptions

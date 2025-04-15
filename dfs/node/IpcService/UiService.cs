@@ -12,14 +12,14 @@ namespace node.IpcService
 {
     [ClassInterface(ClassInterfaceType.AutoDual)]
     [ComVisible(true)]
-    public class NodeServiceImpl
+    public class UiService : Ui.Ui.UiBase
     {
         private NodeState state;
         private NodeRpc rpc;
         private Func<UI?> getUI;
         private string nodeURI;
 
-        public NodeServiceImpl(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
+        public UiService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
         {
             this.state = state;
             this.rpc = rpc;
@@ -27,7 +27,7 @@ namespace node.IpcService
             this.nodeURI = nodeURI;
         }
 
-        public string PickObjectPath(bool folder)
+        public override async Task<Ui.Path> PickObjectPath(Ui.ObjectOptions request, ServerCallContext context)
         {
             var ui = getUI();
             if (ui == null)
@@ -38,10 +38,10 @@ namespace node.IpcService
             string result = "";
             ui.Invoke(() =>
             {
-                result = PickObjectPathInternal(folder);
+                result = PickObjectPathInternal(request.PickFolder);
             });
 
-            return result;
+            return new Ui.Path { Path_ = result };
         }
 
         private static string PickObjectPathInternal(bool folder)
@@ -72,24 +72,27 @@ namespace node.IpcService
             throw new Exception("Dialog failed");
         }
 
-        public string GetObjectPath(string base64Hash)
+        public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
-            var hash = ByteString.FromBase64(base64Hash);
-            return state.PathByHash[hash];
+            return new Ui.Path { Path_ = state.PathByHash[request.Data] };
         }
 
-        public void RevealObjectInExplorer(string base64Hash)
+        public override async Task<RpcCommon.Empty> RevealObjectInExplorer(RpcCommon.Hash request, ServerCallContext context)
         {
-            var path = GetObjectPath(base64Hash);
+            var path = state.PathByHash[request.Data];
             Process.Start("explorer.exe", path);
+
+            return new RpcCommon.Empty();
         }
 
-        public string[] GetAllContainers()
+        public override async Task<RpcCommon.GuidList> GetAllContainers(RpcCommon.Empty request, ServerCallContext context)
         {
-            return state.Manager.Container.Select(guid => guid.Key.ToString()).ToArray();
+            var list = new RpcCommon.GuidList();
+            list.Guid.AddRange(state.Manager.Container.Select(guid => guid.Key.ToString()));
+            return list;
         }
 
-        public void CopyToClipboard(string str)
+        public override async Task<RpcCommon.Empty> CopyToClipboard(Ui.String request, ServerCallContext context)
         {
             var ui = getUI();
             if (ui == null)
@@ -99,31 +102,35 @@ namespace node.IpcService
 
             ui.Invoke(() =>
             {
-                Clipboard.SetText(str);
+                Clipboard.SetText(request.Value);
             });
+
+            return new RpcCommon.Empty();
         }
 
-        public (long current, long total) GetDownloadProgress(string base64Hash)
+        public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
         {
-            return state.FileProgress[ByteString.FromBase64(base64Hash)];
+            (long current, long total) = state.FileProgress[request.Data];
+            return new Ui.Progress { Current = current, Total = total };
         }
 
-        public ByteString GetContainerObjects(string container)
+        public override async Task<ObjectList> GetContainerObjects(RpcCommon.Guid request, ServerCallContext context)
         {
-            var guid = Guid.Parse(container);
-            var contents = new ObjectArray();
+            var guid = Guid.Parse(request.Guid_);
+            var contents = new ObjectList();
             contents.Data.AddRange(state.Manager.GetContainerTree(guid));
 
-            return contents.ToByteString();
+            return contents;
         }
 
-        public string GetContainerRootHash(string container)
+        public override async Task<RpcCommon.Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
         {
-            return state.Manager.Container[Guid.Parse(container)].ToBase64();
+            return new RpcCommon.Hash { Data = state.Manager.Container[Guid.Parse(request.Guid_)] };
         }
 
-        public string ImportObjectFromDisk(string path, int chunkSize)
+        public override async Task<RpcCommon.Guid> ImportObjectFromDisk(Ui.ObjectFromDiskOptions request, ServerCallContext context)
         {
+            (string path, int chunkSize) = (request.Path, request.ChunkSize);
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
                 throw new Exception("Invalid chunk size");
@@ -155,12 +162,13 @@ namespace node.IpcService
                 throw new Exception("Invalid path");
             }
 
-            return state.Manager.CreateObjectContainer(objects, rootHash).ToString();
+            return new RpcCommon.Guid { Guid_ = state.Manager.CreateObjectContainer(objects, rootHash).ToString() };
         }
 
-        public async Task PublishToTracker(string container, string uri)
+        public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTracker(Guid.Parse(container), new TrackerWrapper(uri, state));
+            await PublishToTracker(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state));
+            return new RpcCommon.Empty();
         }
 
         private async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
@@ -185,11 +193,13 @@ namespace node.IpcService
             }
         }
 
-        public async Task DownloadContainer(string container, string uri, string destinationDir, int maxConcurrentChunks = 20)
+        public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(uri, state);
-            var hash = await tracker.GetContainerRootHash(Guid.Parse(container));
-            await DownloadObjectByHash(hash, Guid.Parse(container), tracker, destinationDir, maxConcurrentChunks);
+            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            var hash = await tracker.GetContainerRootHash(Guid.Parse(request.ContainerGuid));
+            await DownloadObjectByHash(hash, Guid.Parse(request.ContainerGuid), tracker, request.DestinationDir, request.MaxConcurrentChunks);
+
+            return new RpcCommon.Empty();
         }
 
         private async Task DownloadObjectByHash(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)

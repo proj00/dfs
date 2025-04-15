@@ -14,8 +14,8 @@ namespace common
         Task<Empty> MarkReachable(ByteString hash, string nodeURI);
         Task<Empty> MarkUnreachable(ByteString hash, string nodeURI);
 
-        Task<ByteString> GetContainerRootHash(RpcCommon.Guid containerGuid);
-        Task<Empty> SetContainerRootHash(RpcCommon.Guid containerGuid, ByteString rootHash);
+        Task<ByteString> GetContainerRootHash(System.Guid containerGuid);
+        Task<Empty> SetContainerRootHash(System.Guid containerGuid, ByteString rootHash);
 
     }
 }
