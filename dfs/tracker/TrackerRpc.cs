@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Tracker;
 using Google.Protobuf;
 using common;
+using RpcCommon;
 
 
 namespace tracker
@@ -17,16 +18,16 @@ namespace tracker
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly ConcurrentDictionary<string, Tracker.Hash> _containerRoots = new();
+        private readonly ConcurrentDictionary<string, RpcCommon.Hash> _containerRoots = new();
 
         public TrackerRpc(FilesystemManager filesystemManager)
         {
             _filesystemManager = filesystemManager;
         }
 
-        public override Task<Hash> GetContainerRootHash(ContainerGuid request, ServerCallContext context)
+        public override Task<Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
         {
-            if (_containerRoots.TryGetValue(request.Guid, out var rootHash))
+            if (_containerRoots.TryGetValue(request.Guid_, out var rootHash))
             {
                 return Task.FromResult(rootHash);
             }

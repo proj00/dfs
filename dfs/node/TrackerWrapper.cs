@@ -2,6 +2,7 @@
 using Fs;
 using Google.Protobuf;
 using Grpc.Core;
+using RpcCommon;
 using Tracker;
 using static Tracker.Tracker;
 
@@ -76,13 +77,13 @@ namespace node
             return await call;
         }
 
-        public async Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        public async Task<ByteString> GetContainerRootHash(System.Guid containerGuid)
         {
-            var response = await client.GetContainerRootHashAsync(new ContainerGuid { Guid = containerGuid.ToString() });
+            var response = await client.GetContainerRootHashAsync(new RpcCommon.Guid { Guid_ = containerGuid.ToString() });
             return response.Data;
         }
 
-        public async Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
+        public async Task<Empty> SetContainerRootHash(System.Guid containerGuid, ByteString rootHash)
         {
             return await client.SetContainerRootHashAsync(new ContainerRootHash
             {

@@ -1,7 +1,9 @@
 ﻿using common;
 using Fs;
 using Google.Protobuf;
+using RpcCommon;
 using Tracker;
+using Guid = System.Guid;
 
 namespace common_test
 {

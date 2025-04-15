@@ -18,11 +18,8 @@ namespace node
 {
     public partial class UI : Form
     {
-        private NodeService service;
-
-        public UI(NodeService _service)
+        public UI()
         {
-            service = _service;
             InitializeComponent();
         }
 
@@ -35,24 +32,11 @@ namespace node
 #else
             const string sourceUrl = "http://ui.resources/index.html";
 #endif
-
-            browser.JavascriptObjectRepository.ResolveObject += (sender, e) =>
-            {
-                var repo = e.ObjectRepository;
-                if (!e.Url.StartsWith(sourceUrl) || e.ObjectName != "nodeService")
-                {
-                    return;
-                }
-
-                repo.NameConverter = null;
-                repo.Register("nodeService", service);
-            };
-
             await browser.LoadUrlAsync(sourceUrl);
 
-            //#if DEBUG
+#if DEBUG
             browser.ShowDevTools();
-            //#endif
+#endif
         }
     }
 }

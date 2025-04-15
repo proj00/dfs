@@ -25,17 +25,25 @@ namespace node
 
             NodeState state = new(TimeSpan.FromMinutes(1));
             NodeRpc rpc = new(state);
-            var server = new Grpc.Core.Server()
+            var publicServer = new Grpc.Core.Server()
             {
                 Services = { Node.Node.BindService(rpc) },
                 Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
             };
 
-            server.Start();
+            publicServer.Start();
 
-            ServerPort port = server.Ports.First();
+            ServerPort port = publicServer.Ports.First();
             UI? ui = null;
-            NodeService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
+            UiService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
+
+            var internalServer = new Grpc.Core.Server()
+            {
+                Services = { Ui.Ui.BindService(service) },
+                Ports = { new ServerPort("localhost", 42069, ServerCredentials.Insecure) }
+            };
+
+            internalServer.Start();
 
             CefSharpSettings.ConcurrentTaskExecution = true;
             var settings = new CefSettings();
@@ -50,10 +58,14 @@ namespace node
 #endif
             Cef.Initialize(settings);
 
-            ui = new UI(service);
+            ui = new UI();
 
             System.Windows.Forms.Application.Run(ui);
-            server.ShutdownAsync().Wait();
+            Task[] tasks = [internalServer.ShutdownAsync(), publicServer.ShutdownAsync()];
+            var shutdown = Task.WhenAll(tasks);
+
+            // STAThread prohibits async main, this will do
+            shutdown.Wait();
         }
     }
 }

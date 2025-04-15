@@ -3,44 +3,30 @@
 package tracker;
 
 import "fs/filesystem.proto";
+import "rpc_common.proto";
 
 service Tracker
 {
-	rpc Publish(stream fs.ObjectWithHash) returns (Empty);
-	rpc GetObjectTree(Hash) returns (stream fs.ObjectWithHash);
-	rpc MarkReachable(stream MarkRequest) returns (Empty);
-	rpc MarkUnreachable(stream MarkRequest) returns (Empty);
+	rpc Publish(stream fs.ObjectWithHash) returns (rpc_common.Empty);
+	rpc GetObjectTree(rpc_common.Hash) returns (stream fs.ObjectWithHash);
+	rpc MarkReachable(stream MarkRequest) returns (rpc_common.Empty);
+	rpc MarkUnreachable(stream MarkRequest) returns (rpc_common.Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
-	rpc GetContainerRootHash(ContainerGuid) returns (Hash);
-	rpc SetContainerRootHash(ContainerRootHash) returns (Empty);
-	rpc DeleteObjectHash(Hash) returns (Empty);
-}
-
-message Empty
-{
-	// :)
-}
-
-message ContainerGuid
-{
-	string guid = 1;
+	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
+	rpc SetContainerRootHash(ContainerRootHash) returns (rpc_common.Empty);
+	rpc DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
 }
 
 message ContainerRootHash
 {
 	string guid = 1;
-	Hash hash = 2;
+	rpc_common.Hash hash = 2;
 }
 
 message PeerRequest
 {
 	bytes chunk_hash = 1;
 	int32 max_peer_count = 2;
-}
-
-message Hash
-{
-	bytes data = 1;
 }
 
 message PeerResponse
