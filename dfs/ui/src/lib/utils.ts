@@ -61,3 +61,31 @@ export async function copyToClipboard(str: string): Promise<void> {
   const service = await GetNodeService();
   await service.CopyToClipboard(str);
 }
+
+export function formatProgress(current: number, total: number): string {
+  return `${formatFileSize(current)} of ${formatFileSize(total)}`;
+}
+
+export function calculatePercentage(current: number, total: number): number {
+  if (total === 0) return 0;
+  return Math.min(100, Math.round((current / total) * 100));
+}
+
+export function formatSpeed(bytesPerSecond: number): string {
+  return `${formatFileSize(bytesPerSecond)}/s`;
+}
+
+export function formatDuration(milliseconds: number): string {
+  if (milliseconds < 1000) return `${milliseconds}ms`;
+
+  const seconds = Math.floor(milliseconds / 1000);
+  if (seconds < 60) return `${seconds}s`;
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  if (minutes < 60) return `${minutes}m ${remainingSeconds}s`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m`;
+}

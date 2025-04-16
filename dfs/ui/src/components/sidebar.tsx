@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronRight,
   Clock,
@@ -8,6 +8,8 @@ import {
   HardDrive,
   Star,
   Upload,
+  Activity,
+  FileText,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -19,16 +21,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+import { Progress } from "./ui/progress";
 import { backendService } from "../services/BackendService";
 import type { Folder } from "../lib/types";
+import type { DataUsage } from "../services/BackendService";
+import {
+  formatProgress,
+  calculatePercentage,
+  formatFileSize,
+} from "../lib/utils";
+import { DownloadManager } from "./download-manager";
 import { GetNodeService } from "@/IpcService/NodeServiceClient";
 
 interface SidebarProps {
   currentFolder: string | null;
   navigateToFolder: (folderId: string | null) => void;
   folders: Folder[];
-  onContainerDownloaded?: () => void; // Add callback for container download
-  onContainerPublished?: () => void; // Add callback for container publish
+  onContainerDownloaded?: () => void;
+  onContainerPublished?: () => void;
 }
 
 export function Sidebar({
@@ -39,24 +49,129 @@ export function Sidebar({
   onContainerPublished,
 }: SidebarProps) {
   // Get root folders from the passed folders prop
-  const rootFolders = folders.filter((folder) => folder.parentId.length === 0);
+  const rootFolders = folders.filter((folder) => folder.parentId === null);
 
   // State for publish dialog
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [selectedContainer, setSelectedContainer] = useState<string>("");
   const [publishTrackerUri, setPublishTrackerUri] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<boolean | null>(null);
 
   // State for download dialog
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [downloadContainerGuid, setDownloadContainerGuid] = useState("");
   const [downloadTrackerUri, setDownloadTrackerUri] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadDestination, setDownloadDestination] = useState<string>("");
   const [downloadSuccess, setDownloadSuccess] = useState<boolean | null>(null);
+  const [downloadDestination, setDownloadDestination] = useState<string>("");
+  const [activeContainerDownloadIds, setActiveContainerDownloadIds] = useState<
+    string[]
+  >([]);
+  const [containerDownloadProgress, setContainerDownloadProgress] = useState({
+    filesTotal: 0,
+    filesCompleted: 0,
+    bytesTotal: 0,
+    bytesReceived: 0,
+  });
 
-  // Add state for publish success/error
-  const [publishSuccess, setPublishSuccess] = useState<boolean | null>(null);
+  // State for download manager
+  const [downloadManagerOpen, setDownloadManagerOpen] = useState(false);
+  const [activeDownloadIds, setActiveDownloadIds] = useState<string[]>([]);
+  const [dataUsage, setDataUsage] = useState<DataUsage | null>(null);
+
+  // Calculate download percentage
+  const downloadPercentage = calculatePercentage(
+    containerDownloadProgress.bytesReceived,
+    containerDownloadProgress.bytesTotal,
+  );
+
+  // Fetch data usage periodically
+  useEffect(() => {
+    const fetchDataUsage = async () => {
+      try {
+        const usage = await backendService.GetDataUsage();
+        setDataUsage(usage);
+      } catch (error) {
+        console.error("Failed to fetch data usage:", error);
+      }
+    };
+
+    fetchDataUsage(); // Initial fetch
+    const interval = setInterval(fetchDataUsage, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update container download progress
+  useEffect(() => {
+    if (activeContainerDownloadIds.length === 0) return;
+
+    const fetchProgress = async () => {
+      try {
+        let filesTotal = 0;
+        let filesCompleted = 0;
+        let bytesTotal = 0;
+        let bytesReceived = 0;
+        let allCompleted = true;
+
+        // Fetch progress for each file in the container
+        for (const downloadId of activeContainerDownloadIds) {
+          const progress = await backendService.GetDownloadProgress(downloadId);
+
+          filesTotal++;
+          bytesTotal += progress.totalBytes;
+          bytesReceived += progress.receivedBytes;
+
+          if (progress.status === "completed") {
+            filesCompleted++;
+          } else if (progress.status === "active") {
+            allCompleted = false;
+          }
+        }
+
+        // Update container download progress
+        setContainerDownloadProgress({
+          filesTotal,
+          filesCompleted,
+          bytesTotal,
+          bytesReceived,
+        });
+
+        // If all files are completed, trigger the onContainerDownloaded callback
+        if (allCompleted && filesTotal > 0 && filesCompleted === filesTotal) {
+          setIsDownloading(false);
+
+          // Close dialog after a short delay to show success state
+          setTimeout(() => {
+            setDownloadDialogOpen(false);
+            setDownloadContainerGuid("");
+            setDownloadTrackerUri("");
+            setDownloadDestination("");
+            setDownloadSuccess(null);
+            setActiveContainerDownloadIds([]);
+            setContainerDownloadProgress({
+              filesTotal: 0,
+              filesCompleted: 0,
+              bytesTotal: 0,
+              bytesReceived: 0,
+            });
+          }, 1500);
+
+          if (onContainerDownloaded) {
+            onContainerDownloaded();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch download progress:", error);
+      }
+    };
+
+    fetchProgress();
+    const interval = setInterval(fetchProgress, 500); // Update every 500ms
+
+    return () => clearInterval(interval);
+  }, [activeContainerDownloadIds, onContainerDownloaded]);
 
   // Handle publish to tracker
   const handlePublish = async () => {
@@ -100,31 +215,29 @@ export function Sidebar({
     setDownloadSuccess(null);
 
     try {
-      await backendService.downloadContainer(
+      // Start the download and get the download IDs for each file
+      const downloadIds = await backendService.downloadContainer(
         downloadContainerGuid,
         downloadTrackerUri,
         downloadDestination || undefined,
       );
 
+      // Add to active downloads list
+      setActiveDownloadIds((prev) => [...prev, ...downloadIds]);
+
       setDownloadSuccess(true);
 
-      // Close dialog after a short delay to show success state
+      // Keep the dialog open for a moment to show success state
       setTimeout(() => {
         setDownloadDialogOpen(false);
         setDownloadContainerGuid("");
         setDownloadTrackerUri("");
         setDownloadDestination("");
         setDownloadSuccess(null);
-
-        // Trigger refresh of container list
-        if (onContainerDownloaded) {
-          onContainerDownloaded();
-        }
       }, 1500);
     } catch (error) {
       console.error("Failed to download:", error);
       setDownloadSuccess(false);
-    } finally {
       setIsDownloading(false);
     }
   };
@@ -170,7 +283,46 @@ export function Sidebar({
           <Download className="mr-2 h-4 w-4" />
           Download Container
         </Button>
+
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => setDownloadManagerOpen(true)}
+        >
+          <Activity className="mr-2 h-4 w-4" />
+          Transfer Manager
+          {activeDownloadIds.length > 0 && (
+            <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
+              {activeDownloadIds.length}
+            </span>
+          )}
+        </Button>
       </div>
+
+      {/* Data Usage Summary */}
+      {dataUsage && (
+        <div className="mt-6 border rounded-md p-3 bg-muted/30">
+          <h3 className="text-sm font-medium mb-2">Data Usage</h3>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Downloaded:</span>
+              <span>{formatFileSize(dataUsage.totalBytesReceived)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Uploaded:</span>
+              <span>{formatFileSize(dataUsage.totalBytesSent)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total:</span>
+              <span>
+                {formatFileSize(
+                  dataUsage.totalBytesReceived + dataUsage.totalBytesSent,
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <h3 className="mb-2 text-sm font-medium">My folders</h3>
@@ -337,6 +489,12 @@ export function Sidebar({
             setDownloadDialogOpen(open);
             if (!open) {
               setDownloadSuccess(null);
+              setContainerDownloadProgress({
+                filesTotal: 0,
+                filesCompleted: 0,
+                bytesTotal: 0,
+                bytesReceived: 0,
+              });
             }
           }
         }}
@@ -363,7 +521,7 @@ export function Sidebar({
                   clipRule="evenodd"
                 />
               </svg>
-              Container downloaded successfully!
+              Download started successfully!
             </div>
           )}
 
@@ -381,7 +539,7 @@ export function Sidebar({
                   clipRule="evenodd"
                 />
               </svg>
-              Failed to download container. Please try again.
+              Failed to start download. Please try again.
             </div>
           )}
 
@@ -434,6 +592,33 @@ export function Sidebar({
                 </Button>
               </div>
             </div>
+
+            {/* Progress bar for downloading */}
+            {activeContainerDownloadIds.length > 0 &&
+              containerDownloadProgress.bytesTotal > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Download progress</span>
+                    <span>{downloadPercentage}%</span>
+                  </div>
+                  <Progress value={downloadPercentage} className="h-2" />
+                  <div className="text-xs text-muted-foreground text-right">
+                    {formatProgress(
+                      containerDownloadProgress.bytesReceived,
+                      containerDownloadProgress.bytesTotal,
+                    )}
+                  </div>
+
+                  {/* File count information */}
+                  <div className="flex items-center text-xs text-muted-foreground mt-2">
+                    <FileText className="h-3 w-3 mr-1" />
+                    <span>
+                      {containerDownloadProgress.filesCompleted} of{" "}
+                      {containerDownloadProgress.filesTotal} files
+                    </span>
+                  </div>
+                </div>
+              )}
           </div>
           <DialogFooter>
             <Button
@@ -474,6 +659,13 @@ export function Sidebar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Download Manager Dialog */}
+      <DownloadManager
+        open={downloadManagerOpen}
+        onOpenChange={setDownloadManagerOpen}
+        activeDownloadIds={activeDownloadIds}
+      />
     </div>
   );
 }
