@@ -61,6 +61,10 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::RpcCommon.Guid> __Marshaller_rpc_common_Guid = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Guid.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.ContainerRootHash> __Marshaller_tracker_ContainerRootHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ContainerRootHash.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.SearchRequest> __Marshaller_tracker_SearchRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.SearchRequest.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::RpcCommon.SearchResponse> __Marshaller_rpc_common_SearchResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.SearchResponse.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty> __Method_Publish = new grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty>(
@@ -126,6 +130,14 @@ namespace Tracker {
         __Marshaller_rpc_common_Hash,
         __Marshaller_rpc_common_Empty);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse> __Method_SearchForObjects = new grpc::Method<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse>(
+        grpc::MethodType.ServerStreaming,
+        __ServiceName,
+        "SearchForObjects",
+        __Marshaller_tracker_SearchRequest,
+        __Marshaller_rpc_common_SearchResponse);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -180,6 +192,12 @@ namespace Tracker {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> DeleteObjectHash(global::RpcCommon.Hash request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task SearchForObjects(global::Tracker.SearchRequest request, grpc::IServerStreamWriter<global::RpcCommon.SearchResponse> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -323,6 +341,16 @@ namespace Tracker {
       {
         return CallInvoker.AsyncUnaryCall(__Method_DeleteObjectHash, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncServerStreamingCall<global::RpcCommon.SearchResponse> SearchForObjects(global::Tracker.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SearchForObjects(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncServerStreamingCall<global::RpcCommon.SearchResponse> SearchForObjects(global::Tracker.SearchRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_SearchForObjects, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override TrackerClient NewInstance(ClientBaseConfiguration configuration)
@@ -344,7 +372,8 @@ namespace Tracker {
           .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList)
           .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
           .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash)
-          .AddMethod(__Method_DeleteObjectHash, serviceImpl.DeleteObjectHash).Build();
+          .AddMethod(__Method_DeleteObjectHash, serviceImpl.DeleteObjectHash)
+          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -362,6 +391,7 @@ namespace Tracker {
       serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Hash>(serviceImpl.GetContainerRootHash));
       serviceBinder.AddMethod(__Method_SetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerRootHash, global::RpcCommon.Empty>(serviceImpl.SetContainerRootHash));
       serviceBinder.AddMethod(__Method_DeleteObjectHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::RpcCommon.Empty>(serviceImpl.DeleteObjectHash));
+      serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse>(serviceImpl.SearchForObjects));
     }
 
   }

@@ -4,6 +4,9 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Ui } from "./uiservice";
+import type { SearchResponse } from "../rpc_common";
+import type { SearchRequest } from "./uiservice";
+import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
 import type { String$ } from "./uiservice";
 import type { DownloadContainerOptions } from "./uiservice";
 import type { PublishingOptions } from "./uiservice";
@@ -111,6 +114,13 @@ export interface IUiClient {
     input: String$,
     options?: RpcOptions,
   ): UnaryCall<String$, Empty>;
+  /**
+   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (stream rpc_common.SearchResponse);
+   */
+  searchForObjects(
+    input: SearchRequest,
+    options?: RpcOptions,
+  ): ServerStreamingCall<SearchRequest, SearchResponse>;
 }
 /**
  * @generated from protobuf service Ui.Ui
@@ -332,6 +342,23 @@ export class UiClient implements IUiClient, ServiceInfo {
       opt = this._transport.mergeOptions(options);
     return stackIntercept<String$, Empty>(
       "unary",
+      this._transport,
+      method,
+      opt,
+      input,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (stream rpc_common.SearchResponse);
+   */
+  searchForObjects(
+    input: SearchRequest,
+    options?: RpcOptions,
+  ): ServerStreamingCall<SearchRequest, SearchResponse> {
+    const method = this.methods[13],
+      opt = this._transport.mergeOptions(options);
+    return stackIntercept<SearchRequest, SearchResponse>(
+      "serverStreaming",
       this._transport,
       method,
       opt,

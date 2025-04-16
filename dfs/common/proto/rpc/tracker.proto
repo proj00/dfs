@@ -15,6 +15,7 @@ service Tracker
 	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
 	rpc SetContainerRootHash(ContainerRootHash) returns (rpc_common.Empty);
 	rpc DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
+	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 }
 
 message ContainerRootHash
@@ -38,4 +39,9 @@ message MarkRequest
 {
 	string peer = 1;
 	bytes hash = 2;
+}
+
+message SearchRequest
+{
+	string query = 1;
 }

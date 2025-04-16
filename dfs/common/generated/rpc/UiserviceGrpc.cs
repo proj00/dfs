@@ -69,6 +69,10 @@ namespace Ui {
     static readonly grpc::Marshaller<global::Ui.DownloadContainerOptions> __Marshaller_Ui_DownloadContainerOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.DownloadContainerOptions.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Ui.String> __Marshaller_Ui_String = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.String.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.SearchRequest> __Marshaller_Ui_SearchRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.SearchRequest.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::RpcCommon.SearchResponse> __Marshaller_rpc_common_SearchResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.SearchResponse.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Ui.ObjectOptions, global::Ui.Path> __Method_PickObjectPath = new grpc::Method<global::Ui.ObjectOptions, global::Ui.Path>(
@@ -174,6 +178,14 @@ namespace Ui {
         __Marshaller_Ui_String,
         __Marshaller_rpc_common_Empty);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.SearchRequest, global::RpcCommon.SearchResponse> __Method_SearchForObjects = new grpc::Method<global::Ui.SearchRequest, global::RpcCommon.SearchResponse>(
+        grpc::MethodType.ServerStreaming,
+        __ServiceName,
+        "SearchForObjects",
+        __Marshaller_Ui_SearchRequest,
+        __Marshaller_rpc_common_SearchResponse);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -258,6 +270,12 @@ namespace Ui {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> CopyToClipboard(global::Ui.String request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task SearchForObjects(global::Ui.SearchRequest request, grpc::IServerStreamWriter<global::RpcCommon.SearchResponse> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -551,6 +569,16 @@ namespace Ui {
       {
         return CallInvoker.AsyncUnaryCall(__Method_CopyToClipboard, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncServerStreamingCall<global::RpcCommon.SearchResponse> SearchForObjects(global::Ui.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SearchForObjects(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncServerStreamingCall<global::RpcCommon.SearchResponse> SearchForObjects(global::Ui.SearchRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_SearchForObjects, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override UiClient NewInstance(ClientBaseConfiguration configuration)
@@ -577,7 +605,8 @@ namespace Ui {
           .AddMethod(__Method_DownloadContainer, serviceImpl.DownloadContainer)
           .AddMethod(__Method_PauseContainerDownload, serviceImpl.PauseContainerDownload)
           .AddMethod(__Method_ResumeContainerDownload, serviceImpl.ResumeContainerDownload)
-          .AddMethod(__Method_CopyToClipboard, serviceImpl.CopyToClipboard).Build();
+          .AddMethod(__Method_CopyToClipboard, serviceImpl.CopyToClipboard)
+          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -600,6 +629,7 @@ namespace Ui {
       serviceBinder.AddMethod(__Method_PauseContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.PauseContainerDownload));
       serviceBinder.AddMethod(__Method_ResumeContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.ResumeContainerDownload));
       serviceBinder.AddMethod(__Method_CopyToClipboard, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.String, global::RpcCommon.Empty>(serviceImpl.CopyToClipboard));
+      serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Ui.SearchRequest, global::RpcCommon.SearchResponse>(serviceImpl.SearchForObjects));
     }
 
   }

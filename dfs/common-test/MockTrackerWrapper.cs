@@ -91,5 +91,9 @@ namespace common_test
             return new();
         }
 
+        public async Task<List<SearchResponse>> SearchForObjects(string query)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -43,6 +43,19 @@ export interface Hash {
    */
   data: Uint8Array;
 }
+/**
+ * @generated from protobuf message rpc_common.SearchResponse
+ */
+export interface SearchResponse {
+  /**
+   * @generated from protobuf field: string guid = 1;
+   */
+  guid: string;
+  /**
+   * @generated from protobuf field: repeated bytes hash = 2;
+   */
+  hash: Uint8Array[];
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class Empty$Type extends MessageType<Empty> {
   constructor() {
@@ -314,3 +327,86 @@ class Hash$Type extends MessageType<Hash> {
  * @generated MessageType for protobuf message rpc_common.Hash
  */
 export const Hash = new Hash$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SearchResponse$Type extends MessageType<SearchResponse> {
+  constructor() {
+    super("rpc_common.SearchResponse", [
+      { no: 1, name: "guid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+      {
+        no: 2,
+        name: "hash",
+        kind: "scalar",
+        repeat: 2 /*RepeatType.UNPACKED*/,
+        T: 12 /*ScalarType.BYTES*/,
+      },
+    ]);
+  }
+  create(value?: PartialMessage<SearchResponse>): SearchResponse {
+    const message = globalThis.Object.create(this.messagePrototype!);
+    message.guid = "";
+    message.hash = [];
+    if (value !== undefined)
+      reflectionMergePartial<SearchResponse>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: SearchResponse,
+  ): SearchResponse {
+    let message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      let [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* string guid */ 1:
+          message.guid = reader.string();
+          break;
+        case /* repeated bytes hash */ 2:
+          message.hash.push(reader.bytes());
+          break;
+        default:
+          let u = options.readUnknownField;
+          if (u === "throw")
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          let d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: SearchResponse,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* string guid = 1; */
+    if (message.guid !== "")
+      writer.tag(1, WireType.LengthDelimited).string(message.guid);
+    /* repeated bytes hash = 2; */
+    for (let i = 0; i < message.hash.length; i++)
+      writer.tag(2, WireType.LengthDelimited).bytes(message.hash[i]);
+    let u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message rpc_common.SearchResponse
+ */
+export const SearchResponse = new SearchResponse$Type();

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
 using Microsoft.VisualStudio.Threading;
+using Grpc.Core.Utils;
 
 namespace node.IpcService
 {
@@ -124,6 +125,12 @@ namespace node.IpcService
             contents.Data.AddRange(state.Manager.GetContainerTree(guid));
 
             return contents;
+        }
+
+        public override async Task SearchForObjects(Ui.SearchRequest request, IServerStreamWriter<RpcCommon.SearchResponse> responseStream, ServerCallContext context)
+        {
+            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            await responseStream.WriteAllAsync(await tracker.SearchForObjects(request.Query));
         }
 
         public override async Task<RpcCommon.Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)

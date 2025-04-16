@@ -17,5 +17,6 @@ namespace common
         Task<ByteString> GetContainerRootHash(System.Guid containerGuid);
         Task<Empty> SetContainerRootHash(System.Guid containerGuid, ByteString rootHash);
 
+        Task<List<SearchResponse>> SearchForObjects(string query);
     }
 }
