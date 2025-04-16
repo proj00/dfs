@@ -4,6 +4,8 @@
 import type { RpcTransport } from "@protobuf-ts/runtime-rpc";
 import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Ui } from "./uiservice";
+import type { DataUsage } from "../rpc_common";
+import type { UsageRequest } from "./uiservice";
 import type { SearchResponse } from "../rpc_common";
 import type { SearchRequest } from "./uiservice";
 import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
@@ -121,6 +123,13 @@ export interface IUiClient {
     input: SearchRequest,
     options?: RpcOptions,
   ): ServerStreamingCall<SearchRequest, SearchResponse>;
+  /**
+   * @generated from protobuf rpc: GetDataUsage(Ui.UsageRequest) returns (rpc_common.DataUsage);
+   */
+  getDataUsage(
+    input: UsageRequest,
+    options?: RpcOptions,
+  ): UnaryCall<UsageRequest, DataUsage>;
 }
 /**
  * @generated from protobuf service Ui.Ui
@@ -359,6 +368,23 @@ export class UiClient implements IUiClient, ServiceInfo {
       opt = this._transport.mergeOptions(options);
     return stackIntercept<SearchRequest, SearchResponse>(
       "serverStreaming",
+      this._transport,
+      method,
+      opt,
+      input,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: GetDataUsage(Ui.UsageRequest) returns (rpc_common.DataUsage);
+   */
+  getDataUsage(
+    input: UsageRequest,
+    options?: RpcOptions,
+  ): UnaryCall<UsageRequest, DataUsage> {
+    const method = this.methods[14],
+      opt = this._transport.mergeOptions(options);
+    return stackIntercept<UsageRequest, DataUsage>(
+      "unary",
       this._transport,
       method,
       opt,

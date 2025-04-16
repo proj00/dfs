@@ -12,9 +12,12 @@ namespace node
     class TrackerWrapper : ITrackerWrapper
     {
         public TrackerClient client { get; }
+        public string GetUri() => trackerUri;
+        private readonly string trackerUri;
 
         public TrackerWrapper(string trackerUri, NodeState state)
         {
+            this.trackerUri = trackerUri;
             if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri) || uri == null)
             {
                 throw new Exception("invalid uri");
@@ -104,6 +107,20 @@ namespace node
             }
 
             return responses;
+        }
+
+        public async Task<DataUsage> GetDataUsage()
+        {
+            return await client.GetDataUsageAsync(new Empty());
+        }
+
+        public async Task<Empty> ReportDataUsage(bool isUpload, long bytes)
+        {
+            return await client.ReportDataUsageAsync(new UsageReport
+            {
+                IsUpload = isUpload,
+                Bytes = bytes
+            });
         }
     }
 }

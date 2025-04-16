@@ -21,6 +21,7 @@ service Ui
 	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc CopyToClipboard(String) returns (rpc_common.Empty);
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
+	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
 }
 
 message ObjectOptions
@@ -68,4 +69,9 @@ message SearchRequest
 {
 	string trackerUri = 1;
 	string query = 2;
+}
+
+message UsageRequest
+{
+	string trackerUri = 1;
 }

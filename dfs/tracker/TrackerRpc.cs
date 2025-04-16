@@ -20,6 +20,7 @@ namespace tracker
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly ConcurrentDictionary<string, RpcCommon.Hash> _containerRoots = new();
+        private readonly ConcurrentDictionary<string, DataUsage> dataUsage = new();
 
         public TrackerRpc(FilesystemManager filesystemManager)
         {
@@ -180,6 +181,27 @@ namespace tracker
                 response.Hash.AddRange(obj.Select(o => o.Hash));
                 await responseStream.WriteAsync(response);
             }
+        }
+
+        public override async Task<DataUsage> GetDataUsage(Empty request, ServerCallContext context)
+        {
+            return dataUsage[context.Peer];
+        }
+
+        public override async Task<Empty> ReportDataUsage(UsageReport request, ServerCallContext context)
+        {
+            DataUsage change = new DataUsage { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
+            if (dataUsage.TryGetValue(context.Peer, out var usage))
+            {
+                usage.Upload += change.Upload;
+                usage.Download += change.Download;
+            }
+            else
+            {
+                dataUsage[context.Peer] = change;
+            }
+
+            return new Empty();
         }
     }
 }

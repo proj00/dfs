@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from "@/lib/utils";
 import { ObjectList } from "@/types/fs/filesystem";
 import { Progress } from "@/types/rpc/uiservice";
 import { UiClient } from "@/types/rpc/uiservice.client";
-import { Hash, SearchResponse } from "@/types/rpc_common";
+import { DataUsage, Hash, SearchResponse } from "@/types/rpc_common";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 
 const serviceUrl: string = "http://127.0.0.1:42069";
@@ -34,6 +34,7 @@ export interface INodeService {
     query: string,
     trackerUri: string,
   ) => Promise<SearchResponse[]>;
+  GetDataUsage: (trackerUri: string) => Promise<DataUsage>;
 }
 
 class NodeServiceClient implements INodeService {
@@ -116,6 +117,9 @@ class NodeServiceClient implements INodeService {
     }
 
     return response;
+  }
+  async GetDataUsage(trackerUri: string): Promise<DataUsage> {
+    return (await this.client.getDataUsage({ trackerUri })).response;
   }
 }
 

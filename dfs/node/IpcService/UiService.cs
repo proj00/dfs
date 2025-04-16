@@ -282,7 +282,7 @@ namespace node.IpcService
                 // for now, pick a random peer
                 var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
                 var peerClient = state.GetNodeClient(new Uri(peers[index]));
-                var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash });
+                var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash, TrackerUri = tracker.GetUri() });
 
                 List<Node.ChunkResponse> response = [];
                 await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
@@ -303,11 +303,18 @@ namespace node.IpcService
                 }
 
                 await tracker.MarkReachable(hash, nodeURI);
+                await tracker.ReportDataUsage(false, state.FileProgress[fileHash].Item2);
             }
             finally
             {
                 semaphore.Release();
             }
+        }
+
+        public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
+        {
+            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            return await tracker.GetDataUsage();
         }
     }
 }
