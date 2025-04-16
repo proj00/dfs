@@ -151,6 +151,22 @@ namespace Ui {
         __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty> __Method_PauseContainerDownload = new grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "PauseContainerDownload",
+        __Marshaller_rpc_common_Guid,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty> __Method_ResumeContainerDownload = new grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ResumeContainerDownload",
+        __Marshaller_rpc_common_Guid,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Ui.String, global::RpcCommon.Empty> __Method_CopyToClipboard = new grpc::Method<global::Ui.String, global::RpcCommon.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
@@ -224,6 +240,18 @@ namespace Ui {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> DownloadContainer(global::Ui.DownloadContainerOptions request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> PauseContainerDownload(global::RpcCommon.Guid request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> ResumeContainerDownload(global::RpcCommon.Guid request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -464,6 +492,46 @@ namespace Ui {
         return CallInvoker.AsyncUnaryCall(__Method_DownloadContainer, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty PauseContainerDownload(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return PauseContainerDownload(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty PauseContainerDownload(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_PauseContainerDownload, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PauseContainerDownloadAsync(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return PauseContainerDownloadAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PauseContainerDownloadAsync(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_PauseContainerDownload, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ResumeContainerDownload(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ResumeContainerDownload(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ResumeContainerDownload(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ResumeContainerDownload, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ResumeContainerDownloadAsync(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ResumeContainerDownloadAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ResumeContainerDownloadAsync(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ResumeContainerDownload, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty CopyToClipboard(global::Ui.String request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return CopyToClipboard(request, new grpc::CallOptions(headers, deadline, cancellationToken));
@@ -507,6 +575,8 @@ namespace Ui {
           .AddMethod(__Method_ImportObjectFromDisk, serviceImpl.ImportObjectFromDisk)
           .AddMethod(__Method_PublishToTracker, serviceImpl.PublishToTracker)
           .AddMethod(__Method_DownloadContainer, serviceImpl.DownloadContainer)
+          .AddMethod(__Method_PauseContainerDownload, serviceImpl.PauseContainerDownload)
+          .AddMethod(__Method_ResumeContainerDownload, serviceImpl.ResumeContainerDownload)
           .AddMethod(__Method_CopyToClipboard, serviceImpl.CopyToClipboard).Build();
     }
 
@@ -527,6 +597,8 @@ namespace Ui {
       serviceBinder.AddMethod(__Method_ImportObjectFromDisk, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid>(serviceImpl.ImportObjectFromDisk));
       serviceBinder.AddMethod(__Method_PublishToTracker, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.PublishingOptions, global::RpcCommon.Empty>(serviceImpl.PublishToTracker));
       serviceBinder.AddMethod(__Method_DownloadContainer, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.DownloadContainerOptions, global::RpcCommon.Empty>(serviceImpl.DownloadContainer));
+      serviceBinder.AddMethod(__Method_PauseContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.PauseContainerDownload));
+      serviceBinder.AddMethod(__Method_ResumeContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.ResumeContainerDownload));
       serviceBinder.AddMethod(__Method_CopyToClipboard, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.String, global::RpcCommon.Empty>(serviceImpl.CopyToClipboard));
     }
 

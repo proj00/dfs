@@ -17,6 +17,8 @@ service Ui
 	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (rpc_common.Guid);
 	rpc PublishToTracker(PublishingOptions) returns (rpc_common.Empty);
 	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
+	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
+	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc CopyToClipboard(String) returns (rpc_common.Empty);
 }
 

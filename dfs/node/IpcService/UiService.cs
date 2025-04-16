@@ -193,6 +193,20 @@ namespace node.IpcService
             }
         }
 
+        public override async Task<RpcCommon.Empty> PauseContainerDownload(RpcCommon.Guid request, ServerCallContext context)
+        {
+            var guid = Guid.Parse(request.Guid_);
+
+            return new RpcCommon.Empty();
+        }
+
+        public override async Task<RpcCommon.Empty> ResumeContainerDownload(RpcCommon.Guid request, ServerCallContext context)
+        {
+            var guid = Guid.Parse(request.Guid_);
+
+            return new RpcCommon.Empty();
+        }
+
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
