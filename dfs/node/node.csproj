@@ -16,6 +16,9 @@
   <ItemGroup>
     <PackageReference Include="CefSharp.Common.NETCore" Version="135.0.170" />
     <PackageReference Include="CefSharp.WinForms.NETCore" Version="135.0.170" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+    <PackageReference Include="Grpc.AspNetCore.Web" Version="2.70.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.13.61" />
   </ItemGroup>
 
