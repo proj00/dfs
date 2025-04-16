@@ -95,5 +95,20 @@ namespace common_test
         {
             throw new NotImplementedException();
         }
+
+        public Task<DataUsage> GetDataUsage()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Empty> ReportDataUsage(bool isUpload, long bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetUri()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
