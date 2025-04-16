@@ -158,26 +158,36 @@ namespace tracker
         public override Task<Empty> DeleteObjectHash(Hash request, ServerCallContext context)
         {
             string hashBase64 = request.Data.ToBase64();
-            _filesystemManager.ObjectByHash.TryRemove(ByteString.FromBase64(hashBase64), out _);
+            _filesystemManager.ObjectByHash.Remove(ByteString.FromBase64(hashBase64), out _);
             return Task.FromResult(new Empty());
         }
 
         public override async Task SearchForObjects(SearchRequest request, IServerStreamWriter<SearchResponse> responseStream, ServerCallContext context)
         {
             using var re = new IronRe2.Regex(request.Query);
-            foreach (var container in _filesystemManager.Container.Keys)
+
+            // collect all container GUIDs
+            var allContainers = new List<System.Guid>();
+            _filesystemManager.Container.ForEach((guid, bs) =>
             {
-                var obj = _filesystemManager.GetContainerTree(container).Where(o => re.IsMatch(o.Object.Name)).ToList();
-                if (obj.Count == 0)
-                {
+                allContainers.Add(guid);
+                return true;
+            });
+
+            foreach (var container in allContainers)
+            {
+                var matches = _filesystemManager
+                                  .GetContainerTree(container)
+                                  .Where(o => re.IsMatch(o.Object.Name))
+                                  .ToList();
+                if (matches.Count == 0)
                     continue;
-                }
 
                 var response = new SearchResponse
                 {
                     Guid = container.ToString()
                 };
-                response.Hash.AddRange(obj.Select(o => o.Hash));
+                response.Hash.AddRange(matches.Select(o => o.Hash));
                 await responseStream.WriteAsync(response);
             }
         }
