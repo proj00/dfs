@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    class PersistentDictionary<_Key, _Value> : IDisposable
+    public class PersistentDictionary<_Key, _Value> : IDisposable
     {
         RocksDb db;
         private object dbLock = new object();
@@ -23,6 +23,10 @@ namespace common
         public PersistentDictionary(string dbPath, Func<_Key, byte[]> keySerializer, Func<byte[], _Key> keyDeserializer, Func<_Value, byte[]> valueSerializer, Func<byte[], _Value> valueDeserializer, DbOptions? options = null)
         {
             var opt = options ?? new DbOptions().SetCreateIfMissing(true);
+            if (!Directory.Exists(dbPath))
+            {
+                Directory.CreateDirectory(dbPath);
+            }
             db = RocksDb.Open(opt, dbPath);
             this.keySerializer = keySerializer;
             this.keyDeserializer = keyDeserializer;
@@ -74,10 +78,11 @@ namespace common
             db.Dispose();
         }
 
-        public void Remove(_Key key)
+        public void Remove(_Key key, out object _)
         {
             lock (dbLock)
                 db.Remove(keySerializer(key));
+                _ = null;
         }
 
         public bool TryGetValue(_Key key, [MaybeNullWhen(false)] out _Value value)
