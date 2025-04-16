@@ -57,9 +57,9 @@ class BackendService implements BackendServiceInterface {
     const containers = await service.GetAllContainers();
 
     for (const container of containers) {
-      const objects = await service.GetContainerObjects(container);
-      const internalObjects = objects.data.map((object) =>
-        FromObjectWithHash(object, objects.data, container),
+      const objects = (await service.GetContainerObjects(container)).data;
+      const internalObjects = objects.map((object) =>
+        FromObjectWithHash(object, objects, container),
       );
 
       for (let i = 0; i < internalObjects.length; i++) {

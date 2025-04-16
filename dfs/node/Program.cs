@@ -2,7 +2,10 @@ using node.IpcService;
 using CefSharp;
 using Grpc.Core;
 using CefSharp.WinForms;
-using node.UiResourceLoading;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace node
 {
@@ -37,17 +40,12 @@ namespace node
             UI? ui = null;
             UiService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
 
-            var internalServer = new Grpc.Core.Server()
-            {
-                Services = { Ui.Ui.BindService(service) },
-                Ports = { new ServerPort("localhost", 42069, ServerCredentials.Insecure) }
-            };
-
-            internalServer.Start();
+            StartGrpcWebServer(service);
 
             CefSharpSettings.ConcurrentTaskExecution = true;
             var settings = new CefSettings();
             settings.RootCachePath = AppDomain.CurrentDomain.BaseDirectory + "\\" + Guid.NewGuid();
+            settings.CefCommandLineArgs.Add("disable-features", "BlockInsecurePrivateNetworkRequests");
 #if !DEBUG
             settings.RegisterScheme(new CefCustomScheme()
             {
@@ -59,13 +57,47 @@ namespace node
             Cef.Initialize(settings);
 
             ui = new UI();
-
             System.Windows.Forms.Application.Run(ui);
-            Task[] tasks = [internalServer.ShutdownAsync(), publicServer.ShutdownAsync()];
-            var shutdown = Task.WhenAll(tasks);
 
             // STAThread prohibits async main, this will do
-            shutdown.Wait();
+            publicServer.ShutdownAsync().Wait();
+        }
+
+        private static IHost StartGrpcWebServer(UiService service)
+        {
+            var builder = WebApplication.CreateBuilder();
+
+            builder.Services.AddGrpc();
+            builder.Services.AddCors(o => o.AddPolicy("AllowAll", policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+            }));
+
+            builder.Services.AddSingleton(service);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenLocalhost(42069);
+            });
+
+            var app = builder.Build();
+
+            app.UseRouting();
+            app.UseCors("AllowAll");
+            app.UseGrpcWeb();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGrpcService<UiService>()
+                         .EnableGrpcWeb()
+                         .RequireCors("AllowAll");
+            });
+
+            app.Start();
+            return app;
         }
     }
 }

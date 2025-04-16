@@ -1,4 +1,4 @@
-import { fs } from "@/types/fs/filesystem";
+import * as fs from "@/types/fs/filesystem";
 import { toBase64 } from "./utils";
 
 interface FsObject {
@@ -25,25 +25,26 @@ export function FromObjectWithHash(
   containerObjects: fs.ObjectWithHash[],
   containerGuid: string,
 ): File | Folder {
-  if (object.object == null) {
+  const fsObj = object.object;
+  if (fsObj == null) {
     throw new Error("ObjectWithHash had a null object");
   }
 
   const base: FsObject = {
     id: toBase64(object.hash),
-    name: object.object?.name,
+    name: fsObj?.name,
     createdAt: Date.now().toString(),
     modifiedAt: Date.now().toString(),
     containerGuid,
     parentId: containerObjects
       .filter((o) => {
         const obj = o?.object;
-        if (obj == null || obj.type !== "directory") {
+        if (obj == null || obj.type.oneofKind !== "directory") {
           return false;
         }
 
         return (
-          obj.directory.entries.find((hash) => {
+          obj.type.directory.entries.find((hash) => {
             return toBase64(hash) === toBase64(object.hash);
           }) !== undefined
         );
@@ -51,12 +52,12 @@ export function FromObjectWithHash(
       .map((o) => toBase64(o.hash)),
   };
 
-  switch (object.object.type) {
+  switch (fsObj.type.oneofKind) {
     case "file":
       return {
         ...base,
         type: "other",
-        size: Number(object.object.file.size),
+        size: Number(fsObj.type.file.size),
         thumbnail: undefined,
       };
     case "directory":

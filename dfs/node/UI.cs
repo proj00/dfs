@@ -22,7 +22,7 @@ namespace node
             InitializeComponent();
         }
 
-        protected override void OnShown(EventArgs e)
+        protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
 
@@ -31,7 +31,7 @@ namespace node
 #else
             const string sourceUrl = "http://ui.resources/index.html";
 #endif
-            browser.LoadUrl(sourceUrl);
+            await browser.LoadUrlAsync(sourceUrl);
 #if DEBUG
             browser.ShowDevTools();
 #endif

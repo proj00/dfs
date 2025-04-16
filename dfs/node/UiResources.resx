@@ -63,10 +63,10 @@
 	<data name="vite.svg" type="System.Resources.ResXFileRef, System.Windows.Forms">
 		<value>UiResources/vite.svg;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
-	<data name="assets/index-CMxd-qbC.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/index-CMxd-qbC.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	<data name="assets/index-CLgPgl8k.css" type="System.Resources.ResXFileRef, System.Windows.Forms">
+		<value>UiResources\assets/index-CLgPgl8k.css;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
-	<data name="assets/index-CQN_jJ8l.css" type="System.Resources.ResXFileRef, System.Windows.Forms">
-		<value>UiResources\assets/index-CQN_jJ8l.css;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	<data name="assets/index-DIWZ6lk7.js" type="System.Resources.ResXFileRef, System.Windows.Forms">
+		<value>UiResources\assets/index-DIWZ6lk7.js;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
 	</data>
 </root>
