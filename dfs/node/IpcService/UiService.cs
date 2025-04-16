@@ -3,10 +3,12 @@ using Fs;
 using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
+using Microsoft.VisualStudio.Threading;
 
 namespace node.IpcService
 {
@@ -18,6 +20,7 @@ namespace node.IpcService
         private NodeRpc rpc;
         private Func<UI?> getUI;
         private string nodeURI;
+        private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
 
         public UiService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
         {
@@ -167,11 +170,11 @@ namespace node.IpcService
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTracker(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state));
             return new RpcCommon.Empty();
         }
 
-        private async Task PublishToTracker(Guid container, ITrackerWrapper tracker)
+        private async Task PublishToTrackerAsync(Guid container, ITrackerWrapper tracker)
         {
             if (!state.Manager.Container.ContainsKey(container))
             {
@@ -196,40 +199,46 @@ namespace node.IpcService
         public override async Task<RpcCommon.Empty> PauseContainerDownload(RpcCommon.Guid request, ServerCallContext context)
         {
             var guid = Guid.Parse(request.Guid_);
-
+            var pauseEvent = pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
+            pauseEvent.Reset();
             return new RpcCommon.Empty();
         }
 
         public override async Task<RpcCommon.Empty> ResumeContainerDownload(RpcCommon.Guid request, ServerCallContext context)
         {
             var guid = Guid.Parse(request.Guid_);
-
+            if (pauseEvents.TryGetValue(guid, out var pauseEvent))
+            {
+                pauseEvent.Set();
+            }
             return new RpcCommon.Empty();
         }
 
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            var hash = await tracker.GetContainerRootHash(Guid.Parse(request.ContainerGuid));
-            await DownloadObjectByHash(hash, Guid.Parse(request.ContainerGuid), tracker, request.DestinationDir, request.MaxConcurrentChunks);
+            var guid = Guid.Parse(request.ContainerGuid);
+            var hash = await tracker.GetContainerRootHash(guid);
+            await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
+            await DownloadObjectByHash(hash, guid, tracker, request.DestinationDir, request.MaxConcurrentChunks);
 
             return new RpcCommon.Empty();
         }
 
-        private async Task DownloadObjectByHash(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
-            state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
+            guid = state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
 
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
                 .Where(obj => obj.Object.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
-                .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore));
+                .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore, guid.Value));
 
             await Task.WhenAll(fileTasks);
         }
 
-        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore)
+        private async Task DownloadFileAsync(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore, Guid containerGuid)
         {
             List<Task> chunkTasks = [];
 
@@ -243,7 +252,7 @@ namespace node.IpcService
             var i = 0;
             foreach (var hash in obj.Object.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore));
+                chunkTasks.Add(DownloadChunk(hash, obj.Hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore, containerGuid));
                 i++;
             }
 
@@ -251,12 +260,16 @@ namespace node.IpcService
             state.PathByHash[obj.Hash] = dir;
         }
 
-        private async Task DownloadChunk(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
-            FileStream stream, object streamLock, SemaphoreSlim semaphore)
+        private async Task DownloadChunkAsync(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
+            FileStream stream, object streamLock, SemaphoreSlim semaphore, Guid containerGuid)
         {
             await semaphore.WaitAsync();
             try
             {
+                if (pauseEvents.TryGetValue(containerGuid, out var pauseEvent))
+                {
+                    await pauseEvent.WaitAsync();
+                }
                 List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
 
                 // for now, pick a random peer
