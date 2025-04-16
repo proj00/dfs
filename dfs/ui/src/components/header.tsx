@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Grid, List, Plus, Upload, User, RefreshCw } from "lucide-react"
+import { Search, Grid, List, Plus, Upload, User, RefreshCw, Globe } from "lucide-react"
 import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { UploadDialog } from "./upload-dialog"
+import { TrackerSearchDialog } from "./tracker-search-dialog"
 
 interface HeaderProps {
     view: "grid" | "list"
@@ -13,10 +14,12 @@ interface HeaderProps {
     searchQuery: string
     setSearchQuery: (query: string) => void
     onRefresh?: () => void
+    onDownloadContainer?: (containerGuid: string, trackerUri: string) => void
 }
 
-export function Header({ view, setView, searchQuery, setSearchQuery, onRefresh }: HeaderProps) {
+export function Header({ view, setView, searchQuery, setSearchQuery, onRefresh, onDownloadContainer }: HeaderProps) {
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+    const [trackerSearchOpen, setTrackerSearchOpen] = useState(false)
 
     return (
         <header className="border-b bg-background px-4 py-3 sticky top-0 z-10">
@@ -44,7 +47,8 @@ export function Header({ view, setView, searchQuery, setSearchQuery, onRefresh }
                     </div>
                     <h1 className="text-xl font-semibold">Drive</h1>
                 </div>
-                <div className="relative flex-1 max-w-md mx-4">
+                <div className="relative flex-1 max-w-md mx-4 flex items-center gap-2">
+                    <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
@@ -52,7 +56,12 @@ export function Header({ view, setView, searchQuery, setSearchQuery, onRefresh }
                         className="pl-8 w-full"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                        />
+                    </div>
+                    <Button variant="outline" className="flex items-center gap-1" onClick={() => setTrackerSearchOpen(true)}>
+                        <Globe className="h-4 w-4" />
+                        <span className="hidden sm:inline">Search Tracker</span>
+                    </Button>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="flex border rounded-md">
@@ -148,7 +157,11 @@ export function Header({ view, setView, searchQuery, setSearchQuery, onRefresh }
                         <span className="sr-only">Upload</span>
                     </Button>
                     <UploadDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} />
-
+                    <TrackerSearchDialog
+                        open={trackerSearchOpen}
+                        onOpenChange={setTrackerSearchOpen}
+                        onDownloadContainer={onDownloadContainer}
+                    />
                     {/* Add refresh button */}
                     {onRefresh && (
                         <Button variant="outline" size="icon" onClick={onRefresh} title="Refresh data">

@@ -100,6 +100,17 @@ export function Drive() {
     fetchData();
   }, [fetchData]);
 
+    // Handle download from tracker search
+    const handleDownloadContainer = useCallback((containerGuid: string, trackerUri: string) => {
+        console.log(`Downloading container ${containerGuid} from tracker ${trackerUri}`)
+        // Open the download dialog in the sidebar with pre-filled values
+        // This is a workaround since we don't have direct access to the sidebar's state
+        // In a real app, you might use a state management library or context for this
+        const event = new CustomEvent("openDownloadDialog", {
+            detail: { containerGuid, trackerUri },
+        })
+        window.dispatchEvent(event)
+    }, [])
   return (
     <div className="flex h-screen flex-col">
       <Header
@@ -107,7 +118,8 @@ export function Drive() {
         setView={setView}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        onRefresh={fetchData}
+              onRefresh={fetchData}
+              onDownloadContainer={handleDownloadContainer}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

@@ -86,6 +86,21 @@ export function Sidebar({
     containerDownloadProgress.bytesTotal,
   );
 
+    // Listen for custom event to open download dialog
+    useEffect(() => {
+        const handleOpenDownloadDialog = (event: CustomEvent) => {
+            const { containerGuid, trackerUri } = event.detail
+            setDownloadContainerGuid(containerGuid)
+            setDownloadTrackerUri(trackerUri)
+            setDownloadDialogOpen(true)
+        }
+
+        window.addEventListener("openDownloadDialog", handleOpenDownloadDialog as EventListener)
+
+        return () => {
+            window.removeEventListener("openDownloadDialog", handleOpenDownloadDialog as EventListener)
+        }
+    }, [])
   // Fetch data usage periodically
   useEffect(() => {
     const fetchDataUsage = async () => {
