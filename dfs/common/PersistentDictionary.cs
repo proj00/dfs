@@ -13,6 +13,7 @@ namespace common
     class PersistentDictionary<_Key, _Value> : IDisposable
     {
         RocksDb db;
+        private object dbLock = new object();
 
         private Func<_Key, byte[]> keySerializer;
         private Func<byte[], _Key> keyDeserializer;
@@ -31,22 +32,41 @@ namespace common
 
         public _Value this[_Key key]
         {
-            get => valueDeserializer(db.Get(keySerializer(key)));
-            set =>
-                db.Put(keySerializer(key), valueSerializer(value));
+            get
+            {
+                lock (dbLock)
+                {
+                    return valueDeserializer(db.Get(keySerializer(key)));
+                }
+            }
+            set
+            {
+                lock (dbLock)
+                {
+                    db.Put(keySerializer(key), valueSerializer(value));
+                }
+            }
         }
 
         public long CountEstimate
         {
             get
             {
-                return int.Parse(db.GetProperty("rocksdb-estimate-num-keys"));
+                lock (dbLock)
+                {
+                    return db.GetProperty("rocksdb-estimate-num-keys") == null
+                        ? 0
+                        : int.Parse(db.GetProperty("rocksdb-estimate-num-keys"));
+                }
             }
         }
 
         public bool ContainsKey(_Key key)
         {
-            return db.HasKey(keySerializer(key));
+            lock (dbLock)
+            {
+                return db.HasKey(keySerializer(key));
+            }
         }
 
         public void Dispose()
@@ -54,48 +74,44 @@ namespace common
             db.Dispose();
         }
 
-        public IEnumerator<KeyValuePair<_Key, _Value>> GetEnumerator()
+        public void Remove(_Key key)
         {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove(_Key key)
-        {
-            try
-            {
+            lock (dbLock)
                 db.Remove(keySerializer(key));
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool Remove(KeyValuePair<_Key, _Value> item)
-        {
-            try
-            {
-                db.Remove(keySerializer(item.Key));
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
         }
 
         public bool TryGetValue(_Key key, [MaybeNullWhen(false)] out _Value value)
         {
-            var result = db.Get(keySerializer(key));
-            if (result == null)
+            lock (dbLock)
             {
-                value = default;
-                return false;
-            }
+                var result = db.Get(keySerializer(key));
+                if (result == null)
+                {
+                    value = default;
+                    return false;
+                }
 
-            value = valueDeserializer(result);
-            return true;
+                value = valueDeserializer(result);
+                return true;
+            }
+        }
+
+        // action returns true to continue, false to stop
+        public void ForEach(Func<_Key, _Value, bool> action)
+        {
+            lock (dbLock)
+            {
+                using var it = db.NewIterator();
+                for (it.SeekToFirst(); it.Valid(); it.Next())
+                {
+                    var key = keyDeserializer(it.Key());
+                    var value = valueDeserializer(it.Value());
+                    if (!action(key, value))
+                    {
+                        break;
+                    }
+                }
+            }
         }
     }
 }
