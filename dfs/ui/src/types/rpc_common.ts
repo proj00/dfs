@@ -61,14 +61,14 @@ export interface SearchResponse {
  * @generated from protobuf message rpc_common.DataUsage
  */
 export interface DataUsage {
-  /**
-   * @generated from protobuf field: int64 upload = 1;
-   */
-  upload: bigint;
-  /**
-   * @generated from protobuf field: int64 download = 2;
-   */
-  download: bigint;
+    /**
+     * @generated from protobuf field: int64 upload = 1;
+     */
+    upload: bigint;
+    /**
+     * @generated from protobuf field: int64 download = 2;
+     */
+    download: bigint;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class Empty$Type extends MessageType<Empty> {
@@ -306,88 +306,54 @@ class SearchResponse$Type extends MessageType<SearchResponse> {
 export const SearchResponse = new SearchResponse$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class DataUsage$Type extends MessageType<DataUsage> {
-  constructor() {
-    super("rpc_common.DataUsage", [
-      {
-        no: 1,
-        name: "upload",
-        kind: "scalar",
-        T: 3 /*ScalarType.INT64*/,
-        L: 0 /*LongType.BIGINT*/,
-      },
-      {
-        no: 2,
-        name: "download",
-        kind: "scalar",
-        T: 3 /*ScalarType.INT64*/,
-        L: 0 /*LongType.BIGINT*/,
-      },
-    ]);
-  }
-  create(value?: PartialMessage<DataUsage>): DataUsage {
-    const message = globalThis.Object.create(this.messagePrototype!);
-    message.upload = 0n;
-    message.download = 0n;
-    if (value !== undefined)
-      reflectionMergePartial<DataUsage>(this, message, value);
-    return message;
-  }
-  internalBinaryRead(
-    reader: IBinaryReader,
-    length: number,
-    options: BinaryReadOptions,
-    target?: DataUsage,
-  ): DataUsage {
-    let message = target ?? this.create(),
-      end = reader.pos + length;
-    while (reader.pos < end) {
-      let [fieldNo, wireType] = reader.tag();
-      switch (fieldNo) {
-        case /* int64 upload */ 1:
-          message.upload = reader.int64().toBigInt();
-          break;
-        case /* int64 download */ 2:
-          message.download = reader.int64().toBigInt();
-          break;
-        default:
-          let u = options.readUnknownField;
-          if (u === "throw")
-            throw new globalThis.Error(
-              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
-            );
-          let d = reader.skip(wireType);
-          if (u !== false)
-            (u === true ? UnknownFieldHandler.onRead : u)(
-              this.typeName,
-              message,
-              fieldNo,
-              wireType,
-              d,
-            );
-      }
+    constructor() {
+        super("rpc_common.DataUsage", [
+            { no: 1, name: "upload", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ },
+            { no: 2, name: "download", kind: "scalar", T: 3 /*ScalarType.INT64*/, L: 0 /*LongType.BIGINT*/ }
+        ]);
     }
-    return message;
-  }
-  internalBinaryWrite(
-    message: DataUsage,
-    writer: IBinaryWriter,
-    options: BinaryWriteOptions,
-  ): IBinaryWriter {
-    /* int64 upload = 1; */
-    if (message.upload !== 0n)
-      writer.tag(1, WireType.Varint).int64(message.upload);
-    /* int64 download = 2; */
-    if (message.download !== 0n)
-      writer.tag(2, WireType.Varint).int64(message.download);
-    let u = options.writeUnknownFields;
-    if (u !== false)
-      (u == true ? UnknownFieldHandler.onWrite : u)(
-        this.typeName,
-        message,
-        writer,
-      );
-    return writer;
-  }
+    create(value?: PartialMessage<DataUsage>): DataUsage {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.upload = 0n;
+        message.download = 0n;
+        if (value !== undefined)
+            reflectionMergePartial<DataUsage>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: DataUsage): DataUsage {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* int64 upload */ 1:
+                    message.upload = reader.int64().toBigInt();
+                    break;
+                case /* int64 download */ 2:
+                    message.download = reader.int64().toBigInt();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: DataUsage, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* int64 upload = 1; */
+        if (message.upload !== 0n)
+            writer.tag(1, WireType.Varint).int64(message.upload);
+        /* int64 download = 2; */
+        if (message.download !== 0n)
+            writer.tag(2, WireType.Varint).int64(message.download);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
 }
 /**
  * @generated MessageType for protobuf message rpc_common.DataUsage

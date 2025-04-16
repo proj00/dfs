@@ -122,10 +122,10 @@ export interface SearchRequest {
  * @generated from protobuf message Ui.UsageRequest
  */
 export interface UsageRequest {
-  /**
-   * @generated from protobuf field: string trackerUri = 1;
-   */
-  trackerUri: string;
+    /**
+     * @generated from protobuf field: string trackerUri = 1;
+     */
+    trackerUri: string;
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ObjectOptions$Type extends MessageType<ObjectOptions> {
@@ -561,68 +561,46 @@ class SearchRequest$Type extends MessageType<SearchRequest> {
 export const SearchRequest = new SearchRequest$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class UsageRequest$Type extends MessageType<UsageRequest> {
-  constructor() {
-    super("Ui.UsageRequest", [
-      { no: 1, name: "trackerUri", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-    ]);
-  }
-  create(value?: PartialMessage<UsageRequest>): UsageRequest {
-    const message = globalThis.Object.create(this.messagePrototype!);
-    message.trackerUri = "";
-    if (value !== undefined)
-      reflectionMergePartial<UsageRequest>(this, message, value);
-    return message;
-  }
-  internalBinaryRead(
-    reader: IBinaryReader,
-    length: number,
-    options: BinaryReadOptions,
-    target?: UsageRequest,
-  ): UsageRequest {
-    let message = target ?? this.create(),
-      end = reader.pos + length;
-    while (reader.pos < end) {
-      let [fieldNo, wireType] = reader.tag();
-      switch (fieldNo) {
-        case /* string trackerUri */ 1:
-          message.trackerUri = reader.string();
-          break;
-        default:
-          let u = options.readUnknownField;
-          if (u === "throw")
-            throw new globalThis.Error(
-              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
-            );
-          let d = reader.skip(wireType);
-          if (u !== false)
-            (u === true ? UnknownFieldHandler.onRead : u)(
-              this.typeName,
-              message,
-              fieldNo,
-              wireType,
-              d,
-            );
-      }
+    constructor() {
+        super("Ui.UsageRequest", [
+            { no: 1, name: "trackerUri", kind: "scalar", T: 9 /*ScalarType.STRING*/ }
+        ]);
     }
-    return message;
-  }
-  internalBinaryWrite(
-    message: UsageRequest,
-    writer: IBinaryWriter,
-    options: BinaryWriteOptions,
-  ): IBinaryWriter {
-    /* string trackerUri = 1; */
-    if (message.trackerUri !== "")
-      writer.tag(1, WireType.LengthDelimited).string(message.trackerUri);
-    let u = options.writeUnknownFields;
-    if (u !== false)
-      (u == true ? UnknownFieldHandler.onWrite : u)(
-        this.typeName,
-        message,
-        writer,
-      );
-    return writer;
-  }
+    create(value?: PartialMessage<UsageRequest>): UsageRequest {
+        const message = globalThis.Object.create((this.messagePrototype!));
+        message.trackerUri = "";
+        if (value !== undefined)
+            reflectionMergePartial<UsageRequest>(this, message, value);
+        return message;
+    }
+    internalBinaryRead(reader: IBinaryReader, length: number, options: BinaryReadOptions, target?: UsageRequest): UsageRequest {
+        let message = target ?? this.create(), end = reader.pos + length;
+        while (reader.pos < end) {
+            let [fieldNo, wireType] = reader.tag();
+            switch (fieldNo) {
+                case /* string trackerUri */ 1:
+                    message.trackerUri = reader.string();
+                    break;
+                default:
+                    let u = options.readUnknownField;
+                    if (u === "throw")
+                        throw new globalThis.Error(`Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`);
+                    let d = reader.skip(wireType);
+                    if (u !== false)
+                        (u === true ? UnknownFieldHandler.onRead : u)(this.typeName, message, fieldNo, wireType, d);
+            }
+        }
+        return message;
+    }
+    internalBinaryWrite(message: UsageRequest, writer: IBinaryWriter, options: BinaryWriteOptions): IBinaryWriter {
+        /* string trackerUri = 1; */
+        if (message.trackerUri !== "")
+            writer.tag(1, WireType.LengthDelimited).string(message.trackerUri);
+        let u = options.writeUnknownFields;
+        if (u !== false)
+            (u == true ? UnknownFieldHandler.onWrite : u)(this.typeName, message, writer);
+        return writer;
+    }
 }
 /**
  * @generated MessageType for protobuf message Ui.UsageRequest
@@ -645,5 +623,6 @@ export const Ui = new ServiceType("Ui.Ui", [
     { name: "PauseContainerDownload", options: {}, I: Guid, O: Empty },
     { name: "ResumeContainerDownload", options: {}, I: Guid, O: Empty },
     { name: "CopyToClipboard", options: {}, I: String$, O: Empty },
-    { name: "SearchForObjects", serverStreaming: true, options: {}, I: SearchRequest, O: SearchResponse }
+    { name: "SearchForObjects", serverStreaming: true, options: {}, I: SearchRequest, O: SearchResponse },
+    { name: "GetDataUsage", options: {}, I: UsageRequest, O: DataUsage }
 ]);

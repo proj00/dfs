@@ -23,6 +23,10 @@ namespace common
         public PersistentDictionary(string dbPath, Func<_Key, byte[]> keySerializer, Func<byte[], _Key> keyDeserializer, Func<_Value, byte[]> valueSerializer, Func<byte[], _Value> valueDeserializer, DbOptions? options = null)
         {
             var opt = options ?? new DbOptions().SetCreateIfMissing(true);
+            if (!Directory.Exists(dbPath))
+            {
+                Directory.CreateDirectory(dbPath);
+            }
             db = RocksDb.Open(opt, dbPath);
             this.keySerializer = keySerializer;
             this.keyDeserializer = keyDeserializer;
@@ -78,6 +82,7 @@ namespace common
         {
             lock (dbLock)
                 db.Remove(keySerializer(key));
+                _ = null;
         }
 
         public bool TryGetValue(_Key key, [MaybeNullWhen(false)] out _Value value)
