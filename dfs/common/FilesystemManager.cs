@@ -3,7 +3,6 @@ using Google.Protobuf;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Tracker;
@@ -12,109 +11,198 @@ namespace common
 {
     public class FilesystemManager
     {
-        public ConcurrentDictionary<ByteString, ObjectWithHash> ObjectByHash { get; }
-        public ConcurrentDictionary<ByteString, ByteString[]> ChunkParents { get; }
-        public ConcurrentDictionary<Guid, ByteString> Container { get; }
-        public ConcurrentDictionary<ByteString, List<ByteString>> Parent { get; }
-        public ConcurrentDictionary<ByteString, ByteString> NewerVersion { get; }
+        private const string DbBasePath = "./db";
+
+        private readonly object _syncRoot = new object();
+        public PersistentDictionary<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
+        public PersistentDictionary<ByteString, ByteString[]> ChunkParents { get; private set; }
+        public PersistentDictionary<Guid, ByteString> Container { get; private set; }
+        public PersistentDictionary<ByteString, List<ByteString>> Parent { get; private set; }
+        public PersistentDictionary<ByteString, ByteString> NewerVersion { get; private set; }
 
         public FilesystemManager()
         {
-            ObjectByHash = new(new HashUtils.ByteStringComparer());
-            ChunkParents = new(new HashUtils.ByteStringComparer());
-            Container = [];
-            Parent = [];
-            NewerVersion = [];
+
+            ObjectByHash = new PersistentDictionary<ByteString, ObjectWithHash>(
+                Path.Combine(DbBasePath, "ObjectByHash"),
+                keySerializer: bs => bs.ToByteArray(),
+                keyDeserializer: bytes => ByteString.CopyFrom(bytes),
+                valueSerializer: o => o.ToByteArray(),
+                valueDeserializer: bytes => ObjectWithHash.Parser.ParseFrom(bytes)
+            );
+
+            ChunkParents = new PersistentDictionary<ByteString, ByteString[]>(
+                Path.Combine(DbBasePath, "ChunkParents"),
+                bs => bs.ToByteArray(),
+                bytes => ByteString.CopyFrom(bytes),
+                SerializeByteStringArray,
+                DeserializeByteStringArray
+            );
+
+            Container = new PersistentDictionary<Guid, ByteString>(
+                Path.Combine(DbBasePath, "Container"),
+                guid => guid.ToByteArray(),
+                bytes => new Guid(bytes),
+                bs => bs.ToByteArray(),
+                bytes => ByteString.CopyFrom(bytes)
+            );
+
+            Parent = new PersistentDictionary<ByteString, List<ByteString>>(
+                Path.Combine(DbBasePath, "Parent"),
+                bs => bs.ToByteArray(),
+                bytes => ByteString.CopyFrom(bytes),
+                list => SerializeByteStringArray(list.ToArray()),
+                bytes => DeserializeByteStringArray(bytes).ToList()
+            );
+
+            NewerVersion = new PersistentDictionary<ByteString, ByteString>(
+                Path.Combine(DbBasePath, "NewerVersion"),
+                bs => bs.ToByteArray(),
+                bytes => ByteString.CopyFrom(bytes),
+                bs => bs.ToByteArray(),
+                bytes => ByteString.CopyFrom(bytes)
+            );
+        }
+
+        private static byte[] SerializeByteStringArray(ByteString[] array)
+        {
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            bw.Write(array.Length);
+            foreach (var bs in array)
+            {
+                var data = bs.ToByteArray();
+                bw.Write(data.Length);
+                bw.Write(data);
+            }
+            return ms.ToArray();
+        }
+
+        private static ByteString[] DeserializeByteStringArray(byte[] bytes)
+        {
+            using var ms = new MemoryStream(bytes);
+            using var br = new BinaryReader(ms);
+            int count = br.ReadInt32();
+            var arr = new ByteString[count];
+            for (int i = 0; i < count; i++)
+            {
+                int len = br.ReadInt32();
+                var data = br.ReadBytes(len);
+                arr[i] = ByteString.CopyFrom(data);
+            }
+            return arr;
+        }
+
+        public void Dispose()
+        {
+            ObjectByHash.Dispose();
+            ChunkParents.Dispose();
+            Container.Dispose();
+            Parent.Dispose();
+            NewerVersion.Dispose();
         }
 
         public Guid CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid? guid = null)
         {
-            foreach (var obj in objects)
+            lock (_syncRoot)
             {
-                ObjectByHash[obj.Hash] = obj;
-                switch (obj.Object.TypeCase)
+                foreach (var obj in objects)
                 {
-                    case FileSystemObject.TypeOneofCase.File:
-                        SetFileChunkParents(obj);
-                        break;
-                    case FileSystemObject.TypeOneofCase.Directory:
-                        foreach (var child in obj.Object.Directory.Entries)
-                        {
-                            if (Parent.TryGetValue(child, out List<ByteString>? value))
+                    ObjectByHash[obj.Hash] = obj;
+                    switch (obj.Object.TypeCase)
+                    {
+                        case FileSystemObject.TypeOneofCase.File:
+                            SetFileChunkParents(obj);
+                            break;
+                        case FileSystemObject.TypeOneofCase.Directory:
+                            foreach (var child in obj.Object.Directory.Entries)
                             {
-                                value.Add(obj.Hash);
+                                if (Parent.TryGetValue(child, out List<ByteString>? value))
+                                {
+                                    value.Add(obj.Hash);
+                                }
+                                else
+                                {
+                                    Parent[child] = [obj.Hash];
+                                }
                             }
-                            else
-                            {
-                                Parent[child] = [obj.Hash];
-                            }
-                        }
-                        break;
-                    case FileSystemObject.TypeOneofCase.Link:
-                        break;
-                    default:
-                        throw new ArgumentException("ObjectWithHash has an invalid type");
+                            break;
+                        case FileSystemObject.TypeOneofCase.Link:
+                            break;
+                        default:
+                            throw new ArgumentException("ObjectWithHash has an invalid type");
+                    }
                 }
-            }
 
-            var g = guid ?? Guid.NewGuid();
-            Container[g] = rootObject;
-            return g;
+                var g = guid ?? Guid.NewGuid();
+                Container[g] = rootObject;
+                return g;
+            }
         }
 
         public List<ObjectWithHash> GetContainerTree(Guid containerGuid)
         {
-            var root = Container[containerGuid];
-            if (root == null)
+            lock (_syncRoot)
             {
-                return [];
-            }
+                var root = Container[containerGuid];
+                if (root == null)
+                {
+                    return [];
+                }
 
-            return GetObjectTree(root);
+                return GetObjectTree(root);
+            }
+            
         }
 
         public List<ObjectWithHash> GetObjectTree(ByteString root)
         {
-            Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
-            void Traverse(ByteString hash)
+            lock (_syncRoot)
             {
-                var o = ObjectByHash[hash];
-                obj[hash] = o;
-                if (o.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
+                Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
+                void Traverse(ByteString hash)
                 {
-                    return;
+                    var o = ObjectByHash[hash];
+                    obj[hash] = o;
+                    if (o.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
+                    {
+                        return;
+                    }
+
+                    foreach (var next in o.Object.Directory.Entries)
+                    {
+                        Traverse(next);
+                    }
                 }
 
-                foreach (var next in o.Object.Directory.Entries)
-                {
-                    Traverse(next);
-                }
+                Traverse(root);
+                return [.. obj.Values];
             }
-
-            Traverse(root);
-            return [.. obj.Values];
         }
 
         public void SetFileChunkParents(ObjectWithHash fileObject)
         {
-            if (fileObject.Object.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
+            lock (_syncRoot)
             {
-                throw new ArgumentException("fileObject doesn't represent a file");
-            }
-
-            var parentHash = fileObject.Hash;
-            var file = fileObject.Object.File;
-            foreach (var chunkHash in file.Hashes.Hash)
-            {
-                // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
-                // in comparison to reads, so this is... fine?
-                if (ChunkParents.TryGetValue(chunkHash, out ByteString[]? parents))
+                if (fileObject.Object.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
                 {
-                    ChunkParents[chunkHash] = [.. parents, parentHash];
-                    continue;
+                    throw new ArgumentException("fileObject doesn't represent a file");
                 }
 
-                ChunkParents[chunkHash] = [parentHash];
+                var parentHash = fileObject.Hash;
+                var file = fileObject.Object.File;
+                foreach (var chunkHash in file.Hashes.Hash)
+                {
+                    // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
+                    // in comparison to reads, so this is... fine?
+                    if (ChunkParents.TryGetValue(chunkHash, out ByteString[]? parents))
+                    {
+                        ChunkParents[chunkHash] = [.. parents, parentHash];
+                        continue;
+                    }
+
+                    ChunkParents[chunkHash] = [parentHash];
+                }
             }
         }
 
