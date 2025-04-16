@@ -20,6 +20,19 @@ export interface Folder extends FsObject {
   hasChildren: boolean;
 }
 
+export interface DownloadItem {
+  id: string;
+  fileId: string;
+  containerGuid: string;
+  fileName: string;
+  startTime: Date;
+  downloadedBytes: number;
+  totalBytes: number;
+  status: "active" | "completed" | "failed";
+  speed: number; // bytes per second
+  elapsedTime: number; // milliseconds
+}
+
 export function FromObjectWithHash(
   object: fs.ObjectWithHash,
   containerObjects: fs.ObjectWithHash[],
