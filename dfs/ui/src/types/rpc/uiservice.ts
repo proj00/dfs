@@ -891,6 +891,32 @@ export namespace Ui {
         responseDeserialize: (bytes: Buffer) =>
           dependency_2.rpc_common.Empty.deserialize(new Uint8Array(bytes)),
       },
+      PauseContainerDownload: {
+        path: "/Ui.Ui/PauseContainerDownload",
+        requestStream: false,
+        responseStream: false,
+        requestSerialize: (message: dependency_2.rpc_common.Guid) =>
+          Buffer.from(message.serialize()),
+        requestDeserialize: (bytes: Buffer) =>
+          dependency_2.rpc_common.Guid.deserialize(new Uint8Array(bytes)),
+        responseSerialize: (message: dependency_2.rpc_common.Empty) =>
+          Buffer.from(message.serialize()),
+        responseDeserialize: (bytes: Buffer) =>
+          dependency_2.rpc_common.Empty.deserialize(new Uint8Array(bytes)),
+      },
+      ResumeContainerDownload: {
+        path: "/Ui.Ui/ResumeContainerDownload",
+        requestStream: false,
+        responseStream: false,
+        requestSerialize: (message: dependency_2.rpc_common.Guid) =>
+          Buffer.from(message.serialize()),
+        requestDeserialize: (bytes: Buffer) =>
+          dependency_2.rpc_common.Guid.deserialize(new Uint8Array(bytes)),
+        responseSerialize: (message: dependency_2.rpc_common.Empty) =>
+          Buffer.from(message.serialize()),
+        responseDeserialize: (bytes: Buffer) =>
+          dependency_2.rpc_common.Empty.deserialize(new Uint8Array(bytes)),
+      },
       CopyToClipboard: {
         path: "/Ui.Ui/CopyToClipboard",
         requestStream: false,
@@ -962,6 +988,20 @@ export namespace Ui {
     abstract DownloadContainer(
       call: grpc_1.ServerUnaryCall<
         DownloadContainerOptions,
+        dependency_2.rpc_common.Empty
+      >,
+      callback: grpc_1.sendUnaryData<dependency_2.rpc_common.Empty>,
+    ): void;
+    abstract PauseContainerDownload(
+      call: grpc_1.ServerUnaryCall<
+        dependency_2.rpc_common.Guid,
+        dependency_2.rpc_common.Empty
+      >,
+      callback: grpc_1.sendUnaryData<dependency_2.rpc_common.Empty>,
+    ): void;
+    abstract ResumeContainerDownload(
+      call: grpc_1.ServerUnaryCall<
+        dependency_2.rpc_common.Guid,
         dependency_2.rpc_common.Empty
       >,
       callback: grpc_1.sendUnaryData<dependency_2.rpc_common.Empty>,
@@ -1133,6 +1173,43 @@ export namespace Ui {
       callback?: grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
     ): grpc_1.ClientUnaryCall => {
       return super.DownloadContainer(message, metadata, options, callback);
+    };
+    PauseContainerDownload: GrpcUnaryServiceInterface<
+      dependency_2.rpc_common.Guid,
+      dependency_2.rpc_common.Empty
+    > = (
+      message: dependency_2.rpc_common.Guid,
+      metadata:
+        | grpc_1.Metadata
+        | grpc_1.CallOptions
+        | grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+      options?:
+        | grpc_1.CallOptions
+        | grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+      callback?: grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+    ): grpc_1.ClientUnaryCall => {
+      return super.PauseContainerDownload(message, metadata, options, callback);
+    };
+    ResumeContainerDownload: GrpcUnaryServiceInterface<
+      dependency_2.rpc_common.Guid,
+      dependency_2.rpc_common.Empty
+    > = (
+      message: dependency_2.rpc_common.Guid,
+      metadata:
+        | grpc_1.Metadata
+        | grpc_1.CallOptions
+        | grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+      options?:
+        | grpc_1.CallOptions
+        | grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+      callback?: grpc_1.requestCallback<dependency_2.rpc_common.Empty>,
+    ): grpc_1.ClientUnaryCall => {
+      return super.ResumeContainerDownload(
+        message,
+        metadata,
+        options,
+        callback,
+      );
     };
     CopyToClipboard: GrpcUnaryServiceInterface<
       String,

@@ -1,5 +1,4 @@
 ﻿using CefSharp;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using node.IpcService;
 using System;

@@ -51,6 +51,8 @@ export interface INodeService {
     destinationDir: string,
     maxConcurrentChunks: number,
   ) => Promise<void>;
+  PauseContainerDownload: (container: string) => Promise<void>;
+  ResumeContainerDownload: (container: string) => Promise<void>;
   CopyToClipboard: (str: string) => Promise<void>;
 }
 
@@ -152,6 +154,16 @@ class NodeServiceClient implements INodeService {
     await this.callGrpc(
       this.client.CopyToClipboard,
       new Ui.String({ value: str }),
+    );
+  }
+
+  async PauseContainerDownload(container: string): Promise<void> {
+    await this.callGrpc(this.client.PauseContainerDownload, getGuid(container));
+  }
+  async ResumeContainerDownload(container: string): Promise<void> {
+    await this.callGrpc(
+      this.client.ResumeContainerDownload,
+      getGuid(container),
     );
   }
 }
