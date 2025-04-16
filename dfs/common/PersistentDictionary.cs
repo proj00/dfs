@@ -74,7 +74,7 @@ namespace common
             db.Dispose();
         }
 
-        public void Remove(_Key key)
+        public void Remove(_Key key, out object _)
         {
             lock (dbLock)
                 db.Remove(keySerializer(key));
