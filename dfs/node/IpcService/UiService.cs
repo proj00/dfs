@@ -225,7 +225,7 @@ namespace node.IpcService
             return new RpcCommon.Empty();
         }
 
-        private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHash(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
             guid = state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
@@ -238,7 +238,7 @@ namespace node.IpcService
             await Task.WhenAll(fileTasks);
         }
 
-        private async Task DownloadFileAsync(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore, Guid containerGuid)
+        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore, Guid containerGuid)
         {
             List<Task> chunkTasks = [];
 
@@ -260,7 +260,7 @@ namespace node.IpcService
             state.PathByHash[obj.Hash] = dir;
         }
 
-        private async Task DownloadChunkAsync(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
+        private async Task DownloadChunk(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
             FileStream stream, object streamLock, SemaphoreSlim semaphore, Guid containerGuid)
         {
             await semaphore.WaitAsync();
