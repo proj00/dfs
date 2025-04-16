@@ -92,7 +92,12 @@ namespace node.IpcService
         public override async Task<RpcCommon.GuidList> GetAllContainers(RpcCommon.Empty request, ServerCallContext context)
         {
             var list = new RpcCommon.GuidList();
-            list.Guid.AddRange(state.Manager.Container.Select(guid => guid.Key.ToString()));
+
+            state.Manager.Container.ForEach((guid, bs) => {
+                list.Guid.Add(guid.ToString());
+                return true;    
+            });
+
             return list;
         }
 

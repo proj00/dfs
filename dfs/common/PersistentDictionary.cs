@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    class PersistentDictionary<_Key, _Value> : IDisposable
+    public class PersistentDictionary<_Key, _Value> : IDisposable
     {
         RocksDb db;
         private object dbLock = new object();
