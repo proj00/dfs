@@ -19,7 +19,6 @@ namespace tracker
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly ConcurrentDictionary<string, RpcCommon.Hash> _containerRoots = new();
         private readonly ConcurrentDictionary<string, DataUsage> dataUsage = new();
 
         public TrackerRpc(FilesystemManager filesystemManager)
@@ -29,9 +28,9 @@ namespace tracker
 
         public override Task<Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
         {
-            if (_containerRoots.TryGetValue(request.Guid_, out var rootHash))
+            if (_filesystemManager.Container.TryGetValue(System.Guid.Parse(request.Guid_), out var rootHash))
             {
-                return Task.FromResult(rootHash);
+                return Task.FromResult(new Hash { Data = rootHash });
             }
             throw new RpcException(new Status(StatusCode.NotFound, "Container root hash not found."));
         }
@@ -152,7 +151,7 @@ namespace tracker
 
         public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
         {
-            _containerRoots[request.Guid] = request.Hash;
+            _filesystemManager.Container[System.Guid.Parse(request.Guid)] = request.Hash.Data;
             return Task.FromResult(new Empty());
         }
 
