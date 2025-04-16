@@ -10,6 +10,7 @@ using Tracker;
 using Google.Protobuf;
 using common;
 using RpcCommon;
+using System.Text.RegularExpressions;
 
 
 namespace tracker
@@ -159,6 +160,26 @@ namespace tracker
             string hashBase64 = request.Data.ToBase64();
             _filesystemManager.ObjectByHash.TryRemove(ByteString.FromBase64(hashBase64), out _);
             return Task.FromResult(new Empty());
+        }
+
+        public override async Task SearchForObjects(SearchRequest request, IServerStreamWriter<SearchResponse> responseStream, ServerCallContext context)
+        {
+            using var re = new IronRe2.Regex(request.Query);
+            foreach (var container in _filesystemManager.Container.Keys)
+            {
+                var obj = _filesystemManager.GetContainerTree(container).Where(o => re.IsMatch(o.Object.Name)).ToList();
+                if (obj.Count == 0)
+                {
+                    continue;
+                }
+
+                var response = new SearchResponse
+                {
+                    Guid = container.ToString()
+                };
+                response.Hash.AddRange(obj.Select(o => o.Hash));
+                await responseStream.WriteAsync(response);
+            }
         }
     }
 }

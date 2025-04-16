@@ -20,6 +20,7 @@ service Ui
 	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc CopyToClipboard(String) returns (rpc_common.Empty);
+	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 }
 
 message ObjectOptions
@@ -61,4 +62,10 @@ message DownloadContainerOptions
 	string trackerUri = 2;
 	string destinationDir = 3;
 	int32 maxConcurrentChunks = 4;
+}
+
+message SearchRequest
+{
+	string trackerUri = 1;
+	string query = 2;
 }

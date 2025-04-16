@@ -2,6 +2,7 @@
 using Fs;
 using Google.Protobuf;
 using Grpc.Core;
+using Org.BouncyCastle.Utilities;
 using RpcCommon;
 using Tracker;
 using static Tracker.Tracker;
@@ -90,6 +91,19 @@ namespace node
                 Guid = containerGuid.ToString(),
                 Hash = new Hash { Data = rootHash }
             });
+        }
+
+        public async Task<List<SearchResponse>> SearchForObjects(string query)
+        {
+            using var response = client.SearchForObjects(new SearchRequest { Query = query });
+
+            List<SearchResponse> responses = [];
+            await foreach (var r in response.ResponseStream.ReadAllAsync())
+            {
+                responses.Add(r);
+            }
+
+            return responses;
         }
     }
 }

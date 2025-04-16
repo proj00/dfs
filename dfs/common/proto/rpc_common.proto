@@ -21,3 +21,9 @@ message Hash
 {
 	bytes data = 1;
 }
+
+message SearchResponse
+{
+	string guid = 1;
+	repeated bytes hash = 2;
+}

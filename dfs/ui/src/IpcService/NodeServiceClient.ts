@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from "@/lib/utils";
 import { ObjectList } from "@/types/fs/filesystem";
 import { Progress } from "@/types/rpc/uiservice";
 import { UiClient } from "@/types/rpc/uiservice.client";
-import { Hash } from "@/types/rpc_common";
+import { Hash, SearchResponse } from "@/types/rpc_common";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 
 const serviceUrl: string = "http://127.0.0.1:42069";
@@ -30,6 +30,10 @@ export interface INodeService {
   PauseContainerDownload: (container: string) => Promise<void>;
   ResumeContainerDownload: (container: string) => Promise<void>;
   CopyToClipboard: (str: string) => Promise<void>;
+  SearchForObjects: (
+    query: string,
+    trackerUri: string,
+  ) => Promise<SearchResponse[]>;
 }
 
 class NodeServiceClient implements INodeService {
@@ -99,6 +103,19 @@ class NodeServiceClient implements INodeService {
   }
   async ResumeContainerDownload(container: string): Promise<void> {
     await this.client.resumeContainerDownload({ guid: container });
+  }
+  async SearchForObjects(
+    query: string,
+    trackerUri: string,
+  ): Promise<SearchResponse[]> {
+    const call = this.client.searchForObjects({ trackerUri, query });
+
+    let response: SearchResponse[] = [];
+    for await (let r of call.responses) {
+      response.push(r);
+    }
+
+    return response;
   }
 }
 
