@@ -27,3 +27,9 @@ message SearchResponse
 	string guid = 1;
 	repeated bytes hash = 2;
 }
+
+message DataUsage
+{
+	int64 upload = 1;
+	int64 download = 2;
+}

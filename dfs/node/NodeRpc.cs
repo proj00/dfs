@@ -40,7 +40,7 @@ namespace node
 
             var buffer = new byte[size];
             stream.Seek(offset, SeekOrigin.Begin);
-            var total = stream.Read(buffer, 0, size);
+            var total = await stream.ReadAsync(buffer, 0, size);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
 
             for (int i = 0; i < total; i += subchunk)
@@ -51,6 +51,8 @@ namespace node
                 });
             }
 
+            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            await tracker.ReportDataUsage(true, total);
         }
     }
 }

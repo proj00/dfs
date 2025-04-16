@@ -65,6 +65,10 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::Tracker.SearchRequest> __Marshaller_tracker_SearchRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.SearchRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.SearchResponse> __Marshaller_rpc_common_SearchResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.SearchResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::RpcCommon.DataUsage> __Marshaller_rpc_common_DataUsage = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.DataUsage.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.UsageReport> __Marshaller_tracker_UsageReport = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.UsageReport.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty> __Method_Publish = new grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty>(
@@ -138,6 +142,22 @@ namespace Tracker {
         __Marshaller_tracker_SearchRequest,
         __Marshaller_rpc_common_SearchResponse);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.DataUsage> __Method_GetDataUsage = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.DataUsage>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetDataUsage",
+        __Marshaller_rpc_common_Empty,
+        __Marshaller_rpc_common_DataUsage);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Tracker.UsageReport, global::RpcCommon.Empty> __Method_ReportDataUsage = new grpc::Method<global::Tracker.UsageReport, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ReportDataUsage",
+        __Marshaller_tracker_UsageReport,
+        __Marshaller_rpc_common_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -198,6 +218,18 @@ namespace Tracker {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task SearchForObjects(global::Tracker.SearchRequest request, grpc::IServerStreamWriter<global::RpcCommon.SearchResponse> responseStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.DataUsage> GetDataUsage(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> ReportDataUsage(global::Tracker.UsageReport request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -351,6 +383,46 @@ namespace Tracker {
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_SearchForObjects, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.DataUsage GetDataUsage(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetDataUsage(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.DataUsage GetDataUsage(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetDataUsage, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetDataUsageAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetDataUsage, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ReportDataUsage(global::Tracker.UsageReport request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ReportDataUsage(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ReportDataUsage(global::Tracker.UsageReport request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ReportDataUsage, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ReportDataUsageAsync(global::Tracker.UsageReport request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ReportDataUsageAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ReportDataUsageAsync(global::Tracker.UsageReport request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ReportDataUsage, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override TrackerClient NewInstance(ClientBaseConfiguration configuration)
@@ -373,7 +445,9 @@ namespace Tracker {
           .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
           .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash)
           .AddMethod(__Method_DeleteObjectHash, serviceImpl.DeleteObjectHash)
-          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects).Build();
+          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects)
+          .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage)
+          .AddMethod(__Method_ReportDataUsage, serviceImpl.ReportDataUsage).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -392,6 +466,8 @@ namespace Tracker {
       serviceBinder.AddMethod(__Method_SetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerRootHash, global::RpcCommon.Empty>(serviceImpl.SetContainerRootHash));
       serviceBinder.AddMethod(__Method_DeleteObjectHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::RpcCommon.Empty>(serviceImpl.DeleteObjectHash));
       serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse>(serviceImpl.SearchForObjects));
+      serviceBinder.AddMethod(__Method_GetDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.DataUsage>(serviceImpl.GetDataUsage));
+      serviceBinder.AddMethod(__Method_ReportDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.UsageReport, global::RpcCommon.Empty>(serviceImpl.ReportDataUsage));
     }
 
   }

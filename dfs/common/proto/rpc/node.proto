@@ -10,6 +10,7 @@ service Node
 message ChunkRequest
 {
 	bytes hash = 1;
+	string trackerUri = 2;
 }
 
 message ChunkResponse
