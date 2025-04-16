@@ -24,14 +24,14 @@ namespace Node {
     static NodeReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5ycGMvbm9kZS5wcm90bxIEbm9kZSIcCgxDaHVua1JlcXVlc3QSDAoEaGFz",
-            "aBgBIAEoDCIhCg1DaHVua1Jlc3BvbnNlEhAKCHJlc3BvbnNlGAEgASgMMj0K",
-            "BE5vZGUSNQoIR2V0Q2h1bmsSEi5ub2RlLkNodW5rUmVxdWVzdBoTLm5vZGUu",
-            "Q2h1bmtSZXNwb25zZTABYgZwcm90bzM="));
+            "Cg5ycGMvbm9kZS5wcm90bxIEbm9kZSIwCgxDaHVua1JlcXVlc3QSDAoEaGFz",
+            "aBgBIAEoDBISCgp0cmFja2VyVXJpGAIgASgJIiEKDUNodW5rUmVzcG9uc2US",
+            "EAoIcmVzcG9uc2UYASABKAwyPQoETm9kZRI1CghHZXRDaHVuaxISLm5vZGUu",
+            "Q2h1bmtSZXF1ZXN0GhMubm9kZS5DaHVua1Jlc3BvbnNlMAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkRequest), global::Node.ChunkRequest.Parser, new[]{ "Hash" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkRequest), global::Node.ChunkRequest.Parser, new[]{ "Hash", "TrackerUri" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Node.ChunkResponse), global::Node.ChunkResponse.Parser, new[]{ "Response" }, null, null, null, null)
           }));
     }
@@ -75,6 +75,7 @@ namespace Node {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ChunkRequest(ChunkRequest other) : this() {
       hash_ = other.hash_;
+      trackerUri_ = other.trackerUri_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -96,6 +97,18 @@ namespace Node {
       }
     }
 
+    /// <summary>Field number for the "trackerUri" field.</summary>
+    public const int TrackerUriFieldNumber = 2;
+    private string trackerUri_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string TrackerUri {
+      get { return trackerUri_; }
+      set {
+        trackerUri_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -112,6 +125,7 @@ namespace Node {
         return true;
       }
       if (Hash != other.Hash) return false;
+      if (TrackerUri != other.TrackerUri) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -120,6 +134,7 @@ namespace Node {
     public override int GetHashCode() {
       int hash = 1;
       if (Hash.Length != 0) hash ^= Hash.GetHashCode();
+      if (TrackerUri.Length != 0) hash ^= TrackerUri.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -142,6 +157,10 @@ namespace Node {
         output.WriteRawTag(10);
         output.WriteBytes(Hash);
       }
+      if (TrackerUri.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(TrackerUri);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -156,6 +175,10 @@ namespace Node {
         output.WriteRawTag(10);
         output.WriteBytes(Hash);
       }
+      if (TrackerUri.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(TrackerUri);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -168,6 +191,9 @@ namespace Node {
       int size = 0;
       if (Hash.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Hash);
+      }
+      if (TrackerUri.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(TrackerUri);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -183,6 +209,9 @@ namespace Node {
       }
       if (other.Hash.Length != 0) {
         Hash = other.Hash;
+      }
+      if (other.TrackerUri.Length != 0) {
+        TrackerUri = other.TrackerUri;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -207,6 +236,10 @@ namespace Node {
             Hash = input.ReadBytes();
             break;
           }
+          case 18: {
+            TrackerUri = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -228,6 +261,10 @@ namespace Node {
             break;
           case 10: {
             Hash = input.ReadBytes();
+            break;
+          }
+          case 18: {
+            TrackerUri = input.ReadString();
             break;
           }
         }

@@ -18,5 +18,9 @@ namespace common
         Task<Empty> SetContainerRootHash(System.Guid containerGuid, ByteString rootHash);
 
         Task<List<SearchResponse>> SearchForObjects(string query);
+        Task<DataUsage> GetDataUsage();
+        Task<Empty> ReportDataUsage(bool isUpload, Int64 bytes);
+
+        string GetUri();
     }
 }

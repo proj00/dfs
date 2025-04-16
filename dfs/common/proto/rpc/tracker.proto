@@ -16,6 +16,8 @@ service Tracker
 	rpc SetContainerRootHash(ContainerRootHash) returns (rpc_common.Empty);
 	rpc DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
+	rpc GetDataUsage(rpc_common.Empty) returns (rpc_common.DataUsage);
+	rpc ReportDataUsage(UsageReport) returns (rpc_common.Empty);
 }
 
 message ContainerRootHash
@@ -44,4 +46,10 @@ message MarkRequest
 message SearchRequest
 {
 	string query = 1;
+}
+
+message UsageReport
+{
+	bool is_upload = 1;
+	int64 bytes = 2;
 }
