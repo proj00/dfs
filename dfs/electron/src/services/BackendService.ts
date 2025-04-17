@@ -1,4 +1,4 @@
-import { GetNodeService, INodeService } from "poo/IpcService/NodeServiceClient";
+import { GetNodeService, INodeService } from "@/IpcService/NodeServiceClient";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
 
 // Define interfaces for the backend services

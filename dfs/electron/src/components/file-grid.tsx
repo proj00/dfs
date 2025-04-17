@@ -11,7 +11,7 @@ import {
   handleDelete,
   handleShare,
   handleFileOpen,
-} from "poo/lib/file-handlers";
+} from "@/lib/file-handlers";
 
 interface FileGridProps {
   files: File[];

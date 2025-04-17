@@ -1,4 +1,4 @@
-import * as fs from "poo/types/fs/filesystem";
+import * as fs from "@/types/fs/filesystem";
 import { toBase64 } from "./utils";
 
 interface FsObject {

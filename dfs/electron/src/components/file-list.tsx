@@ -12,7 +12,7 @@ import {
   handleMove,
   handleDelete,
   handleShare,
-} from "poo/lib/file-handlers";
+} from "@/lib/file-handlers";
 
 interface FileListProps {
   files: File[];

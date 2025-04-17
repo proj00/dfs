@@ -17,10 +17,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { GetNodeService } from "poo/IpcService/NodeServiceClient";
-import { File } from "poo/lib/types";
-import { toBase64 } from "poo/lib/utils";
-import { backendService } from "poo/services/BackendService";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
+import { File } from "@/lib/types";
+import { toBase64 } from "@/lib/utils";
+import { backendService } from "@/services/BackendService";
 
 interface TrackerSearchDialogProps {
   open: boolean;

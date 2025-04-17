@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { Folder } from "../../lib/types";
-import { copyToClipboard } from "poo/lib/utils";
+import { copyToClipboard } from "@/lib/utils";
 
 interface FolderActionMenuProps {
   folder: Folder;

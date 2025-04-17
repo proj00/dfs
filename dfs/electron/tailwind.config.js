@@ -1,11 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./index.html"],
   theme: {
     container: {
       center: true,
@@ -48,6 +44,16 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // Add sidebar-specific colors
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background, 0 0% 98%))",
+          foreground: "hsl(var(--sidebar-foreground, 240 5.3% 26.1%))",
+          border: "hsl(var(--sidebar-border, 220 13% 91%))",
+          ring: "hsl(var(--sidebar-ring, 217.2 91.2% 59.8%))",
+          accent: "hsl(var(--sidebar-accent, 240 4.8% 95.9%))",
+          "accent-foreground":
+            "hsl(var(--sidebar-accent-foreground, 240 5.9% 10%))",
         },
       },
       borderRadius: {

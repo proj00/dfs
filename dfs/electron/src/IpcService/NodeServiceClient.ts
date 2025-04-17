@@ -1,8 +1,8 @@
-import { fromBase64, toBase64 } from "poo/lib/utils";
-import { ObjectList } from "poo/types/fs/filesystem";
-import { Progress } from "poo/types/rpc/uiservice";
-import { UiClient } from "poo/types/rpc/uiservice.client";
-import { DataUsage, Hash, SearchResponse } from "poo/types/rpc_common";
+import { fromBase64, toBase64 } from "@/lib/utils";
+import { ObjectList } from "@/types/fs/filesystem";
+import { Progress } from "@/types/rpc/uiservice";
+import { UiClient } from "@/types/rpc/uiservice.client";
+import { DataUsage, Hash, SearchResponse } from "@/types/rpc_common";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 
 const serviceUrl: string = "http://127.0.0.1:42069";

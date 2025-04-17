@@ -31,7 +31,7 @@ import {
   formatFileSize,
 } from "../lib/utils";
 import { DownloadManager } from "./download-manager";
-import { GetNodeService } from "poo/IpcService/NodeServiceClient";
+import { GetNodeService } from "@/IpcService/NodeServiceClient";
 
 interface SidebarProps {
   currentFolder: string | null;
