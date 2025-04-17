@@ -54,7 +54,7 @@ export function toBase64(array: Uint8Array): string {
 }
 
 export function fromBase64(b64: string): Uint8Array {
-  return Buffer.from(b64);
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 }
 
 export async function copyToClipboard(str: string): Promise<void> {
