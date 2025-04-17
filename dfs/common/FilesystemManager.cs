@@ -22,9 +22,9 @@ namespace common
 
         public FilesystemManager()
         {
-
+            var p = Path.Combine(DbBasePath, Guid.NewGuid().GetHashCode().ToString());
             ObjectByHash = new PersistentDictionary<ByteString, ObjectWithHash>(
-                Path.Combine(DbBasePath, "ObjectByHash"),
+                Path.Combine(p, "ObjectByHash"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: bytes => ByteString.CopyFrom(bytes),
                 valueSerializer: o => o.ToByteArray(),
@@ -32,7 +32,7 @@ namespace common
             );
 
             ChunkParents = new PersistentDictionary<ByteString, ByteString[]>(
-                Path.Combine(DbBasePath, "ChunkParents"),
+                Path.Combine(p, "ChunkParents"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 SerializeByteStringArray,
@@ -40,7 +40,7 @@ namespace common
             );
 
             Container = new PersistentDictionary<Guid, ByteString>(
-                Path.Combine(DbBasePath, "Container"),
+                Path.Combine(p, "Container"),
                 guid => guid.ToByteArray(),
                 bytes => new Guid(bytes),
                 bs => bs.ToByteArray(),
@@ -48,7 +48,7 @@ namespace common
             );
 
             Parent = new PersistentDictionary<ByteString, List<ByteString>>(
-                Path.Combine(DbBasePath, "Parent"),
+                Path.Combine(p, "Parent"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 list => SerializeByteStringArray(list.ToArray()),
@@ -56,7 +56,7 @@ namespace common
             );
 
             NewerVersion = new PersistentDictionary<ByteString, ByteString>(
-                Path.Combine(DbBasePath, "NewerVersion"),
+                Path.Combine(p, "NewerVersion"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 bs => bs.ToByteArray(),
