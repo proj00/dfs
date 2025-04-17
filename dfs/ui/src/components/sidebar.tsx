@@ -49,7 +49,7 @@ export function Sidebar({
   onContainerPublished,
 }: SidebarProps) {
   // Get root folders from the passed folders prop
-  const rootFolders = folders.filter((folder) => folder.parentId === null);
+  const rootFolders = folders.filter((folder) => folder.parentId.length === 0);
 
   // State for publish dialog
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -86,21 +86,27 @@ export function Sidebar({
     containerDownloadProgress.bytesTotal,
   );
 
-    // Listen for custom event to open download dialog
-    useEffect(() => {
-        const handleOpenDownloadDialog = (event: CustomEvent) => {
-            const { containerGuid, trackerUri } = event.detail
-            setDownloadContainerGuid(containerGuid)
-            setDownloadTrackerUri(trackerUri)
-            setDownloadDialogOpen(true)
-        }
+  // Listen for custom event to open download dialog
+  useEffect(() => {
+    const handleOpenDownloadDialog = (event: CustomEvent) => {
+      const { containerGuid, trackerUri } = event.detail;
+      setDownloadContainerGuid(containerGuid);
+      setDownloadTrackerUri(trackerUri);
+      setDownloadDialogOpen(true);
+    };
 
-        window.addEventListener("openDownloadDialog", handleOpenDownloadDialog as EventListener)
+    window.addEventListener(
+      "openDownloadDialog",
+      handleOpenDownloadDialog as EventListener,
+    );
 
-        return () => {
-            window.removeEventListener("openDownloadDialog", handleOpenDownloadDialog as EventListener)
-        }
-    }, [])
+    return () => {
+      window.removeEventListener(
+        "openDownloadDialog",
+        handleOpenDownloadDialog as EventListener,
+      );
+    };
+  }, []);
   // Fetch data usage periodically
   useEffect(() => {
     const fetchDataUsage = async () => {
