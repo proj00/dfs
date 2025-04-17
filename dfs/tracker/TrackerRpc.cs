@@ -194,7 +194,14 @@ namespace tracker
 
         public override async Task<DataUsage> GetDataUsage(Empty request, ServerCallContext context)
         {
-            return dataUsage[context.Peer];
+            try
+            {
+                return dataUsage[context.Peer];
+            }
+            catch
+            {
+                return new DataUsage { };
+            }
         }
 
         public override async Task<Empty> ReportDataUsage(UsageReport request, ServerCallContext context)

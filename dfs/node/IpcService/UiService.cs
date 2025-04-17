@@ -295,6 +295,7 @@ namespace node.IpcService
                     response.Add(message);
                 }
 
+                long written = 0;
                 lock (streamLock)
                 {
                     stream.Seek(chunkOffset, SeekOrigin.Begin);
@@ -303,12 +304,13 @@ namespace node.IpcService
                         stream.Write(item.Response.Span);
                         (long current, long total) = state.FileProgress[fileHash];
                         current += item.Response.Span.Length;
+                        written += item.Response.Span.Length;
                         state.FileProgress[fileHash] = (current, total);
                     }
                 }
 
                 await tracker.MarkReachable(hash, nodeURI);
-                await tracker.ReportDataUsage(false, state.FileProgress[fileHash].Item2);
+                await tracker.ReportDataUsage(false, written);
             }
             finally
             {
