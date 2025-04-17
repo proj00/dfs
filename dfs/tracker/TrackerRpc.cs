@@ -20,6 +20,7 @@ namespace tracker
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly ConcurrentDictionary<string, DataUsage> dataUsage = new();
+        private readonly object usageLock = new();
 
         public TrackerRpc(FilesystemManager filesystemManager)
         {
@@ -194,20 +195,31 @@ namespace tracker
 
         public override async Task<DataUsage> GetDataUsage(Empty request, ServerCallContext context)
         {
-            return dataUsage[context.Peer];
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            string ip = match.Success ? match.Groups[1].Value : "";
+            try
+            {
+                return dataUsage[ip];
+            }
+            catch
+            {
+                return new DataUsage { };
+            }
         }
 
         public override async Task<Empty> ReportDataUsage(UsageReport request, ServerCallContext context)
         {
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            string ip = match.Success ? match.Groups[1].Value : "";
             DataUsage change = new DataUsage { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
-            if (dataUsage.TryGetValue(context.Peer, out var usage))
+            if (dataUsage.TryGetValue(ip, out var usage))
             {
                 usage.Upload += change.Upload;
                 usage.Download += change.Download;
             }
             else
             {
-                dataUsage[context.Peer] = change;
+                dataUsage[ip] = change;
             }
 
             return new Empty();
