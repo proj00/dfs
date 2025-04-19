@@ -19,33 +19,35 @@ namespace node.IpcService
     {
         private NodeState state;
         private NodeRpc rpc;
-        private Func<UI?> getUI;
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
+        public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
+        public UiService(NodeState state, NodeRpc rpc, string nodeURI)
         {
+            this.ShutdownEvent = new AsyncManualResetEvent(true);
+            this.ShutdownEvent.Reset();
             this.state = state;
             this.rpc = rpc;
-            this.getUI = getUI;
             this.nodeURI = nodeURI;
         }
 
         public override async Task<Ui.Path> PickObjectPath(Ui.ObjectOptions request, ServerCallContext context)
         {
-            var ui = getUI();
-            if (ui == null)
-            {
-                throw new NullReferenceException();
-            }
+            throw new NotImplementedException();
+            //var ui = getUI();
+            //if (ui == null)
+            //{
+            //    throw new NullReferenceException();
+            //}
 
-            string result = "";
-            ui.Invoke(() =>
-            {
-                result = PickObjectPathInternal(request.PickFolder);
-            });
+            //string result = "";
+            //ui.Invoke(() =>
+            //{
+            //    result = PickObjectPathInternal(request.PickFolder);
+            //});
 
-            return new Ui.Path { Path_ = result };
+            //return new Ui.Path { Path_ = result };
         }
 
         private static string PickObjectPathInternal(bool folder)
@@ -93,9 +95,10 @@ namespace node.IpcService
         {
             var list = new RpcCommon.GuidList();
 
-            state.Manager.Container.ForEach((guid, bs) => {
+            state.Manager.Container.ForEach((guid, bs) =>
+            {
                 list.Guid.Add(guid.ToString());
-                return true;    
+                return true;
             });
 
             return list;
@@ -103,18 +106,20 @@ namespace node.IpcService
 
         public override async Task<RpcCommon.Empty> CopyToClipboard(Ui.String request, ServerCallContext context)
         {
-            var ui = getUI();
-            if (ui == null)
-            {
-                throw new NullReferenceException();
-            }
+            throw new NotImplementedException();
 
-            ui.Invoke(() =>
-            {
-                Clipboard.SetText(request.Value);
-            });
+            //var ui = getUI();
+            //if (ui == null)
+            //{
+            //    throw new NullReferenceException();
+            //}
 
-            return new RpcCommon.Empty();
+            //ui.Invoke(() =>
+            //{
+            //    Clipboard.SetText(request.Value);
+            //});
+
+            //return new RpcCommon.Empty();
         }
 
         public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
@@ -322,6 +327,12 @@ namespace node.IpcService
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
             return await tracker.GetDataUsage();
+        }
+
+        public override async Task<RpcCommon.Empty> Shutdown(RpcCommon.Empty request, ServerCallContext context)
+        {
+            ShutdownEvent.Set();
+            return new RpcCommon.Empty();
         }
     }
 }

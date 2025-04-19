@@ -198,6 +198,14 @@ namespace Ui {
         __Marshaller_Ui_UsageRequest,
         __Marshaller_rpc_common_DataUsage);
 
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty> __Method_Shutdown = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "Shutdown",
+        __Marshaller_rpc_common_Empty,
+        __Marshaller_rpc_common_Empty);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -294,6 +302,12 @@ namespace Ui {
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.DataUsage> GetDataUsage(global::Ui.UsageRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> Shutdown(global::RpcCommon.Empty request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -617,6 +631,26 @@ namespace Ui {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetDataUsage, null, options, request);
       }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty Shutdown(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return Shutdown(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty Shutdown(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_Shutdown, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ShutdownAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ShutdownAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ShutdownAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_Shutdown, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override UiClient NewInstance(ClientBaseConfiguration configuration)
@@ -645,7 +679,8 @@ namespace Ui {
           .AddMethod(__Method_ResumeContainerDownload, serviceImpl.ResumeContainerDownload)
           .AddMethod(__Method_CopyToClipboard, serviceImpl.CopyToClipboard)
           .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects)
-          .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage).Build();
+          .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage)
+          .AddMethod(__Method_Shutdown, serviceImpl.Shutdown).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -670,6 +705,7 @@ namespace Ui {
       serviceBinder.AddMethod(__Method_CopyToClipboard, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.String, global::RpcCommon.Empty>(serviceImpl.CopyToClipboard));
       serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Ui.SearchRequest, global::RpcCommon.SearchResponse>(serviceImpl.SearchForObjects));
       serviceBinder.AddMethod(__Method_GetDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.UsageRequest, global::RpcCommon.DataUsage>(serviceImpl.GetDataUsage));
+      serviceBinder.AddMethod(__Method_Shutdown, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.Empty>(serviceImpl.Shutdown));
     }
 
   }

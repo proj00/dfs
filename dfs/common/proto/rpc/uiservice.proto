@@ -22,6 +22,7 @@ service Ui
 	rpc CopyToClipboard(String) returns (rpc_common.Empty);
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
+	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
 }
 
 message ObjectOptions
