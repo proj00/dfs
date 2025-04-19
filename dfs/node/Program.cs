@@ -13,8 +13,19 @@ namespace node
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
-        static async Task Main()
+        static async Task Main(string[] args)
         {
+            int servicePort = -1;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0)
+            {
+                servicePort = parsedPort;
+            }
+            else
+            {
+                Console.WriteLine("Please provide a valid port number as the first argument.");
+                return;
+            }
+
             GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
                 new Grpc.Core.Logging.ConsoleLogger(),
                 Grpc.Core.Logging.LogLevel.Debug));
@@ -24,21 +35,21 @@ namespace node
             var publicServer = new Grpc.Core.Server()
             {
                 Services = { Node.Node.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("0.0.0.0", 0, ServerCredentials.Insecure) }
             };
 
             publicServer.Start();
 
-            ServerPort port = publicServer.Ports.First();
-            UiService service = new(state, rpc, $"http://{port.Host}:{port.BoundPort}");
+            ServerPort publicPort = publicServer.Ports.First();
+            UiService service = new(state, rpc, $"http://{publicPort.Host}:{publicPort.BoundPort}");
 
-            StartGrpcWebServer(service);
+            StartGrpcWebServer(service, servicePort);
 
             await service.ShutdownEvent.WaitAsync();
             await publicServer.ShutdownAsync();
         }
 
-        private static IHost StartGrpcWebServer(UiService service)
+        private static IHost StartGrpcWebServer(UiService service, int port)
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -55,20 +66,20 @@ namespace node
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(42069);
+                options.ListenLocalhost(port);
             });
 
             var app = builder.Build();
 
             app.UseRouting();
-            app.UseCors("AllowAll");
+            app.UseCors("AllowLocalhost");
             app.UseGrpcWeb();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<UiService>()
                          .EnableGrpcWeb()
-                         .RequireCors("AllowAll");
+                         .RequireCors("AllowLocalhost");
             });
 
             app.Start();
