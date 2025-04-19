@@ -5,9 +5,9 @@ import { ArrowDown, ArrowUp, Clock, Database, Download } from "lucide-react";
 import { Progress } from "./ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { backendService } from "../services/BackendService";
+import { backendService } from "../IpcService/BackendService";
 import type { DownloadItem } from "../lib/types";
-import type { DataUsage, DownloadProgress } from "../services/BackendService";
+import type { DataUsage, DownloadProgress } from "../IpcService/BackendService";
 import {
   formatFileSize,
   formatSpeed,

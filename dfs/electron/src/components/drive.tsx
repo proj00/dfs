@@ -6,7 +6,7 @@ import { FileList } from "./file-list";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import type { File, Folder } from "../lib/types";
-import { backendService } from "../services/BackendService";
+import { backendService } from "../IpcService/BackendService";
 
 export function Drive() {
   const [view, setView] = useState<"grid" | "list">("grid");

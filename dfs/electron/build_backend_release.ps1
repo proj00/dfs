@@ -8,3 +8,7 @@ $opts = @(
 )
 
 dotnet publish "./../node/node.csproj" @opts
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "dotnet publish failed with exit code $LASTEXITCODE"
+  exit $LASTEXITCODE
+}

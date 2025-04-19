@@ -23,6 +23,9 @@ namespace node
                 Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
                 return;
             }
+#if !DEBUG
+            servicePort = 42069;
+#endif
 
             NodeState state = new(TimeSpan.FromMinutes(1));
             NodeRpc rpc = new(state);

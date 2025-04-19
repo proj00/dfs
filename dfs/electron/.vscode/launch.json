@@ -1,12 +1,18 @@
 {
   "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Electron (Main + Renderer)",
+      "configurations": ["Main Process (Electron Forge)", "Electron Renderer"]
+    }
+  ],
   "configurations": [
     {
       "name": "Main Process (Electron Forge)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["electron-forge", "start"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "debug-no-build"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "preLaunchTask": "build-backend",
@@ -16,6 +22,14 @@
         "ELECTRON_ENABLE_STACK_DUMPING": "1"
       },
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Electron Renderer",
+      "port": 9229,
+      "webRoot": "${workspaceFolder}/src",
+      "timeout": 60000
     }
   ]
 }

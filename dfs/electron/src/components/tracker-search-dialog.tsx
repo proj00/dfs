@@ -20,7 +20,7 @@ import {
 import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import { File } from "@/lib/types";
 import { toBase64 } from "@/lib/utils";
-import { backendService } from "@/services/BackendService";
+import { backendService } from "@/IpcService/BackendService";
 
 interface TrackerSearchDialogProps {
   open: boolean;

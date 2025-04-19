@@ -118,9 +118,11 @@ class NodeServiceClient implements INodeService {
 
 let _client: INodeService | undefined = undefined;
 
-export const GetNodeService = async (): Promise<INodeService> => {
+export const GetNodeService = async (port?: number): Promise<INodeService> => {
   if (_client === undefined) {
-    _client = new NodeServiceClient(await window.electronAPI.getPort());
+    _client = new NodeServiceClient(
+      port ?? (await window.electronAPI.getPort()),
+    );
   }
   return _client;
 };

@@ -8,6 +8,7 @@
     "package": "npm run publish-backend-release && npm run fix-proto && npx electron-forge package",
     "make": "npm run publish-backend-release && npm run fix-proto && npx electron-forge make",
     "publish": "npm run publish-backend-release && npm run fix-proto && npx electron-forge publish",
+    "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",

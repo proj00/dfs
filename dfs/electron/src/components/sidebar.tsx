@@ -22,9 +22,9 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Progress } from "./ui/progress";
-import { backendService } from "../services/BackendService";
+import { backendService } from "../IpcService/BackendService";
 import type { Folder } from "../lib/types";
-import type { DataUsage } from "../services/BackendService";
+import type { DataUsage } from "../IpcService/BackendService";
 import {
   formatProgress,
   calculatePercentage,

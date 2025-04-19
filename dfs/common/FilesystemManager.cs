@@ -22,7 +22,7 @@ namespace common
 
         public FilesystemManager()
         {
-            var p = Path.Combine(DbBasePath, Guid.NewGuid().GetHashCode().ToString());
+            var p = Path.Combine(DbBasePath, Guid.NewGuid().ToString());
             ObjectByHash = new PersistentDictionary<ByteString, ObjectWithHash>(
                 Path.Combine(p, "ObjectByHash"),
                 keySerializer: bs => bs.ToByteArray(),
@@ -152,7 +152,7 @@ namespace common
 
                 return GetObjectTree(root);
             }
-            
+
         }
 
         public List<ObjectWithHash> GetObjectTree(ByteString root)

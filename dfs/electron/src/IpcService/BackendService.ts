@@ -1,3 +1,7 @@
+// --------------
+// Wrapper for NodeServiceClient (utility functions / transformations to UI internal structs)
+// --------------
+
 import { GetNodeService, INodeService } from "@/IpcService/NodeServiceClient";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
 
