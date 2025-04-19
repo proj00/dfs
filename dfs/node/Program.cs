@@ -1,6 +1,4 @@
 using node.IpcService;
-using Grpc.Core;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,30 +24,49 @@ namespace node
                 return;
             }
 
-            GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
-                new Grpc.Core.Logging.ConsoleLogger(),
-                Grpc.Core.Logging.LogLevel.Debug));
-
             NodeState state = new(TimeSpan.FromMinutes(1));
             NodeRpc rpc = new(state);
-            var publicServer = new Grpc.Core.Server()
-            {
-                Services = { Node.Node.BindService(rpc) },
-                Ports = { new ServerPort("0.0.0.0", 0, ServerCredentials.Insecure) }
-            };
+            var publicServer = await StartPublicNodeServerAsync(rpc);
+            var publicUrl = publicServer.Urls.First();
 
-            publicServer.Start();
-
-            ServerPort publicPort = publicServer.Ports.First();
-            UiService service = new(state, rpc, $"http://{publicPort.Host}:{publicPort.BoundPort}");
-
-            StartGrpcWebServer(service, servicePort);
+            UiService service = new(state, rpc, publicUrl);
+            var privateServer = await StartGrpcWebServerAsync(service, servicePort);
 
             await service.ShutdownEvent.WaitAsync();
-            await publicServer.ShutdownAsync();
+            await publicServer.StopAsync();
+            await privateServer.StopAsync();
         }
 
-        private static IHost StartGrpcWebServer(UiService service, int port)
+        private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc)
+        {
+            var builder = WebApplication.CreateBuilder();
+
+            string policyName = "AllowAll";
+            builder.Services.AddGrpc();
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+            }));
+
+            builder.Services.AddSingleton(rpc);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(0);
+            });
+
+            var app = builder.Build();
+
+            app.UseRouting();
+            app.UseCors(policyName);
+            await app.StartAsync();
+            return app;
+        }
+
+        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, int port)
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -83,7 +100,7 @@ namespace node
                          .RequireCors(policyName);
             });
 
-            app.Start();
+            await app.StartAsync();
             return app;
         }
     }

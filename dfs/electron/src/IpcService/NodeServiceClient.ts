@@ -12,7 +12,6 @@ function getHash(b64: string): Hash {
 }
 
 export interface INodeService {
-  PickObjectPath: (pickFolder: boolean) => Promise<string>;
   GetObjectPath: (base64Hash: string) => Promise<string>;
   RevealObjectInExplorer: (base64Hash: string) => Promise<void>;
   GetAllContainers: () => Promise<string[]>;
@@ -29,7 +28,6 @@ export interface INodeService {
   ) => Promise<void>;
   PauseContainerDownload: (container: string) => Promise<void>;
   ResumeContainerDownload: (container: string) => Promise<void>;
-  CopyToClipboard: (str: string) => Promise<void>;
   SearchForObjects: (
     query: string,
     trackerUri: string,
@@ -45,10 +43,6 @@ class NodeServiceClient implements INodeService {
       new GrpcWebFetchTransport({ baseUrl: serviceUrl }),
     );
     this.client;
-  }
-
-  async PickObjectPath(pickFolder: boolean): Promise<string> {
-    return (await this.client.pickObjectPath({ pickFolder })).response.path;
   }
   async GetObjectPath(base64Hash: string): Promise<string> {
     return (await this.client.getObjectPath(getHash(base64Hash))).response.path;
@@ -95,9 +89,6 @@ class NodeServiceClient implements INodeService {
       destinationDir,
       maxConcurrentChunks,
     });
-  }
-  async CopyToClipboard(str: string): Promise<void> {
-    await this.client.copyToClipboard({ value: str });
   }
 
   async PauseContainerDownload(container: string): Promise<void> {

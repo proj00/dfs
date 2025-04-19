@@ -73,7 +73,8 @@ namespace node.IpcService
         public override async Task SearchForObjects(Ui.SearchRequest request, IServerStreamWriter<RpcCommon.SearchResponse> responseStream, ServerCallContext context)
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            await responseStream.WriteAllAsync(await tracker.SearchForObjects(request.Query));
+            foreach (var res in await tracker.SearchForObjects(request.Query))
+                await responseStream.WriteAsync(res);
         }
 
         public override async Task<RpcCommon.Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
