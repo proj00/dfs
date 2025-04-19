@@ -5,8 +5,6 @@ import { UiClient } from "@/types/rpc/uiservice.client";
 import { DataUsage, Hash, SearchResponse } from "@/types/rpc_common";
 import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 
-const serviceUrl: string = "http://127.0.0.1:42069";
-
 function getHash(b64: string): Hash {
   return { data: fromBase64(b64) };
 }
@@ -38,9 +36,9 @@ export interface INodeService {
 
 class NodeServiceClient implements INodeService {
   private client: UiClient;
-  constructor() {
+  constructor(port: number) {
     this.client = new UiClient(
-      new GrpcWebFetchTransport({ baseUrl: serviceUrl }),
+      new GrpcWebFetchTransport({ baseUrl: `http://127.0.0.1:${port}` }),
     );
     this.client;
   }
@@ -118,8 +116,11 @@ class NodeServiceClient implements INodeService {
   }
 }
 
-const _client = new NodeServiceClient();
+let _client: INodeService | undefined = undefined;
 
 export const GetNodeService = async (): Promise<INodeService> => {
+  if (_client === undefined) {
+    _client = new NodeServiceClient(await window.electronAPI.getPort());
+  }
   return _client;
 };

@@ -13,14 +13,14 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
-            int servicePort = -1;
-            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0)
+            int servicePort;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0 && parsedPort < 65536)
             {
                 servicePort = parsedPort;
             }
             else
             {
-                Console.WriteLine("Please provide a valid port number as the first argument.");
+                Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
                 return;
             }
 

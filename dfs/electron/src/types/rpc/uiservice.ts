@@ -841,7 +841,6 @@ export const UsageRequest = new UsageRequest$Type();
  * @generated ServiceType for protobuf service Ui.Ui
  */
 export const Ui = new ServiceType("Ui.Ui", [
-  { name: "PickObjectPath", options: {}, I: ObjectOptions, O: Path },
   { name: "GetObjectPath", options: {}, I: Hash, O: Path },
   { name: "RevealObjectInExplorer", options: {}, I: Hash, O: Empty },
   { name: "GetAllContainers", options: {}, I: Empty, O: GuidList },
@@ -863,7 +862,6 @@ export const Ui = new ServiceType("Ui.Ui", [
   },
   { name: "PauseContainerDownload", options: {}, I: Guid, O: Empty },
   { name: "ResumeContainerDownload", options: {}, I: Guid, O: Empty },
-  { name: "CopyToClipboard", options: {}, I: String$, O: Empty },
   {
     name: "SearchForObjects",
     serverStreaming: true,

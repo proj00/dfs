@@ -31,7 +31,6 @@ import {
   formatFileSize,
 } from "../lib/utils";
 import { DownloadManager } from "./download-manager";
-import { GetNodeService } from "@/IpcService/NodeServiceClient";
 
 interface SidebarProps {
   currentFolder: string | null;
@@ -602,8 +601,8 @@ export function Sidebar({
                   onClick={async () => {
                     // In a real app, this would open a directory picker
                     console.log("Opening directory picker...");
-                    const service = await GetNodeService();
-                    const path = await service.PickObjectPath(true);
+                    const path =
+                      (await window.electronAPI.selectFolder()) ?? "";
                     setDownloadDestination(path);
                     console.log(`picked: ${path}`);
                   }}

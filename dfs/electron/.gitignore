@@ -8,6 +8,14 @@ lerna-debug.log*
 
 # node binary
 assets
+db
+
+# Editor directories and files
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.local
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

@@ -3,15 +3,16 @@
 
 import { clipboard, contextBridge, ipcRenderer } from "electron";
 
+const portPromise = new Promise<number>((resolve) => {
+  ipcRenderer.once("backend-port", (_, port: number) => {
+    resolve(port);
+  });
+});
+
 contextBridge.exposeInMainWorld("electronAPI", {
-  onAppQuit: (callback: () => void) => {
-    ipcRenderer.on("app-is-quitting", callback);
-  },
-  confirmQuit: () => {
-    ipcRenderer.send("quit-confirmed");
-  },
   selectFile: () => ipcRenderer.invoke("select-file"),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
   writeClipboard: (text: string) => clipboard.writeText(text),
   readClipboard: () => clipboard.readText(),
+  getPort: () => portPromise,
 });

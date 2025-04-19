@@ -9,7 +9,6 @@ import type { UsageRequest } from "./uiservice";
 import type { SearchResponse } from "../rpc_common";
 import type { SearchRequest } from "./uiservice";
 import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
-import type { String$ } from "./uiservice";
 import type { DownloadContainerOptions } from "./uiservice";
 import type { PublishingOptions } from "./uiservice";
 import type { ObjectFromDiskOptions } from "./uiservice";
@@ -18,23 +17,15 @@ import type { Guid } from "../rpc_common";
 import type { Progress } from "./uiservice";
 import type { GuidList } from "../rpc_common";
 import type { Empty } from "../rpc_common";
-import type { Hash } from "../rpc_common";
 import { stackIntercept } from "@protobuf-ts/runtime-rpc";
 import type { Path } from "./uiservice";
-import type { ObjectOptions } from "./uiservice";
+import type { Hash } from "../rpc_common";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
  * @generated from protobuf service Ui.Ui
  */
 export interface IUiClient {
-  /**
-   * @generated from protobuf rpc: PickObjectPath(Ui.ObjectOptions) returns (Ui.Path);
-   */
-  pickObjectPath(
-    input: ObjectOptions,
-    options?: RpcOptions,
-  ): UnaryCall<ObjectOptions, Path>;
   /**
    * @generated from protobuf rpc: GetObjectPath(rpc_common.Hash) returns (Ui.Path);
    */
@@ -110,13 +101,6 @@ export interface IUiClient {
     options?: RpcOptions,
   ): UnaryCall<Guid, Empty>;
   /**
-   * @generated from protobuf rpc: CopyToClipboard(Ui.String) returns (rpc_common.Empty);
-   */
-  copyToClipboard(
-    input: String$,
-    options?: RpcOptions,
-  ): UnaryCall<String$, Empty>;
-  /**
    * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (stream rpc_common.SearchResponse);
    */
   searchForObjects(
@@ -144,27 +128,10 @@ export class UiClient implements IUiClient, ServiceInfo {
   options = Ui.options;
   constructor(private readonly _transport: RpcTransport) {}
   /**
-   * @generated from protobuf rpc: PickObjectPath(Ui.ObjectOptions) returns (Ui.Path);
-   */
-  pickObjectPath(
-    input: ObjectOptions,
-    options?: RpcOptions,
-  ): UnaryCall<ObjectOptions, Path> {
-    const method = this.methods[0],
-      opt = this._transport.mergeOptions(options);
-    return stackIntercept<ObjectOptions, Path>(
-      "unary",
-      this._transport,
-      method,
-      opt,
-      input,
-    );
-  }
-  /**
    * @generated from protobuf rpc: GetObjectPath(rpc_common.Hash) returns (Ui.Path);
    */
   getObjectPath(input: Hash, options?: RpcOptions): UnaryCall<Hash, Path> {
-    const method = this.methods[1],
+    const method = this.methods[0],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Hash, Path>(
       "unary",
@@ -181,7 +148,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Hash,
     options?: RpcOptions,
   ): UnaryCall<Hash, Empty> {
-    const method = this.methods[2],
+    const method = this.methods[1],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Hash, Empty>(
       "unary",
@@ -198,7 +165,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Empty,
     options?: RpcOptions,
   ): UnaryCall<Empty, GuidList> {
-    const method = this.methods[3],
+    const method = this.methods[2],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Empty, GuidList>(
       "unary",
@@ -215,7 +182,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Hash,
     options?: RpcOptions,
   ): UnaryCall<Hash, Progress> {
-    const method = this.methods[4],
+    const method = this.methods[3],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Hash, Progress>(
       "unary",
@@ -232,7 +199,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Guid,
     options?: RpcOptions,
   ): UnaryCall<Guid, ObjectList> {
-    const method = this.methods[5],
+    const method = this.methods[4],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Guid, ObjectList>(
       "unary",
@@ -249,7 +216,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Guid,
     options?: RpcOptions,
   ): UnaryCall<Guid, Hash> {
-    const method = this.methods[6],
+    const method = this.methods[5],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Guid, Hash>(
       "unary",
@@ -266,7 +233,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: ObjectFromDiskOptions,
     options?: RpcOptions,
   ): UnaryCall<ObjectFromDiskOptions, Guid> {
-    const method = this.methods[7],
+    const method = this.methods[6],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<ObjectFromDiskOptions, Guid>(
       "unary",
@@ -283,7 +250,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: PublishingOptions,
     options?: RpcOptions,
   ): UnaryCall<PublishingOptions, Empty> {
-    const method = this.methods[8],
+    const method = this.methods[7],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<PublishingOptions, Empty>(
       "unary",
@@ -300,7 +267,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: DownloadContainerOptions,
     options?: RpcOptions,
   ): UnaryCall<DownloadContainerOptions, Empty> {
-    const method = this.methods[9],
+    const method = this.methods[8],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<DownloadContainerOptions, Empty>(
       "unary",
@@ -317,7 +284,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Guid,
     options?: RpcOptions,
   ): UnaryCall<Guid, Empty> {
-    const method = this.methods[10],
+    const method = this.methods[9],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Guid, Empty>(
       "unary",
@@ -334,26 +301,9 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: Guid,
     options?: RpcOptions,
   ): UnaryCall<Guid, Empty> {
-    const method = this.methods[11],
+    const method = this.methods[10],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Guid, Empty>(
-      "unary",
-      this._transport,
-      method,
-      opt,
-      input,
-    );
-  }
-  /**
-   * @generated from protobuf rpc: CopyToClipboard(Ui.String) returns (rpc_common.Empty);
-   */
-  copyToClipboard(
-    input: String$,
-    options?: RpcOptions,
-  ): UnaryCall<String$, Empty> {
-    const method = this.methods[12],
-      opt = this._transport.mergeOptions(options);
-    return stackIntercept<String$, Empty>(
       "unary",
       this._transport,
       method,
@@ -368,7 +318,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: SearchRequest,
     options?: RpcOptions,
   ): ServerStreamingCall<SearchRequest, SearchResponse> {
-    const method = this.methods[13],
+    const method = this.methods[11],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<SearchRequest, SearchResponse>(
       "serverStreaming",
@@ -385,7 +335,7 @@ export class UiClient implements IUiClient, ServiceInfo {
     input: UsageRequest,
     options?: RpcOptions,
   ): UnaryCall<UsageRequest, DataUsage> {
-    const method = this.methods[14],
+    const method = this.methods[12],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<UsageRequest, DataUsage>(
       "unary",
@@ -399,7 +349,7 @@ export class UiClient implements IUiClient, ServiceInfo {
    * @generated from protobuf rpc: Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
    */
   shutdown(input: Empty, options?: RpcOptions): UnaryCall<Empty, Empty> {
-    const method = this.methods[15],
+    const method = this.methods[13],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Empty, Empty>(
       "unary",

@@ -76,8 +76,7 @@ export function TrackerSearchDialog({
 
   const handleCopyGuid = async (guid: string) => {
     try {
-      const nodeService = await GetNodeService();
-      await nodeService.CopyToClipboard(guid);
+      window.electronAPI.writeClipboard(guid);
       console.log(`Copied GUID: ${guid}`);
     } catch (err) {
       console.error("Failed to copy GUID:", err);

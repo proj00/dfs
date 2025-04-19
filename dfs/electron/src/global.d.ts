@@ -9,6 +9,7 @@ declare global {
       readClipboard: () => string;
       onAppQuit: (callback: () => void) => void;
       confirmQuit: () => void;
+      getPort: () => Promise<number>;
     };
   }
 }

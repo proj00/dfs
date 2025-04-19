@@ -1,4 +1,3 @@
-import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -55,11 +54,6 @@ export function toBase64(array: Uint8Array): string {
 
 export function fromBase64(b64: string): Uint8Array {
   return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-}
-
-export async function copyToClipboard(str: string): Promise<void> {
-  const service = await GetNodeService();
-  await service.CopyToClipboard(str);
 }
 
 export function formatProgress(current: number, total: number): string {

@@ -20,7 +20,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
   const handleFileSelect = async () => {
     console.log("picking...");
     const service = await GetNodeService();
-    const path = await service.PickObjectPath(true);
+    const path = (await window.electronAPI.selectFolder()) ?? "";
     console.log(`got: ${path}`);
     await service.ImportObjectFromDisk(path, 1024);
   };
