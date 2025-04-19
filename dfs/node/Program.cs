@@ -53,10 +53,11 @@ namespace node
         {
             var builder = WebApplication.CreateBuilder();
 
+            string policyName = "AllowLocalhost";
             builder.Services.AddGrpc();
-            builder.Services.AddCors(o => o.AddPolicy("AllowAll", policy =>
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
-                policy.AllowAnyOrigin()
+                policy.SetIsOriginAllowed(origin => new Uri(origin).IsLoopback)
                       .AllowAnyMethod()
                       .AllowAnyHeader()
                       .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
@@ -72,14 +73,14 @@ namespace node
             var app = builder.Build();
 
             app.UseRouting();
-            app.UseCors("AllowLocalhost");
+            app.UseCors(policyName);
             app.UseGrpcWeb();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<UiService>()
                          .EnableGrpcWeb()
-                         .RequireCors("AllowLocalhost");
+                         .RequireCors(policyName);
             });
 
             app.Start();
