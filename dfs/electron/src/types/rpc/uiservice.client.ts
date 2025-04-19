@@ -130,6 +130,10 @@ export interface IUiClient {
     input: UsageRequest,
     options?: RpcOptions,
   ): UnaryCall<UsageRequest, DataUsage>;
+  /**
+   * @generated from protobuf rpc: Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
+   */
+  shutdown(input: Empty, options?: RpcOptions): UnaryCall<Empty, Empty>;
 }
 /**
  * @generated from protobuf service Ui.Ui
@@ -384,6 +388,20 @@ export class UiClient implements IUiClient, ServiceInfo {
     const method = this.methods[14],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<UsageRequest, DataUsage>(
+      "unary",
+      this._transport,
+      method,
+      opt,
+      input,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
+   */
+  shutdown(input: Empty, options?: RpcOptions): UnaryCall<Empty, Empty> {
+    const method = this.methods[15],
+      opt = this._transport.mergeOptions(options);
+    return stackIntercept<Empty, Empty>(
       "unary",
       this._transport,
       method,

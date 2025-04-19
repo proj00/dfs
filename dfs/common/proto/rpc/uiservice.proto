@@ -7,7 +7,6 @@ import "rpc_common.proto";
 
 service Ui
 {
-	rpc PickObjectPath(ObjectOptions) returns (Path);
 	rpc GetObjectPath(rpc_common.Hash) returns (Path);
 	rpc RevealObjectInExplorer(rpc_common.Hash) returns (rpc_common.Empty);
 	rpc GetAllContainers(rpc_common.Empty) returns (rpc_common.GuidList);
@@ -19,7 +18,6 @@ service Ui
 	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
 	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
-	rpc CopyToClipboard(String) returns (rpc_common.Empty);
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
 	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);

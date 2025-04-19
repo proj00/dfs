@@ -872,4 +872,5 @@ export const Ui = new ServiceType("Ui.Ui", [
     O: SearchResponse,
   },
   { name: "GetDataUsage", options: {}, I: UsageRequest, O: DataUsage },
+  { name: "Shutdown", options: {}, I: Empty, O: Empty },
 ]);

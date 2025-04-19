@@ -35,6 +35,7 @@ export interface INodeService {
     trackerUri: string,
   ) => Promise<SearchResponse[]>;
   GetDataUsage: (trackerUri: string) => Promise<DataUsage>;
+  Shutdown: () => Promise<void>;
 }
 
 class NodeServiceClient implements INodeService {
@@ -120,6 +121,9 @@ class NodeServiceClient implements INodeService {
   }
   async GetDataUsage(trackerUri: string): Promise<DataUsage> {
     return (await this.client.getDataUsage({ trackerUri })).response;
+  }
+  async Shutdown(): Promise<void> {
+    await this.client.shutdown({});
   }
 }
 

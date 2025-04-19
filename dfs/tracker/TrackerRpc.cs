@@ -159,7 +159,7 @@ namespace tracker
         public override Task<Empty> DeleteObjectHash(Hash request, ServerCallContext context)
         {
             string hashBase64 = request.Data.ToBase64();
-            _filesystemManager.ObjectByHash.Remove(ByteString.FromBase64(hashBase64), out _);
+            _filesystemManager.ObjectByHash.Remove(ByteString.FromBase64(hashBase64));
             return Task.FromResult(new Empty());
         }
 

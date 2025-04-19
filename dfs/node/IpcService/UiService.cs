@@ -4,7 +4,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
@@ -31,53 +30,6 @@ namespace node.IpcService
             this.rpc = rpc;
             this.nodeURI = nodeURI;
         }
-
-        public override async Task<Ui.Path> PickObjectPath(Ui.ObjectOptions request, ServerCallContext context)
-        {
-            throw new NotImplementedException();
-            //var ui = getUI();
-            //if (ui == null)
-            //{
-            //    throw new NullReferenceException();
-            //}
-
-            //string result = "";
-            //ui.Invoke(() =>
-            //{
-            //    result = PickObjectPathInternal(request.PickFolder);
-            //});
-
-            //return new Ui.Path { Path_ = result };
-        }
-
-        private static string PickObjectPathInternal(bool folder)
-        {
-            if (folder)
-            {
-                using var dialog = new FolderBrowserDialog();
-                dialog.Multiselect = false;
-                var result = dialog.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && System.IO.Directory.Exists(dialog.SelectedPath))
-                {
-                    return dialog.SelectedPath;
-                }
-            }
-            else
-            {
-                using var dialog = new OpenFileDialog();
-                dialog.Multiselect = false;
-                var result = dialog.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && System.IO.File.Exists(dialog.FileName))
-                {
-                    return dialog.FileName;
-                }
-            }
-
-            throw new Exception("Dialog failed");
-        }
-
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
             return new Ui.Path { Path_ = state.PathByHash[request.Data] };
@@ -103,25 +55,6 @@ namespace node.IpcService
 
             return list;
         }
-
-        public override async Task<RpcCommon.Empty> CopyToClipboard(Ui.String request, ServerCallContext context)
-        {
-            throw new NotImplementedException();
-
-            //var ui = getUI();
-            //if (ui == null)
-            //{
-            //    throw new NullReferenceException();
-            //}
-
-            //ui.Invoke(() =>
-            //{
-            //    Clipboard.SetText(request.Value);
-            //});
-
-            //return new RpcCommon.Empty();
-        }
-
         public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
         {
             (long current, long total) = state.FileProgress[request.Data];
