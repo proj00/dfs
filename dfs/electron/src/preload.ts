@@ -3,16 +3,12 @@
 
 import { clipboard, contextBridge, ipcRenderer } from "electron";
 
-const portPromise = new Promise<number>((resolve) => {
-  ipcRenderer.once("backend-port", (_, port: number) => {
-    resolve(port);
-  });
-});
-
 contextBridge.exposeInMainWorld("electronAPI", {
   selectFile: () => ipcRenderer.invoke("select-file"),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
   writeClipboard: (text: string) => clipboard.writeText(text),
   readClipboard: () => clipboard.readText(),
-  getPort: () => portPromise,
+  async callGrpc(method: string, arg: any): Promise<any> {
+    return await ipcRenderer.invoke("grpc-call", { method, arg });
+  },
 });

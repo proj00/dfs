@@ -2,7 +2,6 @@
 // @generated from protobuf file "rpc/uiservice.proto" (package "Ui", syntax proto3)
 // tslint:disable
 import { DataUsage } from "../rpc_common";
-import { SearchResponse } from "../rpc_common";
 import { ObjectList } from "../fs/filesystem";
 import { Guid } from "../rpc_common";
 import { GuidList } from "../rpc_common";
@@ -18,6 +17,7 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { SearchResponse } from "../rpc_common";
 /**
  * @generated from protobuf message Ui.ObjectOptions
  */
@@ -126,6 +126,15 @@ export interface UsageRequest {
    * @generated from protobuf field: string trackerUri = 1;
    */
   trackerUri: string;
+}
+/**
+ * @generated from protobuf message Ui.SearchResponseList
+ */
+export interface SearchResponseList {
+  /**
+   * @generated from protobuf field: repeated rpc_common.SearchResponse results = 1;
+   */
+  results: SearchResponse[];
 }
 // @generated message type with reflection information, may provide speed optimized methods
 class ObjectOptions$Type extends MessageType<ObjectOptions> {
@@ -837,6 +846,87 @@ class UsageRequest$Type extends MessageType<UsageRequest> {
  * @generated MessageType for protobuf message Ui.UsageRequest
  */
 export const UsageRequest = new UsageRequest$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class SearchResponseList$Type extends MessageType<SearchResponseList> {
+  constructor() {
+    super("Ui.SearchResponseList", [
+      {
+        no: 1,
+        name: "results",
+        kind: "message",
+        repeat: 1 /*RepeatType.PACKED*/,
+        T: () => SearchResponse,
+      },
+    ]);
+  }
+  create(value?: PartialMessage<SearchResponseList>): SearchResponseList {
+    const message = globalThis.Object.create(this.messagePrototype!);
+    message.results = [];
+    if (value !== undefined)
+      reflectionMergePartial<SearchResponseList>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: SearchResponseList,
+  ): SearchResponseList {
+    let message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      let [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* repeated rpc_common.SearchResponse results */ 1:
+          message.results.push(
+            SearchResponse.internalBinaryRead(reader, reader.uint32(), options),
+          );
+          break;
+        default:
+          let u = options.readUnknownField;
+          if (u === "throw")
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          let d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: SearchResponseList,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* repeated rpc_common.SearchResponse results = 1; */
+    for (let i = 0; i < message.results.length; i++)
+      SearchResponse.internalBinaryWrite(
+        message.results[i],
+        writer.tag(1, WireType.LengthDelimited).fork(),
+        options,
+      ).join();
+    let u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message Ui.SearchResponseList
+ */
+export const SearchResponseList = new SearchResponseList$Type();
 /**
  * @generated ServiceType for protobuf service Ui.Ui
  */
@@ -864,10 +954,9 @@ export const Ui = new ServiceType("Ui.Ui", [
   { name: "ResumeContainerDownload", options: {}, I: Guid, O: Empty },
   {
     name: "SearchForObjects",
-    serverStreaming: true,
     options: {},
     I: SearchRequest,
-    O: SearchResponse,
+    O: SearchResponseList,
   },
   { name: "GetDataUsage", options: {}, I: UsageRequest, O: DataUsage },
   { name: "Shutdown", options: {}, I: Empty, O: Empty },

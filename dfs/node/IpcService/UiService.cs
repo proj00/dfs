@@ -70,11 +70,12 @@ namespace node.IpcService
             return contents;
         }
 
-        public override async Task SearchForObjects(Ui.SearchRequest request, IServerStreamWriter<RpcCommon.SearchResponse> responseStream, ServerCallContext context)
+        public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            foreach (var res in await tracker.SearchForObjects(request.Query))
-                await responseStream.WriteAsync(res);
+            var list = new Ui.SearchResponseList();
+            list.Results.AddRange(await tracker.SearchForObjects(request.Query));
+            return list;
         }
 
         public override async Task<RpcCommon.Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)

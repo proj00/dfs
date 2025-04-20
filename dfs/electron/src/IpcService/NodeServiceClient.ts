@@ -1,9 +1,7 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 import { ObjectList } from "@/types/fs/filesystem";
 import { Progress } from "@/types/rpc/uiservice";
-import { UiClient } from "@/types/rpc/uiservice.client";
 import { DataUsage, Hash, SearchResponse } from "@/types/rpc_common";
-import { GrpcWebFetchTransport } from "@protobuf-ts/grpcweb-transport";
 
 function getHash(b64: string): Hash {
   return { data: fromBase64(b64) };
@@ -31,46 +29,53 @@ export interface INodeService {
     trackerUri: string,
   ) => Promise<SearchResponse[]>;
   GetDataUsage: (trackerUri: string) => Promise<DataUsage>;
-  Shutdown: () => Promise<void>;
 }
 
 class NodeServiceClient implements INodeService {
-  private client: UiClient;
-  constructor(port: number) {
-    this.client = new UiClient(
-      new GrpcWebFetchTransport({ baseUrl: `http://127.0.0.1:${port}` }),
-    );
-    this.client;
-  }
   async GetObjectPath(base64Hash: string): Promise<string> {
-    return (await this.client.getObjectPath(getHash(base64Hash))).response.path;
+    return (
+      await window.electronAPI.callGrpc("getObjectPath", getHash(base64Hash))
+    ).path;
   }
   async RevealObjectInExplorer(base64Hash: string): Promise<void> {
-    await this.client.revealObjectInExplorer(getHash(base64Hash));
+    await window.electronAPI.callGrpc(
+      "revealObjectInExplorer",
+      getHash(base64Hash),
+    );
   }
   async GetAllContainers(): Promise<string[]> {
-    return (await this.client.getAllContainers({})).response.guid;
+    return (await window.electronAPI.callGrpc("getAllContainers", {})).guid;
   }
   async GetDownloadProgress(base64Hash: string): Promise<Progress> {
-    return (await this.client.getDownloadProgress(getHash(base64Hash)))
-      .response;
+    return await window.electronAPI.callGrpc(
+      "getDownloadProgress",
+      getHash(base64Hash),
+    );
   }
   async GetContainerObjects(container: string): Promise<ObjectList> {
-    return (await this.client.getContainerObjects({ guid: container }))
-      .response;
+    return await window.electronAPI.callGrpc("getContainerObjects", {
+      guid: container,
+    });
   }
   async GetContainerRootHash(container: string): Promise<string> {
     return toBase64(
-      (await this.client.getContainerRootHash({ guid: container })).response
-        .data,
+      (
+        await window.electronAPI.callGrpc("getContainerRootHash", {
+          guid: container,
+        })
+      ).data,
     );
   }
   async ImportObjectFromDisk(path: string, chunkSize: number): Promise<string> {
-    return (await this.client.importObjectFromDisk({ path, chunkSize }))
-      .response.guid;
+    return (
+      await window.electronAPI.callGrpc("importObjectFromDisk", {
+        path,
+        chunkSize,
+      })
+    ).guid;
   }
   async PublishToTracker(container: string, trackerUri: string): Promise<void> {
-    await this.client.publishToTracker({
+    await window.electronAPI.callGrpc("publishToTracker", {
       containerGuid: container,
       trackerUri,
     });
@@ -81,7 +86,7 @@ class NodeServiceClient implements INodeService {
     destinationDir: string,
     maxConcurrentChunks: number,
   ): Promise<void> {
-    await this.client.downloadContainer({
+    await window.electronAPI.callGrpc("downloadContainer", {
       containerGuid: container,
       trackerUri,
       destinationDir,
@@ -90,39 +95,36 @@ class NodeServiceClient implements INodeService {
   }
 
   async PauseContainerDownload(container: string): Promise<void> {
-    await this.client.pauseContainerDownload({ guid: container });
+    await window.electronAPI.callGrpc("pauseContainerDownload", {
+      guid: container,
+    });
   }
   async ResumeContainerDownload(container: string): Promise<void> {
-    await this.client.resumeContainerDownload({ guid: container });
+    await window.electronAPI.callGrpc("resumeContainerDownload", {
+      guid: container,
+    });
   }
   async SearchForObjects(
     query: string,
     trackerUri: string,
   ): Promise<SearchResponse[]> {
-    const call = this.client.searchForObjects({ trackerUri, query });
-
-    let response: SearchResponse[] = [];
-    for await (let r of call.responses) {
-      response.push(r);
-    }
-
-    return response;
+    return (
+      await window.electronAPI.callGrpc("searchForObjects", {
+        trackerUri,
+        query,
+      })
+    ).results;
   }
   async GetDataUsage(trackerUri: string): Promise<DataUsage> {
-    return (await this.client.getDataUsage({ trackerUri })).response;
-  }
-  async Shutdown(): Promise<void> {
-    await this.client.shutdown({});
+    return await window.electronAPI.callGrpc("getDataUsage", { trackerUri });
   }
 }
 
 let _client: INodeService | undefined = undefined;
 
-export const GetNodeService = async (port?: number): Promise<INodeService> => {
+export const GetNodeService = async (): Promise<INodeService> => {
   if (_client === undefined) {
-    _client = new NodeServiceClient(
-      port ?? (await window.electronAPI.getPort()),
-    );
+    _client = new NodeServiceClient();
   }
   return _client;
 };

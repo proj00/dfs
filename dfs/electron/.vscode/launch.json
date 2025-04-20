@@ -1,12 +1,5 @@
 {
   "version": "0.2.0",
-  "compounds": [
-    {
-      "name": "Electron (Main + Renderer)",
-      "configurations": ["Main Process (Electron Forge)", "Electron Renderer"],
-      "stopAll": true
-    }
-  ],
   "configurations": [
     {
       "name": "Main Process (Electron Forge)",
@@ -23,14 +16,6 @@
         "ELECTRON_ENABLE_STACK_DUMPING": "1"
       },
       "skipFiles": ["<node_internals>/**"]
-    },
-    {
-      "name": "Electron Renderer",
-      "type": "chrome",
-      "request": "attach",
-      "port": 9229,
-      "webRoot": "${workspaceFolder}/src",
-      "timeout": 30000
     }
   ]
 }

@@ -18,7 +18,7 @@ service Ui
 	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
 	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
-	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
+	rpc SearchForObjects(SearchRequest) returns (SearchResponseList);
 	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
 	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
 }
@@ -73,4 +73,9 @@ message SearchRequest
 message UsageRequest
 {
 	string trackerUri = 1;
+}
+
+message SearchResponseList
+{
+	repeated rpc_common.SearchResponse results = 1;
 }

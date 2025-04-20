@@ -6,7 +6,7 @@
     <ShouldRunBuildScript>false</ShouldRunBuildScript>
     <!-- Folder where production build objects will be placed -->
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
-    <StartupCommand>npm run dev</StartupCommand>
+    <StartupCommand>npm run start</StartupCommand>
   </PropertyGroup>
   <ItemGroup>
     <None Include=".vscode\launch.json" />

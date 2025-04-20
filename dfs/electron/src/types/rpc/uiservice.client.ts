@@ -6,9 +6,8 @@ import type { ServiceInfo } from "@protobuf-ts/runtime-rpc";
 import { Ui } from "./uiservice";
 import type { DataUsage } from "../rpc_common";
 import type { UsageRequest } from "./uiservice";
-import type { SearchResponse } from "../rpc_common";
+import type { SearchResponseList } from "./uiservice";
 import type { SearchRequest } from "./uiservice";
-import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
 import type { DownloadContainerOptions } from "./uiservice";
 import type { PublishingOptions } from "./uiservice";
 import type { ObjectFromDiskOptions } from "./uiservice";
@@ -101,12 +100,12 @@ export interface IUiClient {
     options?: RpcOptions,
   ): UnaryCall<Guid, Empty>;
   /**
-   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (stream rpc_common.SearchResponse);
+   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (Ui.SearchResponseList);
    */
   searchForObjects(
     input: SearchRequest,
     options?: RpcOptions,
-  ): ServerStreamingCall<SearchRequest, SearchResponse>;
+  ): UnaryCall<SearchRequest, SearchResponseList>;
   /**
    * @generated from protobuf rpc: GetDataUsage(Ui.UsageRequest) returns (rpc_common.DataUsage);
    */
@@ -312,16 +311,16 @@ export class UiClient implements IUiClient, ServiceInfo {
     );
   }
   /**
-   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (stream rpc_common.SearchResponse);
+   * @generated from protobuf rpc: SearchForObjects(Ui.SearchRequest) returns (Ui.SearchResponseList);
    */
   searchForObjects(
     input: SearchRequest,
     options?: RpcOptions,
-  ): ServerStreamingCall<SearchRequest, SearchResponse> {
+  ): UnaryCall<SearchRequest, SearchResponseList> {
     const method = this.methods[11],
       opt = this._transport.mergeOptions(options);
-    return stackIntercept<SearchRequest, SearchResponse>(
-      "serverStreaming",
+    return stackIntercept<SearchRequest, SearchResponseList>(
+      "unary",
       this._transport,
       method,
       opt,

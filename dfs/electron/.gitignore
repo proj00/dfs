@@ -9,6 +9,7 @@ lerna-debug.log*
 # node binary
 assets
 db
+dist
 
 # Editor directories and files
 .vscode/*
