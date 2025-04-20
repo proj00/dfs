@@ -40,10 +40,10 @@ jobs:
         working-directory: ./dfs/electron
         run: |
           npm ci
-          npm run make --if-present
+          npm run package-debug
 
       - uses: actions/checkout@v4
       - name: Test UI
         working-directory: ./dfs/electron
         run: |
-          npm run test
+          npm test
