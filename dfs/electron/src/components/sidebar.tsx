@@ -29,6 +29,7 @@ import {
   formatProgress,
   calculatePercentage,
   formatFileSize,
+  createPollCallback,
 } from "../lib/utils";
 import { DownloadManager } from "./download-manager";
 
@@ -107,91 +108,83 @@ export function Sidebar({
     };
   }, []);
   // Fetch data usage periodically
-  useEffect(() => {
-    const fetchDataUsage = async () => {
-      try {
-        const usage = await backendService.GetDataUsage();
-        setDataUsage(usage);
-      } catch (error) {
-        console.error("Failed to fetch data usage:", error);
+  const fetchDataUsage = async () => {
+    try {
+      const usage = await backendService.GetDataUsage();
+      setDataUsage(usage);
+    } catch (error) {
+      console.error("Failed to fetch data usage:", error);
+    }
+  };
+
+  useEffect(createPollCallback(fetchDataUsage, 1000), []);
+
+  const fetchProgress = async () => {
+    try {
+      if (activeContainerDownloadIds.length === 0) return;
+      let filesTotal = 0;
+      let filesCompleted = 0;
+      let bytesTotal = 0;
+      let bytesReceived = 0;
+      let allCompleted = true;
+
+      // Fetch progress for each file in the container
+      for (const downloadId of activeContainerDownloadIds) {
+        const progress = await backendService.GetDownloadProgress(downloadId);
+
+        filesTotal++;
+        bytesTotal += progress.totalBytes;
+        bytesReceived += progress.receivedBytes;
+
+        if (progress.status === "completed") {
+          filesCompleted++;
+        } else if (progress.status === "active") {
+          allCompleted = false;
+        }
       }
-    };
 
-    fetchDataUsage(); // Initial fetch
-    const interval = setInterval(fetchDataUsage, 5000); // Update every 5 seconds
+      // Update container download progress
+      setContainerDownloadProgress({
+        filesTotal,
+        filesCompleted,
+        bytesTotal,
+        bytesReceived,
+      });
 
-    return () => clearInterval(interval);
-  }, []);
+      // If all files are completed, trigger the onContainerDownloaded callback
+      if (allCompleted && filesTotal > 0 && filesCompleted === filesTotal) {
+        setIsDownloading(false);
+
+        // Close dialog after a short delay to show success state
+        setTimeout(() => {
+          setDownloadDialogOpen(false);
+          setDownloadContainerGuid("");
+          setDownloadTrackerUri("");
+          setDownloadDestination("");
+          setDownloadSuccess(null);
+          setActiveContainerDownloadIds([]);
+          setContainerDownloadProgress({
+            filesTotal: 0,
+            filesCompleted: 0,
+            bytesTotal: 0,
+            bytesReceived: 0,
+          });
+        }, 1500);
+
+        if (onContainerDownloaded) {
+          onContainerDownloaded();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch download progress:", error);
+    }
+  };
 
   // Update container download progress
-  useEffect(() => {
-    if (activeContainerDownloadIds.length === 0) return;
-
-    const fetchProgress = async () => {
-      try {
-        let filesTotal = 0;
-        let filesCompleted = 0;
-        let bytesTotal = 0;
-        let bytesReceived = 0;
-        let allCompleted = true;
-
-        // Fetch progress for each file in the container
-        for (const downloadId of activeContainerDownloadIds) {
-          const progress = await backendService.GetDownloadProgress(downloadId);
-
-          filesTotal++;
-          bytesTotal += progress.totalBytes;
-          bytesReceived += progress.receivedBytes;
-
-          if (progress.status === "completed") {
-            filesCompleted++;
-          } else if (progress.status === "active") {
-            allCompleted = false;
-          }
-        }
-
-        // Update container download progress
-        setContainerDownloadProgress({
-          filesTotal,
-          filesCompleted,
-          bytesTotal,
-          bytesReceived,
-        });
-
-        // If all files are completed, trigger the onContainerDownloaded callback
-        if (allCompleted && filesTotal > 0 && filesCompleted === filesTotal) {
-          setIsDownloading(false);
-
-          // Close dialog after a short delay to show success state
-          setTimeout(() => {
-            setDownloadDialogOpen(false);
-            setDownloadContainerGuid("");
-            setDownloadTrackerUri("");
-            setDownloadDestination("");
-            setDownloadSuccess(null);
-            setActiveContainerDownloadIds([]);
-            setContainerDownloadProgress({
-              filesTotal: 0,
-              filesCompleted: 0,
-              bytesTotal: 0,
-              bytesReceived: 0,
-            });
-          }, 1500);
-
-          if (onContainerDownloaded) {
-            onContainerDownloaded();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch download progress:", error);
-      }
-    };
-
-    fetchProgress();
-    const interval = setInterval(fetchProgress, 500); // Update every 500ms
-
-    return () => clearInterval(interval);
-  }, [activeContainerDownloadIds, onContainerDownloaded]);
+  useEffect(createPollCallback(fetchProgress, 500), [
+    activeContainerDownloadIds,
+    onContainerDownloaded,
+  ]);
 
   // Handle publish to tracker
   const handlePublish = async () => {

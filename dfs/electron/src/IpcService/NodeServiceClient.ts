@@ -1,7 +1,13 @@
 import { fromBase64, toBase64 } from "@/lib/utils";
 import { ObjectList } from "@/types/fs/filesystem";
-import { Progress } from "@/types/rpc/uiservice";
-import { DataUsage, Hash, SearchResponse } from "@/types/rpc_common";
+import { Path, Progress, SearchResponseList } from "@/types/rpc/uiservice";
+import {
+  DataUsage,
+  Guid,
+  GuidList,
+  Hash,
+  SearchResponse,
+} from "@/types/rpc_common";
 
 function getHash(b64: string): Hash {
   return { data: fromBase64(b64) };
@@ -33,8 +39,8 @@ export interface INodeService {
 
 class NodeServiceClient implements INodeService {
   async GetObjectPath(base64Hash: string): Promise<string> {
-    return (
-      await window.electronAPI.callGrpc("getObjectPath", getHash(base64Hash))
+    return Path.fromBinary(
+      await window.electronAPI.callGrpc("getObjectPath", getHash(base64Hash)),
     ).path;
   }
   async RevealObjectInExplorer(base64Hash: string): Promise<void> {
@@ -44,34 +50,40 @@ class NodeServiceClient implements INodeService {
     );
   }
   async GetAllContainers(): Promise<string[]> {
-    return (await window.electronAPI.callGrpc("getAllContainers", {})).guid;
+    return GuidList.fromBinary(
+      await window.electronAPI.callGrpc("getAllContainers", {}),
+    ).guid;
   }
   async GetDownloadProgress(base64Hash: string): Promise<Progress> {
-    return await window.electronAPI.callGrpc(
-      "getDownloadProgress",
-      getHash(base64Hash),
+    return Progress.fromBinary(
+      await window.electronAPI.callGrpc(
+        "getDownloadProgress",
+        getHash(base64Hash),
+      ),
     );
   }
   async GetContainerObjects(container: string): Promise<ObjectList> {
-    return await window.electronAPI.callGrpc("getContainerObjects", {
-      guid: container,
-    });
+    return ObjectList.fromBinary(
+      await window.electronAPI.callGrpc("getContainerObjects", {
+        guid: container,
+      }),
+    );
   }
   async GetContainerRootHash(container: string): Promise<string> {
     return toBase64(
-      (
+      Hash.fromBinary(
         await window.electronAPI.callGrpc("getContainerRootHash", {
           guid: container,
-        })
+        }),
       ).data,
     );
   }
   async ImportObjectFromDisk(path: string, chunkSize: number): Promise<string> {
-    return (
+    return Guid.fromBinary(
       await window.electronAPI.callGrpc("importObjectFromDisk", {
         path,
         chunkSize,
-      })
+      }),
     ).guid;
   }
   async PublishToTracker(container: string, trackerUri: string): Promise<void> {
@@ -108,15 +120,17 @@ class NodeServiceClient implements INodeService {
     query: string,
     trackerUri: string,
   ): Promise<SearchResponse[]> {
-    return (
+    return SearchResponseList.fromBinary(
       await window.electronAPI.callGrpc("searchForObjects", {
         trackerUri,
         query,
-      })
+      }),
     ).results;
   }
   async GetDataUsage(trackerUri: string): Promise<DataUsage> {
-    return await window.electronAPI.callGrpc("getDataUsage", { trackerUri });
+    return DataUsage.fromBinary(
+      await window.electronAPI.callGrpc("getDataUsage", { trackerUri }),
+    );
   }
 }
 
