@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputType>Exe</OutputType>
     <PlatformTarget>x64</PlatformTarget>
@@ -14,8 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CefSharp.Common.NETCore" Version="135.0.170" />
-    <PackageReference Include="CefSharp.WinForms.NETCore" Version="135.0.170" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
     <PackageReference Include="Grpc.AspNetCore.Web" Version="2.70.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4" />
@@ -24,34 +21,5 @@
 
   <ItemGroup>
     <ProjectReference Include="..\common\common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="UiResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>UiResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="UiResources.resx">
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="py pack_resources.py" />
-  </Target>
-
-  <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-arm64" Version="135.0.17" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-x64" Version="135.0.17" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="chromiumembeddedframework.runtime.win-x86" Version="135.0.17" />
   </ItemGroup>
 </Project>

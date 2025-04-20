@@ -78,11 +78,10 @@ namespace common
             db.Dispose();
         }
 
-        public void Remove(_Key key, out object _)
+        public void Remove(_Key key)
         {
             lock (dbLock)
                 db.Remove(keySerializer(key));
-                _ = null;
         }
 
         public bool TryGetValue(_Key key, [MaybeNullWhen(false)] out _Value value)

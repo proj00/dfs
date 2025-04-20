@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Main Process (Electron Forge)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "debug-no-build"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "preLaunchTask": "build-backend",
+      "outputCapture": "std",
+      "env": {
+        "ELECTRON_ENABLE_LOGGING": "1",
+        "ELECTRON_ENABLE_STACK_DUMPING": "1"
+      },
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

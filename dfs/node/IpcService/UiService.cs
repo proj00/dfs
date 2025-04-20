@@ -4,7 +4,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Tracker;
@@ -19,63 +18,18 @@ namespace node.IpcService
     {
         private NodeState state;
         private NodeRpc rpc;
-        private Func<UI?> getUI;
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
+        public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state, NodeRpc rpc, Func<UI?> getUI, string nodeURI)
+        public UiService(NodeState state, NodeRpc rpc, string nodeURI)
         {
+            this.ShutdownEvent = new AsyncManualResetEvent(true);
+            this.ShutdownEvent.Reset();
             this.state = state;
             this.rpc = rpc;
-            this.getUI = getUI;
             this.nodeURI = nodeURI;
         }
-
-        public override async Task<Ui.Path> PickObjectPath(Ui.ObjectOptions request, ServerCallContext context)
-        {
-            var ui = getUI();
-            if (ui == null)
-            {
-                throw new NullReferenceException();
-            }
-
-            string result = "";
-            ui.Invoke(() =>
-            {
-                result = PickObjectPathInternal(request.PickFolder);
-            });
-
-            return new Ui.Path { Path_ = result };
-        }
-
-        private static string PickObjectPathInternal(bool folder)
-        {
-            if (folder)
-            {
-                using var dialog = new FolderBrowserDialog();
-                dialog.Multiselect = false;
-                var result = dialog.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath) && System.IO.Directory.Exists(dialog.SelectedPath))
-                {
-                    return dialog.SelectedPath;
-                }
-            }
-            else
-            {
-                using var dialog = new OpenFileDialog();
-                dialog.Multiselect = false;
-                var result = dialog.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.FileName) && System.IO.File.Exists(dialog.FileName))
-                {
-                    return dialog.FileName;
-                }
-            }
-
-            throw new Exception("Dialog failed");
-        }
-
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
             return new Ui.Path { Path_ = state.PathByHash[request.Data] };
@@ -93,30 +47,14 @@ namespace node.IpcService
         {
             var list = new RpcCommon.GuidList();
 
-            state.Manager.Container.ForEach((guid, bs) => {
+            state.Manager.Container.ForEach((guid, bs) =>
+            {
                 list.Guid.Add(guid.ToString());
-                return true;    
+                return true;
             });
 
             return list;
         }
-
-        public override async Task<RpcCommon.Empty> CopyToClipboard(Ui.String request, ServerCallContext context)
-        {
-            var ui = getUI();
-            if (ui == null)
-            {
-                throw new NullReferenceException();
-            }
-
-            ui.Invoke(() =>
-            {
-                Clipboard.SetText(request.Value);
-            });
-
-            return new RpcCommon.Empty();
-        }
-
         public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
         {
             (long current, long total) = state.FileProgress[request.Data];
@@ -132,10 +70,12 @@ namespace node.IpcService
             return contents;
         }
 
-        public override async Task SearchForObjects(Ui.SearchRequest request, IServerStreamWriter<RpcCommon.SearchResponse> responseStream, ServerCallContext context)
+        public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            await responseStream.WriteAllAsync(await tracker.SearchForObjects(request.Query));
+            var list = new Ui.SearchResponseList();
+            list.Results.AddRange(await tracker.SearchForObjects(request.Query));
+            return list;
         }
 
         public override async Task<RpcCommon.Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
@@ -295,6 +235,7 @@ namespace node.IpcService
                     response.Add(message);
                 }
 
+                long written = 0;
                 lock (streamLock)
                 {
                     stream.Seek(chunkOffset, SeekOrigin.Begin);
@@ -303,12 +244,13 @@ namespace node.IpcService
                         stream.Write(item.Response.Span);
                         (long current, long total) = state.FileProgress[fileHash];
                         current += item.Response.Span.Length;
+                        written += item.Response.Span.Length;
                         state.FileProgress[fileHash] = (current, total);
                     }
                 }
 
                 await tracker.MarkReachable(hash, nodeURI);
-                await tracker.ReportDataUsage(false, state.FileProgress[fileHash].Item2);
+                await tracker.ReportDataUsage(false, written);
             }
             finally
             {
@@ -320,6 +262,12 @@ namespace node.IpcService
         {
             var tracker = new TrackerWrapper(request.TrackerUri, state);
             return await tracker.GetDataUsage();
+        }
+
+        public override async Task<RpcCommon.Empty> Shutdown(RpcCommon.Empty request, ServerCallContext context)
+        {
+            ShutdownEvent.Set();
+            return new RpcCommon.Empty();
         }
     }
 }

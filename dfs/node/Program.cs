@@ -1,8 +1,4 @@
 using node.IpcService;
-using CefSharp;
-using Grpc.Core;
-using CefSharp.WinForms;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,62 +11,73 @@ namespace node
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
-        [STAThread]
-        static void Main()
+        static async Task Main(string[] args)
         {
-            global::System.Windows.Forms.Application.EnableVisualStyles();
-            global::System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
-            global::System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.SystemAware);
-
-            GrpcEnvironment.SetLogger(new Grpc.Core.Logging.LogLevelFilterLogger(
-                new Grpc.Core.Logging.ConsoleLogger(),
-                Grpc.Core.Logging.LogLevel.Debug));
+            int servicePort;
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0 && parsedPort < 65536)
+            {
+                servicePort = parsedPort;
+            }
+            else
+            {
+                Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
+                return;
+            }
+#if !DEBUG
+            servicePort = 42069;
+#endif
 
             NodeState state = new(TimeSpan.FromMinutes(1));
             NodeRpc rpc = new(state);
-            var publicServer = new Grpc.Core.Server()
-            {
-                Services = { Node.Node.BindService(rpc) },
-                Ports = { new ServerPort("localhost", 0, ServerCredentials.Insecure) }
-            };
+            var publicServer = await StartPublicNodeServerAsync(rpc);
+            var publicUrl = publicServer.Urls.First();
 
-            publicServer.Start();
+            UiService service = new(state, rpc, publicUrl);
+            var privateServer = await StartGrpcWebServerAsync(service, servicePort);
 
-            ServerPort port = publicServer.Ports.First();
-            UI? ui = null;
-            UiService service = new(state, rpc, () => ui, $"http://{port.Host}:{port.BoundPort}");
-
-            StartGrpcWebServer(service);
-
-            CefSharpSettings.ConcurrentTaskExecution = true;
-            var settings = new CefSettings();
-            settings.RootCachePath = AppDomain.CurrentDomain.BaseDirectory + "\\" + Guid.NewGuid();
-            settings.CefCommandLineArgs.Add("disable-features", "BlockInsecurePrivateNetworkRequests");
-#if !DEBUG
-            settings.RegisterScheme(new CefCustomScheme()
-            {
-                SchemeName = "http",
-                DomainName = "ui.resources",
-                SchemeHandlerFactory = new UiResourceHandlerFactory(),
-            });
-#endif
-            Cef.Initialize(settings);
-
-            ui = new UI();
-            System.Windows.Forms.Application.Run(ui);
-
-            // STAThread prohibits async main, this will do
-            publicServer.ShutdownAsync().Wait();
+            await service.ShutdownEvent.WaitAsync();
+            await publicServer.StopAsync();
+            await privateServer.StopAsync();
         }
 
-        private static IHost StartGrpcWebServer(UiService service)
+        private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc)
         {
             var builder = WebApplication.CreateBuilder();
 
+            string policyName = "AllowAll";
             builder.Services.AddGrpc();
-            builder.Services.AddCors(o => o.AddPolicy("AllowAll", policy =>
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
                 policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+            }));
+
+            builder.Services.AddSingleton(rpc);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(0);
+            });
+
+            var app = builder.Build();
+
+            app.UseRouting();
+            app.UseCors(policyName);
+            await app.StartAsync();
+            return app;
+        }
+
+        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, int port)
+        {
+            var builder = WebApplication.CreateBuilder();
+
+            string policyName = "AllowLocalhost";
+            builder.Services.AddGrpc();
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
+            {
+                policy.SetIsOriginAllowed(origin => new Uri(origin).IsLoopback)
                       .AllowAnyMethod()
                       .AllowAnyHeader()
                       .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
@@ -80,23 +87,23 @@ namespace node
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(42069);
+                options.ListenLocalhost(port);
             });
 
             var app = builder.Build();
 
             app.UseRouting();
-            app.UseCors("AllowAll");
+            app.UseCors(policyName);
             app.UseGrpcWeb();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<UiService>()
                          .EnableGrpcWeb()
-                         .RequireCors("AllowAll");
+                         .RequireCors(policyName);
             });
 
-            app.Start();
+            await app.StartAsync();
             return app;
         }
     }
