@@ -4,15 +4,17 @@
       "commandName": "Executable",
       "executablePath": "cmd.exe",
       "commandLineArgs": "/c npm run start",
-      "workingDirectory": "../electron",
-      "launchBrowser": false
+      "workingDirectory": "../electron"
     },
     "Electron UI (release build)": {
       "commandName": "Executable",
       "executablePath": "powershell.exe",
       "commandLineArgs": "npm run make; -NoExit -Command \"ii 'out/make/squirrel.windows/x64'; exit\"",
-      "workingDirectory": "../electron",
-      "launchBrowser": false
+      "workingDirectory": "../electron"
+    },
+    "Run with Args": {
+      "commandName": "Project",
+      "commandLineArgs": "42069"
     }
   },
   "$schema": "http://json.schemastore.org/launchsettings.json"

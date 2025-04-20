@@ -4,7 +4,7 @@
     {
       "label": "build-backend",
       "type": "shell",
-      "command": "npm run publish-backend-debug && npm run fix-proto",
+      "command": "npm run fix-proto && npx tsc -b",
       "problemMatcher": []
     }
   ]

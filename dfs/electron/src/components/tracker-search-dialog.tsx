@@ -17,10 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { GetNodeService } from "@/IpcService/NodeServiceClient";
 import { File } from "@/lib/types";
-import { toBase64 } from "@/lib/utils";
-import { backendService } from "@/IpcService/BackendService";
 
 interface TrackerSearchDialogProps {
   open: boolean;
@@ -47,23 +44,25 @@ export function TrackerSearchDialog({
     setSearchResults([]);
 
     try {
-      const nodeService = await GetNodeService();
-      const results = await nodeService.SearchForObjects(
-        searchQuery,
-        trackerUri,
-      );
-      const hashes = new Set(
-        results
-          .map((h) => h.hash)
-          .flat(1)
-          .map((h) => toBase64(h)),
-      );
-      const guids = new Set(results.map((h) => h.guid));
-      const files = (await backendService.fetchDriveData()).files.filter(
-        (f) => hashes.has(f.id) && guids.has(f.containerGuid),
-      );
+      // this is broken
 
-      setSearchResults(files);
+      // const nodeService = await GetNodeService();
+      // const results = await nodeService.SearchForObjects(
+      //   searchQuery,
+      //   trackerUri
+      // );
+      // const hashes = new Set(
+      //   results
+      //     .map((h) => h.hash)
+      //     .flat(1)
+      //     .map((h) => toBase64(h))
+      // );
+      //const guids = new Set(results.map((h) => h.guid));
+      // const files = (await backendService.fetchDriveData()).files.filter(
+      //   (f) => hashes.has(f.id) && guids.has(f.containerGuid)
+      // );
+
+      setSearchResults([]);
     } catch (err) {
       console.error("Search failed:", err);
       setError(

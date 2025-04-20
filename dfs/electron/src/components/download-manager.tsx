@@ -13,6 +13,7 @@ import {
   formatSpeed,
   formatDuration,
   calculatePercentage,
+  createPollCallback,
 } from "../lib/utils";
 
 interface DownloadManagerProps {
@@ -34,74 +35,71 @@ export function DownloadManager({
   const [activeTab, setActiveTab] = useState("downloads");
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
 
+  const fetchDataUsage = async () => {
+    try {
+      const data = await backendService.GetDataUsage();
+      setDataUsage(data);
+    } catch (error) {
+      console.error("Failed to fetch data usage:", error);
+    }
+  };
+
+  const fetchDownloadProgress = async () => {
+    try {
+      // Get all active downloads from the mock service
+      // In a real implementation, you would need to track this info in your app
+      const mockService = backendService as any;
+      const allDownloads = mockService.getAllActiveDownloads
+        ? mockService.getAllActiveDownloads()
+        : new Map();
+
+      // Process individual file downloads
+      const downloadItems: DownloadItem[] = [];
+
+      // Only process downloads that are in the activeDownloadIds array
+      for (const downloadId of activeDownloadIds) {
+        const downloadInfo = allDownloads.get(downloadId);
+        if (!downloadInfo) continue;
+
+        const progress = downloadInfo.progress as DownloadProgress;
+        const containerGuid = downloadInfo.containerGuid;
+        const now = new Date();
+        const startTime = downloadInfo.startTime || now;
+        const elapsedTime = now.getTime() - startTime.getTime();
+        const speed = downloadInfo.speed || 0;
+
+        // Add to file downloads
+        downloadItems.push({
+          id: downloadId,
+          fileId: progress.fileId,
+          containerGuid,
+          fileName: progress.fileName,
+          startTime,
+          downloadedBytes: progress.receivedBytes,
+          totalBytes: progress.totalBytes,
+          status: progress.status,
+          speed,
+          elapsedTime,
+        });
+      }
+
+      setDownloads(downloadItems);
+    } catch (error) {
+      console.error("Failed to fetch download progress:", error);
+    }
+  };
+
   // Fetch data usage and download progress
-  useEffect(() => {
-    if (!open) return;
-
-    const fetchDataUsage = async () => {
-      try {
-        const data = await backendService.GetDataUsage();
-        setDataUsage(data);
-      } catch (error) {
-        console.error("Failed to fetch data usage:", error);
+  useEffect(
+    createPollCallback(async () => {
+      if (!open) {
+        return;
       }
-    };
-
-    const fetchDownloadProgress = async () => {
-      try {
-        // Get all active downloads from the mock service
-        // In a real implementation, you would need to track this info in your app
-        const mockService = backendService as any;
-        const allDownloads = mockService.getAllActiveDownloads
-          ? mockService.getAllActiveDownloads()
-          : new Map();
-
-        // Process individual file downloads
-        const downloadItems: DownloadItem[] = [];
-
-        // Only process downloads that are in the activeDownloadIds array
-        for (const downloadId of activeDownloadIds) {
-          const downloadInfo = allDownloads.get(downloadId);
-          if (!downloadInfo) continue;
-
-          const progress = downloadInfo.progress as DownloadProgress;
-          const containerGuid = downloadInfo.containerGuid;
-          const now = new Date();
-          const startTime = downloadInfo.startTime || now;
-          const elapsedTime = now.getTime() - startTime.getTime();
-          const speed = downloadInfo.speed || 0;
-
-          // Add to file downloads
-          downloadItems.push({
-            id: downloadId,
-            fileId: progress.fileId,
-            containerGuid,
-            fileName: progress.fileName,
-            startTime,
-            downloadedBytes: progress.receivedBytes,
-            totalBytes: progress.totalBytes,
-            status: progress.status,
-            speed,
-            elapsedTime,
-          });
-        }
-
-        setDownloads(downloadItems);
-      } catch (error) {
-        console.error("Failed to fetch download progress:", error);
-      }
-    };
-
-    fetchDataUsage();
-    fetchDownloadProgress();
-
-    const interval = setInterval(() => {
-      fetchDataUsage();
-      fetchDownloadProgress();
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [open, activeDownloadIds]);
+      await fetchDataUsage();
+      await fetchDownloadProgress();
+    }, 1000),
+    [open, activeDownloadIds],
+  );
 
   // Sort downloads based on current sort settings
   const sortedDownloads = [...downloads].sort((a, b) => {

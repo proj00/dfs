@@ -87,3 +87,25 @@ export function formatDuration(milliseconds: number): string {
 export async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
 }
+
+export const createPollCallback = (
+  callback: () => Promise<void>,
+  interval: number,
+) => {
+  return () => {
+    let cancelled = false;
+
+    const poll = async () => {
+      while (!cancelled) {
+        await callback();
+        await sleep(interval);
+      }
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+    };
+  };
+};

@@ -41,5 +41,5 @@ jobs:
         working-directory: ./dfs/electron
         run: |
           npm ci
-          npm run package-debug
+          npm run test-build
           npx jest

@@ -6,7 +6,8 @@ import { FileList } from "./file-list";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 import type { File, Folder } from "../lib/types";
-import { backendService } from "../IpcService/BackendService";
+import { backendService } from "@/IpcService/BackendService";
+import { createPollCallback } from "@/lib/utils";
 
 export function Drive() {
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -36,15 +37,7 @@ export function Drive() {
   }, []);
 
   // Initial data fetch
-  useEffect(() => {
-    fetchData();
-
-    // Set up polling
-    const intervalId = setInterval(fetchData, POLLING_INTERVAL);
-
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
-  }, [fetchData]);
+  useEffect(createPollCallback(fetchData, POLLING_INTERVAL), []);
 
   // Filter files based on current folder and search query
   const filteredFiles = files.filter((file) => {

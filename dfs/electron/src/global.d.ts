@@ -27,7 +27,7 @@ declare global {
       callGrpc<_method extends RpcMethodNames>(
         method: _method,
         arg: RpcRequest<_method>,
-      ): Promise<RpcResponse<_method>>;
+      ): Promise<Buffer>;
     };
   }
 }
