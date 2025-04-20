@@ -26,13 +26,14 @@ jobs:
         with:
           node-version: "22.x"
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
-
       - name: Restore dependencies
         run: dotnet restore dfs/dfs.sln
+
+      - name: Build .NET
+        run: dotnet build --no-restore dfs/dfs.sln
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal dfs/dfs.sln
 
       - uses: actions/checkout@v4
       - name: Build UI
@@ -46,9 +47,3 @@ jobs:
         working-directory: ./dfs/electron
         run: |
           npm run test
-
-      - name: Build .NET
-        run: dotnet build --no-restore dfs/dfs.sln
-
-      - name: Test
-        run: dotnet test --no-build --verbosity normal dfs/dfs.sln
