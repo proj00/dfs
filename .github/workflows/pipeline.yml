@@ -36,14 +36,9 @@ jobs:
         run: dotnet test --no-build --verbosity normal dfs/dfs.sln
 
       - uses: actions/checkout@v4
-      - name: Build UI
+      - name: Test UI
         working-directory: ./dfs/electron
         run: |
           npm ci
           npm run package-debug
-
-      - uses: actions/checkout@v4
-      - name: Test UI
-        working-directory: ./dfs/electron
-        run: |
           npm test
