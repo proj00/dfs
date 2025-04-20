@@ -11,6 +11,7 @@
     "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
+    "test-build": "npx tsc -b",
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
     "publish-backend-release": "powershell -ExecutionPolicy Bypass -File ./build_backend_release.ps1",

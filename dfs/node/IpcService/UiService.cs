@@ -22,6 +22,18 @@ namespace node.IpcService
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
+        public T ExceptionWrap<T>(Func<T> func)
+        {
+            try
+            {
+                return func();
+            }
+            catch (Exception e)
+            {
+                throw new RpcException(new Status(StatusCode.Aborted, "69"), e.ToString());
+            }
+        }
+
         public UiService(NodeState state, NodeRpc rpc, string nodeURI)
         {
             this.ShutdownEvent = new AsyncManualResetEvent(true);
@@ -45,15 +57,18 @@ namespace node.IpcService
 
         public override async Task<RpcCommon.GuidList> GetAllContainers(RpcCommon.Empty request, ServerCallContext context)
         {
-            var list = new RpcCommon.GuidList();
-
-            state.Manager.Container.ForEach((guid, bs) =>
+            return ExceptionWrap(() =>
             {
-                list.Guid.Add(guid.ToString());
-                return true;
-            });
+                var list = new RpcCommon.GuidList();
 
-            return list;
+                state.Manager.Container.ForEach((guid, bs) =>
+                {
+                    list.Guid.Add(guid.ToString());
+                    return true;
+                });
+
+                return list;
+            });
         }
         public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
         {

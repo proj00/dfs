@@ -23,6 +23,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
     const path = (await window.electronAPI.selectFolder()) ?? "";
     console.log(`got: ${path}`);
     await service.ImportObjectFromDisk(path, 1024);
+    console.log(`imported: ${path}`);
   };
 
   return (

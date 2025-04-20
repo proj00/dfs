@@ -27,16 +27,18 @@ let grpcClient: UiClient | undefined = undefined;
 let backendProcess: ChildProcess | undefined = undefined;
 
 const createWindow = async (): Promise<void> => {
-  port = isDev ? await getPort() : 42069;
-  const exePath = path.join(
-    app.isPackaged ? process.resourcesPath : path.join(__dirname, "..", ".."),
-    "assets",
-    "node.exe",
-  );
-  backendProcess = spawn(exePath, [port.toString()], {
-    detached: true,
-    stdio: "inherit",
-  });
+  port = !isDev ? await getPort() : 42069;
+  if (!isDev) {
+    const exePath = path.join(
+      app.isPackaged ? process.resourcesPath : path.join(__dirname, "..", ".."),
+      "assets",
+      "node.exe",
+    );
+    backendProcess = spawn(exePath, [port.toString()], {
+      detached: true,
+      stdio: "inherit",
+    });
+  }
 
   grpcClient = new UiClient(
     new GrpcWebFetchTransport({ baseUrl: `http://127.0.0.1:${port}` }),
