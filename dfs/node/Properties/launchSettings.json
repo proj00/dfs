@@ -1,32 +1,19 @@
 {
   "profiles": {
-    "http": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5112",
-      "jsWebView2Debugging": false
+    "Electron UI (debug build)": {
+      "commandName": "Executable",
+      "executablePath": "cmd.exe",
+      "commandLineArgs": "/c npm run start",
+      "workingDirectory": "../electron",
+      "launchBrowser": false
     },
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+    "Electron UI (release build)": {
+      "commandName": "Executable",
+      "executablePath": "powershell.exe",
+      "commandLineArgs": "npm run make; -NoExit -Command \"ii 'out/make/squirrel.windows/x64'; exit\"",
+      "workingDirectory": "../electron",
+      "launchBrowser": false
     }
   },
-  "$schema": "http://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:20854",
-      "sslPort": 0
-    }
-  }
+  "$schema": "http://json.schemastore.org/launchsettings.json"
 }
