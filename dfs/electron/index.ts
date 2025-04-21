@@ -35,7 +35,7 @@ const createWindow = async (): Promise<void> => {
       "assets",
       "node.exe",
     );
-    backendProcess = spawn(exePath, [pipe], {
+    backendProcess = spawn(exePath, [pipe, process.pid.toString()], {
       detached: true,
       stdio: "inherit",
     });
@@ -56,13 +56,14 @@ const createWindow = async (): Promise<void> => {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   });
 
   // and load the index.html of the app.
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  await mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-  if (isDev) mainWindow.webContents.openDevTools({ mode: "undocked" });
+  mainWindow.webContents.openDevTools({ mode: "undocked" });
 };
 
 // This method will be called when Electron has finished
@@ -78,6 +79,7 @@ app.on("activate", async () => {
       await createWindow();
     } catch (e) {
       console.log(e);
+      app.quit();
     }
   }
 });
