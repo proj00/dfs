@@ -2,6 +2,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.IO.Pipes;
+using System.Reflection.Metadata;
+using System.Text;
+using System.Runtime.InteropServices;
+using System.Collections.Concurrent;
+using System.IO.Pipelines;
 
 namespace node
 {
@@ -13,14 +19,11 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
-            int servicePort = 0;
-            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0 && parsedPort < 65536)
+            Guid pipeGuid = new();
+            uint parentPid = 0;
+            if (!(args.Length == 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
             {
-                servicePort = parsedPort;
-            }
-            else
-            {
-                Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
+                Console.WriteLine("Please provide a pipe GUID and a PID as the first argument.");
                 return;
             }
 
@@ -30,7 +33,8 @@ namespace node
             var publicUrl = publicServer.Urls.First();
 
             UiService service = new(state, "publicUrl");
-            var privateServer = await StartGrpcWebServerAsync(service, servicePort);
+            var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
+            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams);
 
             await service.ShutdownEvent.WaitAsync();
             await publicServer.StopAsync();
@@ -74,7 +78,8 @@ namespace node
             return app;
         }
 
-        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, int port)
+        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid, uint parentPid,
+            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams)
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -91,21 +96,62 @@ namespace node
             builder.Services.AddSingleton(service);
             builder.Services.AddGrpcReflection();
 
-            builder.WebHost.ConfigureKestrel(options =>
+            builder.WebHost.UseNamedPipes(options =>
             {
-                options.ListenLocalhost(port
-                    , o =>
+                options.CreateNamedPipeServerStream = (context) =>
+                {
+                    var stream = new NamedPipeServerStream(
+                            context.NamedPipeEndPoint.PipeName,
+                            PipeDirection.InOut,
+                            NamedPipeServerStream.MaxAllowedServerInstances,
+                            PipeTransmissionMode.Byte,
+                            System.IO.Pipes.PipeOptions.Asynchronous);
+
+                    var connectionId = Guid.NewGuid().ToString();
+                    pipeStreams[connectionId] = stream;
+
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await stream.WaitForConnectionAsync();
+
+                            if (GetNamedPipeClientProcessId(stream.SafePipeHandle, out var clientPid))
+                            {
+#if !DEBUG
+                                if (!IsAncestor(parentPid, clientPid))
+#else
+                                if (false)
+#endif
+                                {
+                                    Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
+                                    await stream.DisposeAsync(); // forcefully kill connection
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Authorized PID: {clientPid}");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error checking pipe PID: {ex}");
+                        }
+                    });
+
+                    return stream;
+                };
+            }).ConfigureKestrel(options =>
+            {
+                options.ListenNamedPipe(pipeGuid.ToString(), o =>
                 {
                     o.Protocols = HttpProtocols.Http2;
-                }
-                );
+                });
 #if DEBUG
-                options.ListenLocalhost(port + 1
-                    , o =>
+                options.ListenLocalhost(42069, o =>
                 {
                     o.Protocols = HttpProtocols.Http2;
-                }
-                );
+                });
 #endif
             });
             var app = builder.Build();
@@ -122,5 +168,80 @@ namespace node
             await app.StartAsync();
             return app;
         }
+
+        static bool IsAncestor(uint ancestorPid, uint childPid)
+        {
+            try
+            {
+                uint currentPid = childPid;
+
+                while (currentPid != 0)
+                {
+                    if (currentPid == ancestorPid)
+                        return true;
+
+                    currentPid = GetParentProcessId(currentPid);
+                }
+            }
+            catch
+            {
+                // Could not find a process — probably exited
+            }
+
+            return false;
+        }
+
+        static uint GetParentProcessId(uint pid)
+        {
+            var handle = OpenProcess(ProcessAccessFlags.QueryInformation, false, (int)pid);
+            if (handle == IntPtr.Zero)
+                return 0;
+
+            try
+            {
+                PROCESS_BASIC_INFORMATION pbi = new();
+                int returnLength;
+                NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out returnLength);
+                return (uint)pbi.InheritedFromUniqueProcessId.ToInt32();
+            }
+            finally
+            {
+                CloseHandle(handle);
+            }
+        }
+
+        // Native structs and imports
+        [StructLayout(LayoutKind.Sequential)]
+        struct PROCESS_BASIC_INFORMATION
+        {
+            public IntPtr ExitStatus;
+            public IntPtr PebBaseAddress;
+            public IntPtr AffinityMask;
+            public IntPtr BasePriority;
+            public UIntPtr UniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId;
+        }
+
+        [DllImport("ntdll.dll")]
+        static extern int NtQueryInformationProcess(
+            IntPtr processHandle, int processInformationClass,
+            ref PROCESS_BASIC_INFORMATION processInformation,
+            int processInformationLength, out int returnLength);
+
+        [DllImport("kernel32.dll")]
+        static extern IntPtr OpenProcess(ProcessAccessFlags access, bool inheritHandle, int processId);
+
+        [DllImport("kernel32.dll")]
+        static extern bool CloseHandle(IntPtr handle);
+
+        [Flags]
+        enum ProcessAccessFlags : uint
+        {
+            QueryInformation = 0x400
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetNamedPipeClientProcessId(SafeHandle Pipe, out uint ClientProcessId);
+
     }
 }
