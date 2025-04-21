@@ -2,13 +2,13 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { clipboard, contextBridge, ipcRenderer } from "electron";
+import { ipcService } from "./types/wrap/IpcRendererService";
 
 contextBridge.exposeInMainWorld("electronAPI", {
   selectFile: () => ipcRenderer.invoke("select-file"),
   selectFolder: () => ipcRenderer.invoke("select-folder"),
   writeClipboard: (text: string) => clipboard.writeText(text),
   readClipboard: () => clipboard.readText(),
-  async callGrpc(method: string, arg: any): Promise<any> {
-    return await ipcRenderer.invoke("grpc-call", { method, arg });
-  },
 });
+
+contextBridge.exposeInMainWorld("ipcService", ipcService);

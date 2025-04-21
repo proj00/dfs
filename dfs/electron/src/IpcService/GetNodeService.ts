@@ -1,6 +1,6 @@
 import { NodeServiceClient } from "@/types/wrap/NodeServiceClient";
 
-export let _client: NodeServiceClient | undefined = undefined;
+let _client: NodeServiceClient | undefined = undefined;
 
 export const GetNodeService = async (): Promise<NodeServiceClient> => {
   if (_client === undefined) {

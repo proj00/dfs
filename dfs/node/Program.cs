@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.IO.Pipes;
+using System.Reflection.Metadata;
+using System.Text;
 
 namespace node
 {
@@ -87,16 +90,17 @@ namespace node
             builder.Services.AddSingleton(service);
             builder.Services.AddGrpcReflection();
 
-            builder.WebHost.ConfigureKestrel(options =>
+            builder.WebHost.UseNamedPipes().ConfigureKestrel(options =>
             {
-                options.ListenNamedPipe(pipeGuid.ToString());
-#if DEBUG
-                options.ListenLocalhost(42069
-                    , o =>
+                options.ListenNamedPipe(pipeGuid.ToString(), o =>
                 {
                     o.Protocols = HttpProtocols.Http2;
-                }
-                );
+                });
+#if DEBUG
+                options.ListenLocalhost(42069, o =>
+                {
+                    o.Protocols = HttpProtocols.Http2;
+                });
 #endif
             });
             var app = builder.Build();
