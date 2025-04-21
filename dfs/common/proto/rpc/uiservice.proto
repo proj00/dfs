@@ -35,7 +35,7 @@ service Ui
 
 	// utils
 	rpc LogMessage(String) returns (rpc_common.Empty);
-	rpc GetLogFilePath(rpc_common.Empty) returns (Path);
+	rpc RevealLogFile(rpc_common.Empty) returns (rpc_common.Empty);
 	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
 
 	// fs

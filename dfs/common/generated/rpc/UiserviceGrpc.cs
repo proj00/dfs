@@ -219,12 +219,12 @@ namespace Ui {
         __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::RpcCommon.Empty, global::Ui.Path> __Method_GetLogFilePath = new grpc::Method<global::RpcCommon.Empty, global::Ui.Path>(
+    static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty> __Method_RevealLogFile = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
-        "GetLogFilePath",
+        "RevealLogFile",
         __Marshaller_rpc_common_Empty,
-        __Marshaller_Ui_Path);
+        __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty> __Method_Shutdown = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty>(
@@ -391,7 +391,7 @@ namespace Ui {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Ui.Path> GetLogFilePath(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> RevealLogFile(global::RpcCommon.Empty request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -952,24 +952,24 @@ namespace Ui {
         return CallInvoker.AsyncUnaryCall(__Method_LogMessage, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.Path GetLogFilePath(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::RpcCommon.Empty RevealLogFile(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return GetLogFilePath(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return RevealLogFile(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.Path GetLogFilePath(global::RpcCommon.Empty request, grpc::CallOptions options)
+      public virtual global::RpcCommon.Empty RevealLogFile(global::RpcCommon.Empty request, grpc::CallOptions options)
       {
-        return CallInvoker.BlockingUnaryCall(__Method_GetLogFilePath, null, options, request);
+        return CallInvoker.BlockingUnaryCall(__Method_RevealLogFile, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.Path> GetLogFilePathAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> RevealLogFileAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return GetLogFilePathAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return RevealLogFileAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.Path> GetLogFilePathAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> RevealLogFileAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
       {
-        return CallInvoker.AsyncUnaryCall(__Method_GetLogFilePath, null, options, request);
+        return CallInvoker.AsyncUnaryCall(__Method_RevealLogFile, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty Shutdown(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
@@ -1070,7 +1070,7 @@ namespace Ui {
           .AddMethod(__Method_ModifyBlockListEntry, serviceImpl.ModifyBlockListEntry)
           .AddMethod(__Method_GetBlockList, serviceImpl.GetBlockList)
           .AddMethod(__Method_LogMessage, serviceImpl.LogMessage)
-          .AddMethod(__Method_GetLogFilePath, serviceImpl.GetLogFilePath)
+          .AddMethod(__Method_RevealLogFile, serviceImpl.RevealLogFile)
           .AddMethod(__Method_Shutdown, serviceImpl.Shutdown)
           .AddMethod(__Method_ApplyFsOperation, serviceImpl.ApplyFsOperation).Build();
     }
@@ -1099,7 +1099,7 @@ namespace Ui {
       serviceBinder.AddMethod(__Method_ModifyBlockListEntry, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.BlockListRequest, global::RpcCommon.Empty>(serviceImpl.ModifyBlockListEntry));
       serviceBinder.AddMethod(__Method_GetBlockList, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::Ui.BlockListResponse>(serviceImpl.GetBlockList));
       serviceBinder.AddMethod(__Method_LogMessage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.String, global::RpcCommon.Empty>(serviceImpl.LogMessage));
-      serviceBinder.AddMethod(__Method_GetLogFilePath, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::Ui.Path>(serviceImpl.GetLogFilePath));
+      serviceBinder.AddMethod(__Method_RevealLogFile, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.Empty>(serviceImpl.RevealLogFile));
       serviceBinder.AddMethod(__Method_Shutdown, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.Empty>(serviceImpl.Shutdown));
       serviceBinder.AddMethod(__Method_ApplyFsOperation, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.FsOperation, global::RpcCommon.Empty>(serviceImpl.ApplyFsOperation));
     }

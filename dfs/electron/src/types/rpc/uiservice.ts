@@ -1408,7 +1408,7 @@ export const Ui = new ServiceType("Ui.Ui", [
   { name: "ModifyBlockListEntry", options: {}, I: BlockListRequest, O: Empty },
   { name: "GetBlockList", options: {}, I: Empty, O: BlockListResponse },
   { name: "LogMessage", options: {}, I: String$, O: Empty },
-  { name: "GetLogFilePath", options: {}, I: Empty, O: Path },
+  { name: "RevealLogFile", options: {}, I: Empty, O: Empty },
   { name: "Shutdown", options: {}, I: Empty, O: Empty },
   { name: "ApplyFsOperation", options: {}, I: FsOperation, O: Empty },
 ]);

@@ -155,9 +155,9 @@ export interface IUiClient {
    */
   logMessage(input: String$, options?: RpcOptions): UnaryCall<String$, Empty>;
   /**
-   * @generated from protobuf rpc: GetLogFilePath(rpc_common.Empty) returns (Ui.Path);
+   * @generated from protobuf rpc: RevealLogFile(rpc_common.Empty) returns (rpc_common.Empty);
    */
-  getLogFilePath(input: Empty, options?: RpcOptions): UnaryCall<Empty, Path>;
+  revealLogFile(input: Empty, options?: RpcOptions): UnaryCall<Empty, Empty>;
   /**
    * @generated from protobuf rpc: Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
    */
@@ -476,12 +476,12 @@ export class UiClient implements IUiClient, ServiceInfo {
     );
   }
   /**
-   * @generated from protobuf rpc: GetLogFilePath(rpc_common.Empty) returns (Ui.Path);
+   * @generated from protobuf rpc: RevealLogFile(rpc_common.Empty) returns (rpc_common.Empty);
    */
-  getLogFilePath(input: Empty, options?: RpcOptions): UnaryCall<Empty, Path> {
+  revealLogFile(input: Empty, options?: RpcOptions): UnaryCall<Empty, Empty> {
     const method = this.methods[17],
       opt = this._transport.mergeOptions(options);
-    return stackIntercept<Empty, Path>(
+    return stackIntercept<Empty, Empty>(
       "unary",
       this._transport,
       method,

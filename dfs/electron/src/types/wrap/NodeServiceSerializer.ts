@@ -87,8 +87,8 @@ export class NodeServiceSerializer {
     return Empty.toBinary(req);
   }
 
-  static getLogFilePath(req: Path): Uint8Array {
-    return Path.toBinary(req);
+  static revealLogFile(req: Empty): Uint8Array {
+    return Empty.toBinary(req);
   }
 
   static shutdown(req: Empty): Uint8Array {

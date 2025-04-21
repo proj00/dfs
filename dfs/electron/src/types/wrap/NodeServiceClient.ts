@@ -105,10 +105,8 @@ export class NodeServiceClient {
     await window.electronAPI.callGrpc("logMessage", req);
   }
 
-  async GetLogFilePath(): Promise<Path> {
-    return Path.fromBinary(
-      await window.electronAPI.callGrpc("getLogFilePath", {}),
-    );
+  async RevealLogFile(): Promise<void> {
+    await window.electronAPI.callGrpc("revealLogFile", {});
   }
 
   async Shutdown(): Promise<void> {
