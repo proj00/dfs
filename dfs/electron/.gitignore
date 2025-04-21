@@ -10,7 +10,7 @@ lerna-debug.log*
 assets
 db
 dist
-src/types/descriptors*
+src/types
 
 # Editor directories and files
 .vscode/*
