@@ -1,7 +1,5 @@
 version: v2
-clean: true
-inputs:
-  - directory: ../common/proto
+clean: false
 plugins:
   - local: protoc-gen-ts
     out: src/types

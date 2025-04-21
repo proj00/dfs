@@ -11,11 +11,14 @@
     "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
-    "test-build": "npx tsc -b",
+    "test-build": "npm run fix-proto && npx tsc -b",
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
     "publish-backend-release": "powershell -ExecutionPolicy Bypass -File ./build_backend_release.ps1",
-    "fix-proto": "npx buf generate"
+    "get-descriptor": "npx buf build ../common/proto -o src/types/descriptors.json --as-file-descriptor-set --exclude-imports",
+    "generate-rpc": "npx buf generate \"../common/proto\"",
+    "generate-wrapper": "",
+    "fix-proto": "npm run get-descriptor && npm run generate-rpc && npm run generate-wrapper"
   },
   "author": {
     "name": "http500"
