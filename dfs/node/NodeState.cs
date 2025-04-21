@@ -5,6 +5,7 @@ using Grpc.Net.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Ui;
@@ -65,10 +66,7 @@ namespace node
 
         public void FixBlockList(BlockListRequest request)
         {
-            if (!Uri.IsWellFormedUriString(request.Url, UriKind.Absolute))
-            {
-                throw new ArgumentException("Invalid URL");
-            }
+            _ = IPNetwork.Parse(request.Url);
 
             PersistentDictionary<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
             if (request.ShouldRemove && reference.ContainsKey(request.Url))
@@ -89,9 +87,45 @@ namespace node
                 return false;
             }
 
-            bool passWhitelist = Whitelist.CountEstimate == 0 || Whitelist.ContainsKey(url);
-            bool passBlacklist = Blacklist.CountEstimate == 0 || !Blacklist.ContainsKey(url);
-            return !(passWhitelist && passBlacklist);
+            bool passWhitelist = Whitelist.CountEstimate == 0;
+            if (!passWhitelist)
+            {
+                Whitelist.ForEach((uri, _) =>
+                {
+                    if (IPNetwork.TryParse(uri, out var network))
+                    {
+                        if (network.Contains(IPAddress.Parse((new Uri(url)).Host)))
+                        {
+                            passWhitelist = true;
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+
+            if (!passWhitelist)
+            {
+                return false;
+            }
+
+            bool passBlacklist = Blacklist.CountEstimate == 0;
+            if (!passBlacklist)
+            {
+                Blacklist.ForEach((uri, _) =>
+                {
+                    if (IPNetwork.TryParse(uri, out var network))
+                    {
+                        if (!network.Contains(IPAddress.Parse((new Uri(url)).Host)))
+                        {
+                            passBlacklist = false;
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+            return !passBlacklist;
         }
 
         public BlockListResponse GetBlockList()
