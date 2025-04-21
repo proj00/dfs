@@ -16,6 +16,18 @@
         "ELECTRON_ENABLE_STACK_DUMPING": "1"
       },
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug current TS file (ts-node)",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }
