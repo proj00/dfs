@@ -44,7 +44,7 @@ namespace node
                 valueDeserializer: Encoding.UTF8.GetString
             );
             Blacklist = new(
-                System.IO.Path.Combine(Manager.DbPath, "Whitelist"),
+                System.IO.Path.Combine(Manager.DbPath, "Blacklist"),
                 keySerializer: Encoding.UTF8.GetBytes,
                 keyDeserializer: Encoding.UTF8.GetString,
                 valueSerializer: Encoding.UTF8.GetBytes,
