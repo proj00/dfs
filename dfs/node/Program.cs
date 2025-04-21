@@ -13,14 +13,10 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
-            int servicePort = 0;
-            if (args.Length > 0 && int.TryParse(args[0], out int parsedPort) && parsedPort > 0 && parsedPort < 65536)
+            Guid pipeGuid = new();
+            if (!(args.Length > 0 && Guid.TryParse(args[0], out pipeGuid)))
             {
-                servicePort = parsedPort;
-            }
-            else
-            {
-                Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
+                Console.WriteLine("Please provide a pipe GUID as the first argument.");
                 return;
             }
 
@@ -30,7 +26,7 @@ namespace node
             var publicUrl = publicServer.Urls.First();
 
             UiService service = new(state, "publicUrl");
-            var privateServer = await StartGrpcWebServerAsync(service, servicePort);
+            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid);
 
             await service.ShutdownEvent.WaitAsync();
             await publicServer.StopAsync();
@@ -74,7 +70,7 @@ namespace node
             return app;
         }
 
-        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, int port)
+        private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid)
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -93,14 +89,9 @@ namespace node
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(port
-                    , o =>
-                {
-                    o.Protocols = HttpProtocols.Http2;
-                }
-                );
+                options.ListenNamedPipe(pipeGuid.ToString());
 #if DEBUG
-                options.ListenLocalhost(port + 1
+                options.ListenLocalhost(42069
                     , o =>
                 {
                     o.Protocols = HttpProtocols.Http2;

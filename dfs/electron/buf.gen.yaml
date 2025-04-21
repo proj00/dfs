@@ -3,3 +3,4 @@ clean: false
 plugins:
   - local: protoc-gen-ts
     out: src/types
+    opt: client_grpc1
