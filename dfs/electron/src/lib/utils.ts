@@ -1,3 +1,4 @@
+import { Hash } from "@/types/rpc_common";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -56,6 +57,10 @@ export function fromBase64(b64: string): Uint8Array {
   return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 }
 
+export function hashFromBase64(b64: string): Hash {
+  return { data: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) };
+}
+
 export function formatProgress(current: number, total: number): string {
   return `${formatFileSize(current)} of ${formatFileSize(total)}`;
 }
@@ -86,6 +91,10 @@ export function formatDuration(milliseconds: number): string {
 
 export async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
+}
+
+export function unique<T>(arr: T[]): T[] {
+  return [...new Set<T>(arr)];
 }
 
 export const createPollCallback = (

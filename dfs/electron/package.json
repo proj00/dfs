@@ -17,7 +17,7 @@
     "publish-backend-release": "powershell -ExecutionPolicy Bypass -File ./build_backend_release.ps1",
     "get-descriptor": "npx pbjs -t json -r -o src/types/descriptors.json ./../common/proto/rpc/uiservice.proto -p ./../common/proto",
     "generate-rpc": "npx buf generate \"../common/proto\"",
-    "generate-wrapper": "npx ts-node utils/codegen.ts",
+    "generate-wrapper": "ts-node --compiler-options \"{\\\"noUnusedLocals\\\": false}\" utils/codegen.ts",
     "fix-proto": "npm run get-descriptor && npm run generate-rpc && npm run generate-wrapper"
   },
   "author": {
@@ -48,7 +48,6 @@
     "css-loader": "^6.11.0",
     "electron": "35.1.5",
     "electron-devtools-installer": "^4.0.0",
-    "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
@@ -65,7 +64,6 @@
     "tailwindcss-animate": "^1.0.7",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
-    "ts-poet": "^6.11.0",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.2.2",
     "webpack": "^5.99.5",
@@ -94,6 +92,7 @@
     "radix-ui": "^1.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "ts-morph": "^25.0.1"
   }
 }
