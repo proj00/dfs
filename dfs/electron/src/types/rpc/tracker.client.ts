@@ -8,27 +8,26 @@ import type { UsageReport } from "./tracker";
 import type { DataUsage } from "../rpc_common";
 import type { SearchResponse } from "../rpc_common";
 import type { SearchRequest } from "./tracker";
+import type { TransactionStateResponse } from "./tracker";
+import type { TransactionStartResponse } from "./tracker";
+import type { PublishedObject } from "./tracker";
 import type { ContainerRootHash } from "./tracker";
 import type { Guid } from "../rpc_common";
 import type { UnaryCall } from "@protobuf-ts/runtime-rpc";
 import type { PeerResponse } from "./tracker";
 import type { PeerRequest } from "./tracker";
+import type { Empty } from "../rpc_common";
 import type { MarkRequest } from "./tracker";
+import type { ClientStreamingCall } from "@protobuf-ts/runtime-rpc";
+import { stackIntercept } from "@protobuf-ts/runtime-rpc";
+import type { ObjectWithHash } from "../fs/filesystem";
 import type { Hash } from "../rpc_common";
 import type { ServerStreamingCall } from "@protobuf-ts/runtime-rpc";
-import { stackIntercept } from "@protobuf-ts/runtime-rpc";
-import type { Empty } from "../rpc_common";
-import type { ObjectWithHash } from "../fs/filesystem";
-import type { ClientStreamingCall } from "@protobuf-ts/runtime-rpc";
 import type { RpcOptions } from "@protobuf-ts/runtime-rpc";
 /**
  * @generated from protobuf service tracker.Tracker
  */
 export interface ITrackerClient {
-  /**
-   * @generated from protobuf rpc: Publish(stream fs.ObjectWithHash) returns (rpc_common.Empty);
-   */
-  publish(options?: RpcOptions): ClientStreamingCall<ObjectWithHash, Empty>;
   /**
    * @generated from protobuf rpc: GetObjectTree(rpc_common.Hash) returns (stream fs.ObjectWithHash);
    */
@@ -61,6 +60,8 @@ export interface ITrackerClient {
     options?: RpcOptions,
   ): UnaryCall<Guid, Hash>;
   /**
+   * container transactions
+   *
    * @generated from protobuf rpc: SetContainerRootHash(tracker.ContainerRootHash) returns (rpc_common.Empty);
    */
   setContainerRootHash(
@@ -68,9 +69,23 @@ export interface ITrackerClient {
     options?: RpcOptions,
   ): UnaryCall<ContainerRootHash, Empty>;
   /**
-   * @generated from protobuf rpc: DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
+   * @generated from protobuf rpc: Publish(stream tracker.PublishedObject) returns (rpc_common.Empty);
    */
-  deleteObjectHash(input: Hash, options?: RpcOptions): UnaryCall<Hash, Empty>;
+  publish(options?: RpcOptions): ClientStreamingCall<PublishedObject, Empty>;
+  /**
+   * @generated from protobuf rpc: StartTransaction(rpc_common.Empty) returns (tracker.TransactionStartResponse);
+   */
+  startTransaction(
+    input: Empty,
+    options?: RpcOptions,
+  ): UnaryCall<Empty, TransactionStartResponse>;
+  /**
+   * @generated from protobuf rpc: CheckTransactionState(rpc_common.Guid) returns (tracker.TransactionStateResponse);
+   */
+  checkTransactionState(
+    input: Guid,
+    options?: RpcOptions,
+  ): UnaryCall<Guid, TransactionStateResponse>;
   /**
    * @generated from protobuf rpc: SearchForObjects(tracker.SearchRequest) returns (stream rpc_common.SearchResponse);
    */
@@ -99,26 +114,13 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
   options = Tracker.options;
   constructor(private readonly _transport: RpcTransport) {}
   /**
-   * @generated from protobuf rpc: Publish(stream fs.ObjectWithHash) returns (rpc_common.Empty);
-   */
-  publish(options?: RpcOptions): ClientStreamingCall<ObjectWithHash, Empty> {
-    const method = this.methods[0],
-      opt = this._transport.mergeOptions(options);
-    return stackIntercept<ObjectWithHash, Empty>(
-      "clientStreaming",
-      this._transport,
-      method,
-      opt,
-    );
-  }
-  /**
    * @generated from protobuf rpc: GetObjectTree(rpc_common.Hash) returns (stream fs.ObjectWithHash);
    */
   getObjectTree(
     input: Hash,
     options?: RpcOptions,
   ): ServerStreamingCall<Hash, ObjectWithHash> {
-    const method = this.methods[1],
+    const method = this.methods[0],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Hash, ObjectWithHash>(
       "serverStreaming",
@@ -132,7 +134,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
    * @generated from protobuf rpc: MarkReachable(stream tracker.MarkRequest) returns (rpc_common.Empty);
    */
   markReachable(options?: RpcOptions): ClientStreamingCall<MarkRequest, Empty> {
-    const method = this.methods[2],
+    const method = this.methods[1],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<MarkRequest, Empty>(
       "clientStreaming",
@@ -147,7 +149,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
   markUnreachable(
     options?: RpcOptions,
   ): ClientStreamingCall<MarkRequest, Empty> {
-    const method = this.methods[3],
+    const method = this.methods[2],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<MarkRequest, Empty>(
       "clientStreaming",
@@ -163,7 +165,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     input: PeerRequest,
     options?: RpcOptions,
   ): ServerStreamingCall<PeerRequest, PeerResponse> {
-    const method = this.methods[4],
+    const method = this.methods[3],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<PeerRequest, PeerResponse>(
       "serverStreaming",
@@ -180,7 +182,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     input: Guid,
     options?: RpcOptions,
   ): UnaryCall<Guid, Hash> {
-    const method = this.methods[5],
+    const method = this.methods[4],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Guid, Hash>(
       "unary",
@@ -191,13 +193,15 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     );
   }
   /**
+   * container transactions
+   *
    * @generated from protobuf rpc: SetContainerRootHash(tracker.ContainerRootHash) returns (rpc_common.Empty);
    */
   setContainerRootHash(
     input: ContainerRootHash,
     options?: RpcOptions,
   ): UnaryCall<ContainerRootHash, Empty> {
-    const method = this.methods[6],
+    const method = this.methods[5],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<ContainerRootHash, Empty>(
       "unary",
@@ -208,12 +212,45 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     );
   }
   /**
-   * @generated from protobuf rpc: DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
+   * @generated from protobuf rpc: Publish(stream tracker.PublishedObject) returns (rpc_common.Empty);
    */
-  deleteObjectHash(input: Hash, options?: RpcOptions): UnaryCall<Hash, Empty> {
+  publish(options?: RpcOptions): ClientStreamingCall<PublishedObject, Empty> {
+    const method = this.methods[6],
+      opt = this._transport.mergeOptions(options);
+    return stackIntercept<PublishedObject, Empty>(
+      "clientStreaming",
+      this._transport,
+      method,
+      opt,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: StartTransaction(rpc_common.Empty) returns (tracker.TransactionStartResponse);
+   */
+  startTransaction(
+    input: Empty,
+    options?: RpcOptions,
+  ): UnaryCall<Empty, TransactionStartResponse> {
     const method = this.methods[7],
       opt = this._transport.mergeOptions(options);
-    return stackIntercept<Hash, Empty>(
+    return stackIntercept<Empty, TransactionStartResponse>(
+      "unary",
+      this._transport,
+      method,
+      opt,
+      input,
+    );
+  }
+  /**
+   * @generated from protobuf rpc: CheckTransactionState(rpc_common.Guid) returns (tracker.TransactionStateResponse);
+   */
+  checkTransactionState(
+    input: Guid,
+    options?: RpcOptions,
+  ): UnaryCall<Guid, TransactionStateResponse> {
+    const method = this.methods[8],
+      opt = this._transport.mergeOptions(options);
+    return stackIntercept<Guid, TransactionStateResponse>(
       "unary",
       this._transport,
       method,
@@ -228,7 +265,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     input: SearchRequest,
     options?: RpcOptions,
   ): ServerStreamingCall<SearchRequest, SearchResponse> {
-    const method = this.methods[8],
+    const method = this.methods[9],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<SearchRequest, SearchResponse>(
       "serverStreaming",
@@ -245,7 +282,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     input: Empty,
     options?: RpcOptions,
   ): UnaryCall<Empty, DataUsage> {
-    const method = this.methods[9],
+    const method = this.methods[10],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<Empty, DataUsage>(
       "unary",
@@ -262,7 +299,7 @@ export class TrackerClient implements ITrackerClient, ServiceInfo {
     input: UsageReport,
     options?: RpcOptions,
   ): UnaryCall<UsageReport, Empty> {
-    const method = this.methods[10],
+    const method = this.methods[11],
       opt = this._transport.mergeOptions(options);
     return stackIntercept<UsageReport, Empty>(
       "unary",

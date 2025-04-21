@@ -2,6 +2,8 @@
 
 package rpc_common;
 
+import "fs/filesystem.proto";
+
 message Empty
 {
 	// :)
@@ -25,7 +27,7 @@ message Hash
 message SearchResponse
 {
 	string guid = 1;
-	repeated bytes hash = 2;
+	fs.ObjectWithHash object = 2;
 }
 
 message DataUsage

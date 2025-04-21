@@ -24,19 +24,20 @@ namespace RpcCommon {
     static RpcCommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChBycGNfY29tbW9uLnByb3RvEgpycGNfY29tbW9uIgcKBUVtcHR5IhQKBEd1",
-            "aWQSDAoEZ3VpZBgBIAEoCSIYCghHdWlkTGlzdBIMCgRndWlkGAEgAygJIhQK",
-            "BEhhc2gSDAoEZGF0YRgBIAEoDCIsCg5TZWFyY2hSZXNwb25zZRIMCgRndWlk",
-            "GAEgASgJEgwKBGhhc2gYAiADKAwiLQoJRGF0YVVzYWdlEg4KBnVwbG9hZBgB",
-            "IAEoAxIQCghkb3dubG9hZBgCIAEoA2IGcHJvdG8z"));
+            "ChBycGNfY29tbW9uLnByb3RvEgpycGNfY29tbW9uGhNmcy9maWxlc3lzdGVt",
+            "LnByb3RvIgcKBUVtcHR5IhQKBEd1aWQSDAoEZ3VpZBgBIAEoCSIYCghHdWlk",
+            "TGlzdBIMCgRndWlkGAEgAygJIhQKBEhhc2gSDAoEZGF0YRgBIAEoDCJCCg5T",
+            "ZWFyY2hSZXNwb25zZRIMCgRndWlkGAEgASgJEiIKBm9iamVjdBgCIAEoCzIS",
+            "LmZzLk9iamVjdFdpdGhIYXNoIi0KCURhdGFVc2FnZRIOCgZ1cGxvYWQYASAB",
+            "KAMSEAoIZG93bmxvYWQYAiABKANiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { },
+          new pbr::FileDescriptor[] { global::Fs.FilesystemReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.Empty), global::RpcCommon.Empty.Parser, null, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.Guid), global::RpcCommon.Guid.Parser, new[]{ "Guid_" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.GuidList), global::RpcCommon.GuidList.Parser, new[]{ "Guid" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.Hash), global::RpcCommon.Hash.Parser, new[]{ "Data" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.SearchResponse), global::RpcCommon.SearchResponse.Parser, new[]{ "Guid", "Hash" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.SearchResponse), global::RpcCommon.SearchResponse.Parser, new[]{ "Guid", "Object" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::RpcCommon.DataUsage), global::RpcCommon.DataUsage.Parser, new[]{ "Upload", "Download" }, null, null, null, null)
           }));
     }
@@ -827,7 +828,7 @@ namespace RpcCommon {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public SearchResponse(SearchResponse other) : this() {
       guid_ = other.guid_;
-      hash_ = other.hash_.Clone();
+      object_ = other.object_ != null ? other.object_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -849,15 +850,16 @@ namespace RpcCommon {
       }
     }
 
-    /// <summary>Field number for the "hash" field.</summary>
-    public const int HashFieldNumber = 2;
-    private static readonly pb::FieldCodec<pb::ByteString> _repeated_hash_codec
-        = pb::FieldCodec.ForBytes(18);
-    private readonly pbc::RepeatedField<pb::ByteString> hash_ = new pbc::RepeatedField<pb::ByteString>();
+    /// <summary>Field number for the "object" field.</summary>
+    public const int ObjectFieldNumber = 2;
+    private global::Fs.ObjectWithHash object_;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public pbc::RepeatedField<pb::ByteString> Hash {
-      get { return hash_; }
+    public global::Fs.ObjectWithHash Object {
+      get { return object_; }
+      set {
+        object_ = value;
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -876,7 +878,7 @@ namespace RpcCommon {
         return true;
       }
       if (Guid != other.Guid) return false;
-      if(!hash_.Equals(other.hash_)) return false;
+      if (!object.Equals(Object, other.Object)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -885,7 +887,7 @@ namespace RpcCommon {
     public override int GetHashCode() {
       int hash = 1;
       if (Guid.Length != 0) hash ^= Guid.GetHashCode();
-      hash ^= hash_.GetHashCode();
+      if (object_ != null) hash ^= Object.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -908,7 +910,10 @@ namespace RpcCommon {
         output.WriteRawTag(10);
         output.WriteString(Guid);
       }
-      hash_.WriteTo(output, _repeated_hash_codec);
+      if (object_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Object);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -923,7 +928,10 @@ namespace RpcCommon {
         output.WriteRawTag(10);
         output.WriteString(Guid);
       }
-      hash_.WriteTo(ref output, _repeated_hash_codec);
+      if (object_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Object);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -937,7 +945,9 @@ namespace RpcCommon {
       if (Guid.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Guid);
       }
-      size += hash_.CalculateSize(_repeated_hash_codec);
+      if (object_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Object);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -953,7 +963,12 @@ namespace RpcCommon {
       if (other.Guid.Length != 0) {
         Guid = other.Guid;
       }
-      hash_.Add(other.hash_);
+      if (other.object_ != null) {
+        if (object_ == null) {
+          Object = new global::Fs.ObjectWithHash();
+        }
+        Object.MergeFrom(other.Object);
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -978,7 +993,10 @@ namespace RpcCommon {
             break;
           }
           case 18: {
-            hash_.AddEntriesFrom(input, _repeated_hash_codec);
+            if (object_ == null) {
+              Object = new global::Fs.ObjectWithHash();
+            }
+            input.ReadMessage(Object);
             break;
           }
         }
@@ -1005,7 +1023,10 @@ namespace RpcCommon {
             break;
           }
           case 18: {
-            hash_.AddEntriesFrom(ref input, _repeated_hash_codec);
+            if (object_ == null) {
+              Object = new global::Fs.ObjectWithHash();
+            }
+            input.ReadMessage(Object);
             break;
           }
         }

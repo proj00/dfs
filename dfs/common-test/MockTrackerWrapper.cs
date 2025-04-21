@@ -70,11 +70,11 @@ namespace common_test
             return new();
         }
 
-        public async Task<Empty> Publish(List<ObjectWithHash> objects)
+        public async Task<Empty> Publish(List<PublishedObject> objects)
         {
             foreach (var obj in objects)
             {
-                this.objects[obj.Hash] = obj.Object;
+                this.objects[obj.Object.Hash] = obj.Object.Object;
             }
 
             return new();

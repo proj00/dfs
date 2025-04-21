@@ -5,7 +5,6 @@ import { DataUsage } from "../rpc_common";
 import { SearchResponse } from "../rpc_common";
 import { Guid } from "../rpc_common";
 import { Empty } from "../rpc_common";
-import { ObjectWithHash } from "../fs/filesystem";
 import { ServiceType } from "@protobuf-ts/runtime-rpc";
 import type { BinaryWriteOptions } from "@protobuf-ts/runtime";
 import type { IBinaryWriter } from "@protobuf-ts/runtime";
@@ -16,6 +15,7 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { ObjectWithHash } from "../fs/filesystem";
 import { Hash } from "../rpc_common";
 /**
  * @generated from protobuf message tracker.ContainerRootHash
@@ -29,6 +29,23 @@ export interface ContainerRootHash {
    * @generated from protobuf field: rpc_common.Hash hash = 2;
    */
   hash?: Hash;
+  /**
+   * @generated from protobuf field: string transactionGuid = 3;
+   */
+  transactionGuid: string;
+}
+/**
+ * @generated from protobuf message tracker.PublishedObject
+ */
+export interface PublishedObject {
+  /**
+   * @generated from protobuf field: string transactionGuid = 1;
+   */
+  transactionGuid: string;
+  /**
+   * @generated from protobuf field: fs.ObjectWithHash object = 2;
+   */
+  object?: ObjectWithHash;
 }
 /**
  * @generated from protobuf message tracker.PeerRequest
@@ -87,17 +104,67 @@ export interface UsageReport {
    */
   bytes: bigint;
 }
+/**
+ * @generated from protobuf message tracker.TransactionStartResponse
+ */
+export interface TransactionStartResponse {
+  /**
+   * @generated from protobuf field: string guid = 1;
+   */
+  guid: string;
+  /**
+   * @generated from protobuf field: int64 ttl_ms = 2;
+   */
+  ttlMs: bigint;
+}
+/**
+ * @generated from protobuf message tracker.TransactionStateResponse
+ */
+export interface TransactionStateResponse {
+  /**
+   * @generated from protobuf field: tracker.TransactionState state = 1;
+   */
+  state: TransactionState;
+}
+/**
+ * @generated from protobuf enum tracker.TransactionState
+ */
+export enum TransactionState {
+  /**
+   * @generated from protobuf enum value: Pending = 0;
+   */
+  Pending = 0,
+  /**
+   * @generated from protobuf enum value: Ok = 1;
+   */
+  Ok = 1,
+  /**
+   * @generated from protobuf enum value: Failed = 2;
+   */
+  Failed = 2,
+  /**
+   * @generated from protobuf enum value: Expired = 3;
+   */
+  Expired = 3,
+}
 // @generated message type with reflection information, may provide speed optimized methods
 class ContainerRootHash$Type extends MessageType<ContainerRootHash> {
   constructor() {
     super("tracker.ContainerRootHash", [
       { no: 1, name: "guid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
       { no: 2, name: "hash", kind: "message", T: () => Hash },
+      {
+        no: 3,
+        name: "transactionGuid",
+        kind: "scalar",
+        T: 9 /*ScalarType.STRING*/,
+      },
     ]);
   }
   create(value?: PartialMessage<ContainerRootHash>): ContainerRootHash {
     const message = globalThis.Object.create(this.messagePrototype!);
     message.guid = "";
+    message.transactionGuid = "";
     if (value !== undefined)
       reflectionMergePartial<ContainerRootHash>(this, message, value);
     return message;
@@ -123,6 +190,9 @@ class ContainerRootHash$Type extends MessageType<ContainerRootHash> {
             options,
             message.hash,
           );
+          break;
+        case /* string transactionGuid */ 3:
+          message.transactionGuid = reader.string();
           break;
         default:
           let u = options.readUnknownField;
@@ -158,6 +228,9 @@ class ContainerRootHash$Type extends MessageType<ContainerRootHash> {
         writer.tag(2, WireType.LengthDelimited).fork(),
         options,
       ).join();
+    /* string transactionGuid = 3; */
+    if (message.transactionGuid !== "")
+      writer.tag(3, WireType.LengthDelimited).string(message.transactionGuid);
     let u = options.writeUnknownFields;
     if (u !== false)
       (u == true ? UnknownFieldHandler.onWrite : u)(
@@ -172,6 +245,96 @@ class ContainerRootHash$Type extends MessageType<ContainerRootHash> {
  * @generated MessageType for protobuf message tracker.ContainerRootHash
  */
 export const ContainerRootHash = new ContainerRootHash$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class PublishedObject$Type extends MessageType<PublishedObject> {
+  constructor() {
+    super("tracker.PublishedObject", [
+      {
+        no: 1,
+        name: "transactionGuid",
+        kind: "scalar",
+        T: 9 /*ScalarType.STRING*/,
+      },
+      { no: 2, name: "object", kind: "message", T: () => ObjectWithHash },
+    ]);
+  }
+  create(value?: PartialMessage<PublishedObject>): PublishedObject {
+    const message = globalThis.Object.create(this.messagePrototype!);
+    message.transactionGuid = "";
+    if (value !== undefined)
+      reflectionMergePartial<PublishedObject>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: PublishedObject,
+  ): PublishedObject {
+    let message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      let [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* string transactionGuid */ 1:
+          message.transactionGuid = reader.string();
+          break;
+        case /* fs.ObjectWithHash object */ 2:
+          message.object = ObjectWithHash.internalBinaryRead(
+            reader,
+            reader.uint32(),
+            options,
+            message.object,
+          );
+          break;
+        default:
+          let u = options.readUnknownField;
+          if (u === "throw")
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          let d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: PublishedObject,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* string transactionGuid = 1; */
+    if (message.transactionGuid !== "")
+      writer.tag(1, WireType.LengthDelimited).string(message.transactionGuid);
+    /* fs.ObjectWithHash object = 2; */
+    if (message.object)
+      ObjectWithHash.internalBinaryWrite(
+        message.object,
+        writer.tag(2, WireType.LengthDelimited).fork(),
+        options,
+      ).join();
+    let u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message tracker.PublishedObject
+ */
+export const PublishedObject = new PublishedObject$Type();
 // @generated message type with reflection information, may provide speed optimized methods
 class PeerRequest$Type extends MessageType<PeerRequest> {
   constructor() {
@@ -552,17 +715,171 @@ class UsageReport$Type extends MessageType<UsageReport> {
  * @generated MessageType for protobuf message tracker.UsageReport
  */
 export const UsageReport = new UsageReport$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class TransactionStartResponse$Type extends MessageType<TransactionStartResponse> {
+  constructor() {
+    super("tracker.TransactionStartResponse", [
+      { no: 1, name: "guid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+      {
+        no: 2,
+        name: "ttl_ms",
+        kind: "scalar",
+        T: 3 /*ScalarType.INT64*/,
+        L: 0 /*LongType.BIGINT*/,
+      },
+    ]);
+  }
+  create(
+    value?: PartialMessage<TransactionStartResponse>,
+  ): TransactionStartResponse {
+    const message = globalThis.Object.create(this.messagePrototype!);
+    message.guid = "";
+    message.ttlMs = 0n;
+    if (value !== undefined)
+      reflectionMergePartial<TransactionStartResponse>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: TransactionStartResponse,
+  ): TransactionStartResponse {
+    let message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      let [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* string guid */ 1:
+          message.guid = reader.string();
+          break;
+        case /* int64 ttl_ms */ 2:
+          message.ttlMs = reader.int64().toBigInt();
+          break;
+        default:
+          let u = options.readUnknownField;
+          if (u === "throw")
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          let d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: TransactionStartResponse,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* string guid = 1; */
+    if (message.guid !== "")
+      writer.tag(1, WireType.LengthDelimited).string(message.guid);
+    /* int64 ttl_ms = 2; */
+    if (message.ttlMs !== 0n)
+      writer.tag(2, WireType.Varint).int64(message.ttlMs);
+    let u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message tracker.TransactionStartResponse
+ */
+export const TransactionStartResponse = new TransactionStartResponse$Type();
+// @generated message type with reflection information, may provide speed optimized methods
+class TransactionStateResponse$Type extends MessageType<TransactionStateResponse> {
+  constructor() {
+    super("tracker.TransactionStateResponse", [
+      {
+        no: 1,
+        name: "state",
+        kind: "enum",
+        T: () => ["tracker.TransactionState", TransactionState],
+      },
+    ]);
+  }
+  create(
+    value?: PartialMessage<TransactionStateResponse>,
+  ): TransactionStateResponse {
+    const message = globalThis.Object.create(this.messagePrototype!);
+    message.state = 0;
+    if (value !== undefined)
+      reflectionMergePartial<TransactionStateResponse>(this, message, value);
+    return message;
+  }
+  internalBinaryRead(
+    reader: IBinaryReader,
+    length: number,
+    options: BinaryReadOptions,
+    target?: TransactionStateResponse,
+  ): TransactionStateResponse {
+    let message = target ?? this.create(),
+      end = reader.pos + length;
+    while (reader.pos < end) {
+      let [fieldNo, wireType] = reader.tag();
+      switch (fieldNo) {
+        case /* tracker.TransactionState state */ 1:
+          message.state = reader.int32();
+          break;
+        default:
+          let u = options.readUnknownField;
+          if (u === "throw")
+            throw new globalThis.Error(
+              `Unknown field ${fieldNo} (wire type ${wireType}) for ${this.typeName}`,
+            );
+          let d = reader.skip(wireType);
+          if (u !== false)
+            (u === true ? UnknownFieldHandler.onRead : u)(
+              this.typeName,
+              message,
+              fieldNo,
+              wireType,
+              d,
+            );
+      }
+    }
+    return message;
+  }
+  internalBinaryWrite(
+    message: TransactionStateResponse,
+    writer: IBinaryWriter,
+    options: BinaryWriteOptions,
+  ): IBinaryWriter {
+    /* tracker.TransactionState state = 1; */
+    if (message.state !== 0)
+      writer.tag(1, WireType.Varint).int32(message.state);
+    let u = options.writeUnknownFields;
+    if (u !== false)
+      (u == true ? UnknownFieldHandler.onWrite : u)(
+        this.typeName,
+        message,
+        writer,
+      );
+    return writer;
+  }
+}
+/**
+ * @generated MessageType for protobuf message tracker.TransactionStateResponse
+ */
+export const TransactionStateResponse = new TransactionStateResponse$Type();
 /**
  * @generated ServiceType for protobuf service tracker.Tracker
  */
 export const Tracker = new ServiceType("tracker.Tracker", [
-  {
-    name: "Publish",
-    clientStreaming: true,
-    options: {},
-    I: ObjectWithHash,
-    O: Empty,
-  },
   {
     name: "GetObjectTree",
     serverStreaming: true,
@@ -593,7 +910,25 @@ export const Tracker = new ServiceType("tracker.Tracker", [
   },
   { name: "GetContainerRootHash", options: {}, I: Guid, O: Hash },
   { name: "SetContainerRootHash", options: {}, I: ContainerRootHash, O: Empty },
-  { name: "DeleteObjectHash", options: {}, I: Hash, O: Empty },
+  {
+    name: "Publish",
+    clientStreaming: true,
+    options: {},
+    I: PublishedObject,
+    O: Empty,
+  },
+  {
+    name: "StartTransaction",
+    options: {},
+    I: Empty,
+    O: TransactionStartResponse,
+  },
+  {
+    name: "CheckTransactionState",
+    options: {},
+    I: Guid,
+    O: TransactionStateResponse,
+  },
   {
     name: "SearchForObjects",
     serverStreaming: true,

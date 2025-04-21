@@ -8,7 +8,7 @@ namespace common
     public interface ITrackerWrapper
     {
         Task<List<ObjectWithHash>> GetObjectTree(ByteString hash);
-        Task<Empty> Publish(List<ObjectWithHash> objects);
+        Task<Empty> Publish(List<PublishedObject> objects);
         Task<List<string>> GetPeerList(PeerRequest request);
 
         Task<Empty> MarkReachable(ByteString hash, string nodeURI);

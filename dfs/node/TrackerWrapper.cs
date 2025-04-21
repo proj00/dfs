@@ -69,7 +69,7 @@ namespace node
             return await call;
         }
 
-        public async Task<Empty> Publish(List<ObjectWithHash> objects)
+        public async Task<Empty> Publish(List<PublishedObject> objects)
         {
             using var call = client.Publish();
             foreach (var obj in objects)

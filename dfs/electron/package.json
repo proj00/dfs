@@ -15,7 +15,7 @@
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
     "publish-backend-release": "powershell -ExecutionPolicy Bypass -File ./build_backend_release.ps1",
-    "fix-proto": "npx protoc -I . --ts_out ./src/types --proto_path ../common/proto ../common/proto/rpc/uiservice.proto ../common/proto/fs/filesystem.proto ../common/proto/rpc_common.proto"
+    "fix-proto": "npx buf generate"
   },
   "author": {
     "name": "http500"

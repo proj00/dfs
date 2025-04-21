@@ -46,13 +46,13 @@ namespace Tracker {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Fs.ObjectWithHash> __Marshaller_fs_ObjectWithHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ObjectWithHash.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::RpcCommon.Empty> __Marshaller_rpc_common_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Empty.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.Hash> __Marshaller_rpc_common_Hash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Hash.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Fs.ObjectWithHash> __Marshaller_fs_ObjectWithHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ObjectWithHash.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.MarkRequest> __Marshaller_tracker_MarkRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.MarkRequest.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::RpcCommon.Empty> __Marshaller_rpc_common_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Empty.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.PeerRequest> __Marshaller_tracker_PeerRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PeerRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -62,6 +62,12 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.ContainerRootHash> __Marshaller_tracker_ContainerRootHash = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.ContainerRootHash.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.PublishedObject> __Marshaller_tracker_PublishedObject = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.PublishedObject.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.TransactionStartResponse> __Marshaller_tracker_TransactionStartResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.TransactionStartResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Tracker.TransactionStateResponse> __Marshaller_tracker_TransactionStateResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.TransactionStateResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.SearchRequest> __Marshaller_tracker_SearchRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.SearchRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.SearchResponse> __Marshaller_rpc_common_SearchResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.SearchResponse.Parser));
@@ -69,14 +75,6 @@ namespace Tracker {
     static readonly grpc::Marshaller<global::RpcCommon.DataUsage> __Marshaller_rpc_common_DataUsage = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.DataUsage.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Tracker.UsageReport> __Marshaller_tracker_UsageReport = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Tracker.UsageReport.Parser));
-
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty> __Method_Publish = new grpc::Method<global::Fs.ObjectWithHash, global::RpcCommon.Empty>(
-        grpc::MethodType.ClientStreaming,
-        __ServiceName,
-        "Publish",
-        __Marshaller_fs_ObjectWithHash,
-        __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Hash, global::Fs.ObjectWithHash> __Method_GetObjectTree = new grpc::Method<global::RpcCommon.Hash, global::Fs.ObjectWithHash>(
@@ -127,12 +125,28 @@ namespace Tracker {
         __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::RpcCommon.Hash, global::RpcCommon.Empty> __Method_DeleteObjectHash = new grpc::Method<global::RpcCommon.Hash, global::RpcCommon.Empty>(
+    static readonly grpc::Method<global::Tracker.PublishedObject, global::RpcCommon.Empty> __Method_Publish = new grpc::Method<global::Tracker.PublishedObject, global::RpcCommon.Empty>(
+        grpc::MethodType.ClientStreaming,
+        __ServiceName,
+        "Publish",
+        __Marshaller_tracker_PublishedObject,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Empty, global::Tracker.TransactionStartResponse> __Method_StartTransaction = new grpc::Method<global::RpcCommon.Empty, global::Tracker.TransactionStartResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
-        "DeleteObjectHash",
-        __Marshaller_rpc_common_Hash,
-        __Marshaller_rpc_common_Empty);
+        "StartTransaction",
+        __Marshaller_rpc_common_Empty,
+        __Marshaller_tracker_TransactionStartResponse);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Guid, global::Tracker.TransactionStateResponse> __Method_CheckTransactionState = new grpc::Method<global::RpcCommon.Guid, global::Tracker.TransactionStateResponse>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "CheckTransactionState",
+        __Marshaller_rpc_common_Guid,
+        __Marshaller_tracker_TransactionStateResponse);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse> __Method_SearchForObjects = new grpc::Method<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse>(
@@ -169,12 +183,6 @@ namespace Tracker {
     public abstract partial class TrackerBase
     {
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> Publish(grpc::IAsyncStreamReader<global::Fs.ObjectWithHash> requestStream, grpc::ServerCallContext context)
-      {
-        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
-      }
-
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task GetObjectTree(global::RpcCommon.Hash request, grpc::IServerStreamWriter<global::Fs.ObjectWithHash> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
@@ -204,6 +212,12 @@ namespace Tracker {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
+      /// <summary>
+      /// container transactions
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::ServerCallContext context)
       {
@@ -211,7 +225,19 @@ namespace Tracker {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> DeleteObjectHash(global::RpcCommon.Hash request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> Publish(grpc::IAsyncStreamReader<global::Tracker.PublishedObject> requestStream, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.TransactionStartResponse> StartTransaction(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Tracker.TransactionStateResponse> CheckTransactionState(global::RpcCommon.Guid request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -263,16 +289,6 @@ namespace Tracker {
       {
       }
 
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ObjectWithHash, global::RpcCommon.Empty> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return Publish(new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncClientStreamingCall<global::Fs.ObjectWithHash, global::RpcCommon.Empty> Publish(grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncClientStreamingCall(__Method_Publish, null, options);
-      }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncServerStreamingCall<global::Fs.ObjectWithHash> GetObjectTree(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
@@ -333,45 +349,103 @@ namespace Tracker {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetContainerRootHash, null, options, request);
       }
+      /// <summary>
+      /// container transactions
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return SetContainerRootHash(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// container transactions
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty SetContainerRootHash(global::Tracker.ContainerRootHash request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_SetContainerRootHash, null, options, request);
       }
+      /// <summary>
+      /// container transactions
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> SetContainerRootHashAsync(global::Tracker.ContainerRootHash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return SetContainerRootHashAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// container transactions
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> SetContainerRootHashAsync(global::Tracker.ContainerRootHash request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_SetContainerRootHash, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Empty DeleteObjectHash(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.PublishedObject, global::RpcCommon.Empty> Publish(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return DeleteObjectHash(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return Publish(new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Empty DeleteObjectHash(global::RpcCommon.Hash request, grpc::CallOptions options)
+      public virtual grpc::AsyncClientStreamingCall<global::Tracker.PublishedObject, global::RpcCommon.Empty> Publish(grpc::CallOptions options)
       {
-        return CallInvoker.BlockingUnaryCall(__Method_DeleteObjectHash, null, options, request);
+        return CallInvoker.AsyncClientStreamingCall(__Method_Publish, null, options);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> DeleteObjectHashAsync(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::Tracker.TransactionStartResponse StartTransaction(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return DeleteObjectHashAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return StartTransaction(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> DeleteObjectHashAsync(global::RpcCommon.Hash request, grpc::CallOptions options)
+      public virtual global::Tracker.TransactionStartResponse StartTransaction(global::RpcCommon.Empty request, grpc::CallOptions options)
       {
-        return CallInvoker.AsyncUnaryCall(__Method_DeleteObjectHash, null, options, request);
+        return CallInvoker.BlockingUnaryCall(__Method_StartTransaction, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.TransactionStartResponse> StartTransactionAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return StartTransactionAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.TransactionStartResponse> StartTransactionAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_StartTransaction, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.TransactionStateResponse CheckTransactionState(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CheckTransactionState(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Tracker.TransactionStateResponse CheckTransactionState(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_CheckTransactionState, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.TransactionStateResponse> CheckTransactionStateAsync(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return CheckTransactionStateAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Tracker.TransactionStateResponse> CheckTransactionStateAsync(global::RpcCommon.Guid request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_CheckTransactionState, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncServerStreamingCall<global::RpcCommon.SearchResponse> SearchForObjects(global::Tracker.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
@@ -437,14 +511,15 @@ namespace Tracker {
     public static grpc::ServerServiceDefinition BindService(TrackerBase serviceImpl)
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
-          .AddMethod(__Method_Publish, serviceImpl.Publish)
           .AddMethod(__Method_GetObjectTree, serviceImpl.GetObjectTree)
           .AddMethod(__Method_MarkReachable, serviceImpl.MarkReachable)
           .AddMethod(__Method_MarkUnreachable, serviceImpl.MarkUnreachable)
           .AddMethod(__Method_GetPeerList, serviceImpl.GetPeerList)
           .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
           .AddMethod(__Method_SetContainerRootHash, serviceImpl.SetContainerRootHash)
-          .AddMethod(__Method_DeleteObjectHash, serviceImpl.DeleteObjectHash)
+          .AddMethod(__Method_Publish, serviceImpl.Publish)
+          .AddMethod(__Method_StartTransaction, serviceImpl.StartTransaction)
+          .AddMethod(__Method_CheckTransactionState, serviceImpl.CheckTransactionState)
           .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects)
           .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage)
           .AddMethod(__Method_ReportDataUsage, serviceImpl.ReportDataUsage).Build();
@@ -457,14 +532,15 @@ namespace Tracker {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, TrackerBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Fs.ObjectWithHash, global::RpcCommon.Empty>(serviceImpl.Publish));
       serviceBinder.AddMethod(__Method_GetObjectTree, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::RpcCommon.Hash, global::Fs.ObjectWithHash>(serviceImpl.GetObjectTree));
       serviceBinder.AddMethod(__Method_MarkReachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.MarkRequest, global::RpcCommon.Empty>(serviceImpl.MarkReachable));
       serviceBinder.AddMethod(__Method_MarkUnreachable, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.MarkRequest, global::RpcCommon.Empty>(serviceImpl.MarkUnreachable));
       serviceBinder.AddMethod(__Method_GetPeerList, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.PeerRequest, global::Tracker.PeerResponse>(serviceImpl.GetPeerList));
       serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Hash>(serviceImpl.GetContainerRootHash));
       serviceBinder.AddMethod(__Method_SetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.ContainerRootHash, global::RpcCommon.Empty>(serviceImpl.SetContainerRootHash));
-      serviceBinder.AddMethod(__Method_DeleteObjectHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::RpcCommon.Empty>(serviceImpl.DeleteObjectHash));
+      serviceBinder.AddMethod(__Method_Publish, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Tracker.PublishedObject, global::RpcCommon.Empty>(serviceImpl.Publish));
+      serviceBinder.AddMethod(__Method_StartTransaction, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::Tracker.TransactionStartResponse>(serviceImpl.StartTransaction));
+      serviceBinder.AddMethod(__Method_CheckTransactionState, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::Tracker.TransactionStateResponse>(serviceImpl.CheckTransactionState));
       serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Tracker.SearchRequest, global::RpcCommon.SearchResponse>(serviceImpl.SearchForObjects));
       serviceBinder.AddMethod(__Method_GetDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.DataUsage>(serviceImpl.GetDataUsage));
       serviceBinder.AddMethod(__Method_ReportDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Tracker.UsageReport, global::RpcCommon.Empty>(serviceImpl.ReportDataUsage));
