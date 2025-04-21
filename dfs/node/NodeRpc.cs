@@ -20,6 +20,11 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
+            if (state.IsInBlockList(context.Peer))
+            {
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
+            }
+
             if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out ByteString[]? parent))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));

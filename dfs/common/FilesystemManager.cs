@@ -20,11 +20,12 @@ namespace common
         public PersistentDictionary<ByteString, List<ByteString>> Parent { get; private set; }
         public PersistentDictionary<ByteString, ByteString> NewerVersion { get; private set; }
 
+        public string DbPath { get; private set; } = Path.Combine(DbBasePath, Guid.NewGuid().ToString());
+
         public FilesystemManager()
         {
-            var p = Path.Combine(DbBasePath, Guid.NewGuid().ToString());
             ObjectByHash = new PersistentDictionary<ByteString, ObjectWithHash>(
-                Path.Combine(p, "ObjectByHash"),
+                Path.Combine(DbPath, "ObjectByHash"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: bytes => ByteString.CopyFrom(bytes),
                 valueSerializer: o => o.ToByteArray(),
@@ -32,7 +33,7 @@ namespace common
             );
 
             ChunkParents = new PersistentDictionary<ByteString, ByteString[]>(
-                Path.Combine(p, "ChunkParents"),
+                Path.Combine(DbPath, "ChunkParents"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 SerializeByteStringArray,
@@ -40,7 +41,7 @@ namespace common
             );
 
             Container = new PersistentDictionary<Guid, ByteString>(
-                Path.Combine(p, "Container"),
+                Path.Combine(DbPath, "Container"),
                 guid => guid.ToByteArray(),
                 bytes => new Guid(bytes),
                 bs => bs.ToByteArray(),
@@ -48,7 +49,7 @@ namespace common
             );
 
             Parent = new PersistentDictionary<ByteString, List<ByteString>>(
-                Path.Combine(p, "Parent"),
+                Path.Combine(DbPath, "Parent"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 list => SerializeByteStringArray(list.ToArray()),
@@ -56,7 +57,7 @@ namespace common
             );
 
             NewerVersion = new PersistentDictionary<ByteString, ByteString>(
-                Path.Combine(p, "NewerVersion"),
+                Path.Combine(DbPath, "NewerVersion"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
                 bs => bs.ToByteArray(),

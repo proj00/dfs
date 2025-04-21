@@ -9,15 +9,15 @@ using System.Runtime.InteropServices;
 using Tracker;
 using Microsoft.VisualStudio.Threading;
 using Grpc.Core.Utils;
+using Ui;
 
-namespace node.IpcService
+namespace node
 {
     [ClassInterface(ClassInterfaceType.AutoDual)]
     [ComVisible(true)]
     public class UiService : Ui.Ui.UiBase
     {
         private NodeState state;
-        private NodeRpc rpc;
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
@@ -34,12 +34,11 @@ namespace node.IpcService
             }
         }
 
-        public UiService(NodeState state, NodeRpc rpc, string nodeURI)
+        public UiService(NodeState state, string nodeURI)
         {
-            this.ShutdownEvent = new AsyncManualResetEvent(true);
-            this.ShutdownEvent.Reset();
+            ShutdownEvent = new AsyncManualResetEvent(true);
+            ShutdownEvent.Reset();
             this.state = state;
-            this.rpc = rpc;
             this.nodeURI = nodeURI;
         }
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
@@ -157,7 +156,7 @@ namespace node.IpcService
             _ = await tracker.SetContainerRootHash(container, state.Manager.Container[container]);
             foreach (var file in objects
                 .Select(o => o.Object)
-                .Where(obj => obj.TypeCase == Fs.FileSystemObject.TypeOneofCase.File))
+                .Where(obj => obj.TypeCase == FileSystemObject.TypeOneofCase.File))
             {
                 foreach (var chunk in file.File.Hashes.Hash)
                 {
@@ -202,7 +201,7 @@ namespace node.IpcService
 
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
-                .Where(obj => obj.Object.TypeCase == Fs.FileSystemObject.TypeOneofCase.File)
+                .Where(obj => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File)
                 .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore, guid.Value));
 
             await Task.WhenAll(fileTasks);
@@ -240,7 +239,14 @@ namespace node.IpcService
                 {
                     await pauseEvent.WaitAsync();
                 }
-                List<string> peers = await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 });
+                List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 }))
+                    .Where(s => !state.IsInBlockList(s))
+                    .ToList();
+
+                if (peers.Count == 0)
+                {
+                    throw new Exception("No peers found");
+                }
 
                 // for now, pick a random peer
                 var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
@@ -286,6 +292,37 @@ namespace node.IpcService
         {
             ShutdownEvent.Set();
             return new RpcCommon.Empty();
+        }
+
+        public override Task<RpcCommon.Empty> CancelContainerDownload(RpcCommon.Guid request, ServerCallContext context)
+        {
+            return base.CancelContainerDownload(request, context);
+        }
+
+        public override async Task<RpcCommon.Empty> ModifyBlockListEntry(BlockListRequest request, ServerCallContext context)
+        {
+            state.FixBlockList(request);
+            return new RpcCommon.Empty();
+        }
+
+        public override async Task<BlockListResponse> GetBlockList(RpcCommon.Empty request, ServerCallContext context)
+        {
+            return state.GetBlockList();
+        }
+
+        public override Task<RpcCommon.Empty> LogMessage(Ui.String request, ServerCallContext context)
+        {
+            return base.LogMessage(request, context);
+        }
+
+        public override Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
+        {
+            return base.RevealLogFile(request, context);
+        }
+
+        public override Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)
+        {
+            return base.ApplyFsOperation(request, context);
         }
     }
 }
