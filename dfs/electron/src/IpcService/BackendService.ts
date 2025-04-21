@@ -2,8 +2,10 @@
 // Wrapper for NodeServiceClient (utility functions / transformations to UI internal structs)
 // --------------
 
-import { GetNodeService, INodeService } from "@/IpcService/NodeServiceClient";
+import { GetNodeService } from "./GetNodeService";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
+import { hashFromBase64 } from "@/lib/utils";
+import { NodeServiceClient } from "@/types/wrap/NodeServiceClient";
 
 // Define interfaces for the backend services
 export interface BackendServiceInterface {
@@ -58,7 +60,7 @@ class BackendService implements BackendServiceInterface {
     };
 
     for (const uri of this.trackerUris) {
-      const stats = await service.GetDataUsage(uri);
+      const stats = await service.GetDataUsage({ trackerUri: uri });
       usage.totalBytesReceived += Number(stats.download);
       usage.totalBytesSent += Number(stats.upload);
     }
@@ -68,7 +70,7 @@ class BackendService implements BackendServiceInterface {
 
   async GetDownloadProgress(fileId: string): Promise<DownloadProgress> {
     const service = await GetNodeService();
-    const progress = await service.GetDownloadProgress(fileId);
+    const progress = await service.GetDownloadProgress(hashFromBase64(fileId));
 
     return {
       fileId,
@@ -85,7 +87,7 @@ class BackendService implements BackendServiceInterface {
   ): Promise<boolean> {
     console.log(`Publishing container ${containerId} to tracker ${trackerUri}`);
     const service = await GetNodeService();
-    await service.PublishToTracker(containerId, trackerUri);
+    await service.PublishToTracker({ containerGuid: containerId, trackerUri });
     return true;
   }
 
@@ -104,7 +106,12 @@ class BackendService implements BackendServiceInterface {
 
     // fire and forget?
     service
-      .DownloadContainer(containerGuid, trackerUri, destination, 20)
+      .DownloadContainer({
+        containerGuid,
+        trackerUri,
+        destinationDir: destination,
+        maxConcurrentChunks: 20,
+      })
       .catch((e) => console.log(e));
 
     const IDs = (
@@ -121,7 +128,7 @@ class BackendService implements BackendServiceInterface {
     };
 
     const service = await GetNodeService();
-    const containers = await service.GetAllContainers();
+    const containers = (await service.GetAllContainers()).guid;
 
     for (const container of containers) {
       let containerObjects: DriveData = await this.getContainerObjects(
@@ -136,8 +143,12 @@ class BackendService implements BackendServiceInterface {
     return contents;
   }
 
-  private async getContainerObjects(service: INodeService, container: string) {
-    const objects = (await service.GetContainerObjects(container)).data;
+  private async getContainerObjects(
+    service: NodeServiceClient,
+    container: string,
+  ) {
+    const objects = (await service.GetContainerObjects({ guid: container }))
+      .data;
     const internalObjects = objects.map((object) =>
       FromObjectWithHash(object, objects, container),
     );

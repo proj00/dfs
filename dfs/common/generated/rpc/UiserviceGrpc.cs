@@ -52,19 +52,11 @@ namespace Ui {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.Empty> __Marshaller_rpc_common_Empty = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Empty.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::RpcCommon.GuidList> __Marshaller_rpc_common_GuidList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.GuidList.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Ui.Progress> __Marshaller_Ui_Progress = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.Progress.Parser));
+    static readonly grpc::Marshaller<global::Ui.ObjectFromDiskOptions> __Marshaller_Ui_ObjectFromDiskOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.ObjectFromDiskOptions.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.Guid> __Marshaller_rpc_common_Guid = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.Guid.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Fs.ObjectList> __Marshaller_fs_ObjectList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ObjectList.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Ui.ObjectFromDiskOptions> __Marshaller_Ui_ObjectFromDiskOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.ObjectFromDiskOptions.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Ui.PublishingOptions> __Marshaller_Ui_PublishingOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.PublishingOptions.Parser));
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Ui.DownloadContainerOptions> __Marshaller_Ui_DownloadContainerOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.DownloadContainerOptions.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::Ui.SearchRequest> __Marshaller_Ui_SearchRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.SearchRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
@@ -73,6 +65,22 @@ namespace Ui {
     static readonly grpc::Marshaller<global::Ui.UsageRequest> __Marshaller_Ui_UsageRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.UsageRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Marshaller<global::RpcCommon.DataUsage> __Marshaller_rpc_common_DataUsage = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.DataUsage.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::RpcCommon.GuidList> __Marshaller_rpc_common_GuidList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::RpcCommon.GuidList.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Fs.ObjectList> __Marshaller_fs_ObjectList = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Fs.ObjectList.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.DownloadContainerOptions> __Marshaller_Ui_DownloadContainerOptions = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.DownloadContainerOptions.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.Progress> __Marshaller_Ui_Progress = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.Progress.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.BlockListRequest> __Marshaller_Ui_BlockListRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.BlockListRequest.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.BlockListResponse> __Marshaller_Ui_BlockListResponse = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.BlockListResponse.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.String> __Marshaller_Ui_String = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.String.Parser));
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Marshaller<global::Ui.FsOperation> __Marshaller_Ui_FsOperation = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Ui.FsOperation.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Hash, global::Ui.Path> __Method_GetObjectPath = new grpc::Method<global::RpcCommon.Hash, global::Ui.Path>(
@@ -91,20 +99,44 @@ namespace Ui {
         __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid> __Method_ImportObjectFromDisk = new grpc::Method<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ImportObjectFromDisk",
+        __Marshaller_Ui_ObjectFromDiskOptions,
+        __Marshaller_rpc_common_Guid);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.PublishingOptions, global::RpcCommon.Empty> __Method_PublishToTracker = new grpc::Method<global::Ui.PublishingOptions, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "PublishToTracker",
+        __Marshaller_Ui_PublishingOptions,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.SearchRequest, global::Ui.SearchResponseList> __Method_SearchForObjects = new grpc::Method<global::Ui.SearchRequest, global::Ui.SearchResponseList>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "SearchForObjects",
+        __Marshaller_Ui_SearchRequest,
+        __Marshaller_Ui_SearchResponseList);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.UsageRequest, global::RpcCommon.DataUsage> __Method_GetDataUsage = new grpc::Method<global::Ui.UsageRequest, global::RpcCommon.DataUsage>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetDataUsage",
+        __Marshaller_Ui_UsageRequest,
+        __Marshaller_rpc_common_DataUsage);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.GuidList> __Method_GetAllContainers = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.GuidList>(
         grpc::MethodType.Unary,
         __ServiceName,
         "GetAllContainers",
         __Marshaller_rpc_common_Empty,
         __Marshaller_rpc_common_GuidList);
-
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::RpcCommon.Hash, global::Ui.Progress> __Method_GetDownloadProgress = new grpc::Method<global::RpcCommon.Hash, global::Ui.Progress>(
-        grpc::MethodType.Unary,
-        __ServiceName,
-        "GetDownloadProgress",
-        __Marshaller_rpc_common_Hash,
-        __Marshaller_Ui_Progress);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Guid, global::Fs.ObjectList> __Method_GetContainerObjects = new grpc::Method<global::RpcCommon.Guid, global::Fs.ObjectList>(
@@ -121,22 +153,6 @@ namespace Ui {
         "GetContainerRootHash",
         __Marshaller_rpc_common_Guid,
         __Marshaller_rpc_common_Hash);
-
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid> __Method_ImportObjectFromDisk = new grpc::Method<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid>(
-        grpc::MethodType.Unary,
-        __ServiceName,
-        "ImportObjectFromDisk",
-        __Marshaller_Ui_ObjectFromDiskOptions,
-        __Marshaller_rpc_common_Guid);
-
-    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Ui.PublishingOptions, global::RpcCommon.Empty> __Method_PublishToTracker = new grpc::Method<global::Ui.PublishingOptions, global::RpcCommon.Empty>(
-        grpc::MethodType.Unary,
-        __ServiceName,
-        "PublishToTracker",
-        __Marshaller_Ui_PublishingOptions,
-        __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::Ui.DownloadContainerOptions, global::RpcCommon.Empty> __Method_DownloadContainer = new grpc::Method<global::Ui.DownloadContainerOptions, global::RpcCommon.Empty>(
@@ -163,20 +179,52 @@ namespace Ui {
         __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Ui.SearchRequest, global::Ui.SearchResponseList> __Method_SearchForObjects = new grpc::Method<global::Ui.SearchRequest, global::Ui.SearchResponseList>(
+    static readonly grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty> __Method_CancelContainerDownload = new grpc::Method<global::RpcCommon.Guid, global::RpcCommon.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
-        "SearchForObjects",
-        __Marshaller_Ui_SearchRequest,
-        __Marshaller_Ui_SearchResponseList);
+        "CancelContainerDownload",
+        __Marshaller_rpc_common_Guid,
+        __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Ui.UsageRequest, global::RpcCommon.DataUsage> __Method_GetDataUsage = new grpc::Method<global::Ui.UsageRequest, global::RpcCommon.DataUsage>(
+    static readonly grpc::Method<global::RpcCommon.Hash, global::Ui.Progress> __Method_GetDownloadProgress = new grpc::Method<global::RpcCommon.Hash, global::Ui.Progress>(
         grpc::MethodType.Unary,
         __ServiceName,
-        "GetDataUsage",
-        __Marshaller_Ui_UsageRequest,
-        __Marshaller_rpc_common_DataUsage);
+        "GetDownloadProgress",
+        __Marshaller_rpc_common_Hash,
+        __Marshaller_Ui_Progress);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.BlockListRequest, global::RpcCommon.Empty> __Method_ModifyBlockListEntry = new grpc::Method<global::Ui.BlockListRequest, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ModifyBlockListEntry",
+        __Marshaller_Ui_BlockListRequest,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Empty, global::Ui.BlockListResponse> __Method_GetBlockList = new grpc::Method<global::RpcCommon.Empty, global::Ui.BlockListResponse>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "GetBlockList",
+        __Marshaller_rpc_common_Empty,
+        __Marshaller_Ui_BlockListResponse);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.String, global::RpcCommon.Empty> __Method_LogMessage = new grpc::Method<global::Ui.String, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "LogMessage",
+        __Marshaller_Ui_String,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty> __Method_RevealLogFile = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "RevealLogFile",
+        __Marshaller_rpc_common_Empty,
+        __Marshaller_rpc_common_Empty);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static readonly grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty> __Method_Shutdown = new grpc::Method<global::RpcCommon.Empty, global::RpcCommon.Empty>(
@@ -184,6 +232,14 @@ namespace Ui {
         __ServiceName,
         "Shutdown",
         __Marshaller_rpc_common_Empty,
+        __Marshaller_rpc_common_Empty);
+
+    [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+    static readonly grpc::Method<global::Ui.FsOperation, global::RpcCommon.Empty> __Method_ApplyFsOperation = new grpc::Method<global::Ui.FsOperation, global::RpcCommon.Empty>(
+        grpc::MethodType.Unary,
+        __ServiceName,
+        "ApplyFsOperation",
+        __Marshaller_Ui_FsOperation,
         __Marshaller_rpc_common_Empty);
 
     /// <summary>Service descriptor</summary>
@@ -196,6 +252,12 @@ namespace Ui {
     [grpc::BindServiceMethod(typeof(Ui), "BindService")]
     public abstract partial class UiBase
     {
+      /// <summary>
+      /// fs operations
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::Ui.Path> GetObjectPath(global::RpcCommon.Hash request, grpc::ServerCallContext context)
       {
@@ -209,13 +271,43 @@ namespace Ui {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.GuidList> GetAllContainers(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Guid> ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// tracker interaction
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> PublishToTracker(global::Ui.PublishingOptions request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Ui.Progress> GetDownloadProgress(global::RpcCommon.Hash request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Ui.SearchResponseList> SearchForObjects(global::Ui.SearchRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.DataUsage> GetDataUsage(global::Ui.UsageRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// container queries
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.GuidList> GetAllContainers(global::RpcCommon.Empty request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -232,18 +324,12 @@ namespace Ui {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Guid> ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::ServerCallContext context)
-      {
-        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
-      }
-
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> PublishToTracker(global::Ui.PublishingOptions request, grpc::ServerCallContext context)
-      {
-        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
-      }
-
+      /// <summary>
+      /// download management
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> DownloadContainer(global::Ui.DownloadContainerOptions request, grpc::ServerCallContext context)
       {
@@ -263,19 +349,67 @@ namespace Ui {
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Ui.SearchResponseList> SearchForObjects(global::Ui.SearchRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> CancelContainerDownload(global::RpcCommon.Guid request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.DataUsage> GetDataUsage(global::Ui.UsageRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Ui.Progress> GetDownloadProgress(global::RpcCommon.Hash request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// block list
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> ModifyBlockListEntry(global::Ui.BlockListRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::Ui.BlockListResponse> GetBlockList(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// utils
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> LogMessage(global::Ui.String request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> RevealLogFile(global::RpcCommon.Empty request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> Shutdown(global::RpcCommon.Empty request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// fs
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::System.Threading.Tasks.Task<global::RpcCommon.Empty> ApplyFsOperation(global::Ui.FsOperation request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -309,21 +443,49 @@ namespace Ui {
       {
       }
 
+      /// <summary>
+      /// fs operations
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::Ui.Path GetObjectPath(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetObjectPath(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// fs operations
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::Ui.Path GetObjectPath(global::RpcCommon.Hash request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_GetObjectPath, null, options, request);
       }
+      /// <summary>
+      /// fs operations
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::Ui.Path> GetObjectPathAsync(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetObjectPathAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// fs operations
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::Ui.Path> GetObjectPathAsync(global::RpcCommon.Hash request, grpc::CallOptions options)
       {
@@ -350,44 +512,160 @@ namespace Ui {
         return CallInvoker.AsyncUnaryCall(__Method_RevealObjectInExplorer, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Guid ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ImportObjectFromDisk(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Guid ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ImportObjectFromDisk, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Guid> ImportObjectFromDiskAsync(global::Ui.ObjectFromDiskOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ImportObjectFromDiskAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Guid> ImportObjectFromDiskAsync(global::Ui.ObjectFromDiskOptions request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ImportObjectFromDisk, null, options, request);
+      }
+      /// <summary>
+      /// tracker interaction
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty PublishToTracker(global::Ui.PublishingOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return PublishToTracker(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// tracker interaction
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty PublishToTracker(global::Ui.PublishingOptions request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_PublishToTracker, null, options, request);
+      }
+      /// <summary>
+      /// tracker interaction
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PublishToTrackerAsync(global::Ui.PublishingOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return PublishToTrackerAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// tracker interaction
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PublishToTrackerAsync(global::Ui.PublishingOptions request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_PublishToTracker, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Ui.SearchResponseList SearchForObjects(global::Ui.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SearchForObjects(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Ui.SearchResponseList SearchForObjects(global::Ui.SearchRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_SearchForObjects, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Ui.SearchResponseList> SearchForObjectsAsync(global::Ui.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return SearchForObjectsAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Ui.SearchResponseList> SearchForObjectsAsync(global::Ui.SearchRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_SearchForObjects, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.DataUsage GetDataUsage(global::Ui.UsageRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetDataUsage(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.DataUsage GetDataUsage(global::Ui.UsageRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetDataUsage, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::Ui.UsageRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetDataUsageAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::Ui.UsageRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetDataUsage, null, options, request);
+      }
+      /// <summary>
+      /// container queries
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.GuidList GetAllContainers(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetAllContainers(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// container queries
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.GuidList GetAllContainers(global::RpcCommon.Empty request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_GetAllContainers, null, options, request);
       }
+      /// <summary>
+      /// container queries
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.GuidList> GetAllContainersAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return GetAllContainersAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// container queries
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.GuidList> GetAllContainersAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetAllContainers, null, options, request);
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.Progress GetDownloadProgress(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return GetDownloadProgress(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.Progress GetDownloadProgress(global::RpcCommon.Hash request, grpc::CallOptions options)
-      {
-        return CallInvoker.BlockingUnaryCall(__Method_GetDownloadProgress, null, options, request);
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.Progress> GetDownloadProgressAsync(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return GetDownloadProgressAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.Progress> GetDownloadProgressAsync(global::RpcCommon.Hash request, grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_GetDownloadProgress, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::Fs.ObjectList GetContainerObjects(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
@@ -429,61 +707,49 @@ namespace Ui {
       {
         return CallInvoker.AsyncUnaryCall(__Method_GetContainerRootHash, null, options, request);
       }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Guid ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return ImportObjectFromDisk(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Guid ImportObjectFromDisk(global::Ui.ObjectFromDiskOptions request, grpc::CallOptions options)
-      {
-        return CallInvoker.BlockingUnaryCall(__Method_ImportObjectFromDisk, null, options, request);
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Guid> ImportObjectFromDiskAsync(global::Ui.ObjectFromDiskOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return ImportObjectFromDiskAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Guid> ImportObjectFromDiskAsync(global::Ui.ObjectFromDiskOptions request, grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_ImportObjectFromDisk, null, options, request);
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Empty PublishToTracker(global::Ui.PublishingOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return PublishToTracker(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.Empty PublishToTracker(global::Ui.PublishingOptions request, grpc::CallOptions options)
-      {
-        return CallInvoker.BlockingUnaryCall(__Method_PublishToTracker, null, options, request);
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PublishToTrackerAsync(global::Ui.PublishingOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
-      {
-        return PublishToTrackerAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
-      }
-      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> PublishToTrackerAsync(global::Ui.PublishingOptions request, grpc::CallOptions options)
-      {
-        return CallInvoker.AsyncUnaryCall(__Method_PublishToTracker, null, options, request);
-      }
+      /// <summary>
+      /// download management
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty DownloadContainer(global::Ui.DownloadContainerOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return DownloadContainer(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// download management
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty DownloadContainer(global::Ui.DownloadContainerOptions request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_DownloadContainer, null, options, request);
       }
+      /// <summary>
+      /// download management
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> DownloadContainerAsync(global::Ui.DownloadContainerOptions request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return DownloadContainerAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// download management
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> DownloadContainerAsync(global::Ui.DownloadContainerOptions request, grpc::CallOptions options)
       {
@@ -530,44 +796,180 @@ namespace Ui {
         return CallInvoker.AsyncUnaryCall(__Method_ResumeContainerDownload, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.SearchResponseList SearchForObjects(global::Ui.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::RpcCommon.Empty CancelContainerDownload(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return SearchForObjects(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return CancelContainerDownload(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Ui.SearchResponseList SearchForObjects(global::Ui.SearchRequest request, grpc::CallOptions options)
+      public virtual global::RpcCommon.Empty CancelContainerDownload(global::RpcCommon.Guid request, grpc::CallOptions options)
       {
-        return CallInvoker.BlockingUnaryCall(__Method_SearchForObjects, null, options, request);
+        return CallInvoker.BlockingUnaryCall(__Method_CancelContainerDownload, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.SearchResponseList> SearchForObjectsAsync(global::Ui.SearchRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> CancelContainerDownloadAsync(global::RpcCommon.Guid request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return SearchForObjectsAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return CancelContainerDownloadAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Ui.SearchResponseList> SearchForObjectsAsync(global::Ui.SearchRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> CancelContainerDownloadAsync(global::RpcCommon.Guid request, grpc::CallOptions options)
       {
-        return CallInvoker.AsyncUnaryCall(__Method_SearchForObjects, null, options, request);
+        return CallInvoker.AsyncUnaryCall(__Method_CancelContainerDownload, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.DataUsage GetDataUsage(global::Ui.UsageRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::Ui.Progress GetDownloadProgress(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return GetDataUsage(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return GetDownloadProgress(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::RpcCommon.DataUsage GetDataUsage(global::Ui.UsageRequest request, grpc::CallOptions options)
+      public virtual global::Ui.Progress GetDownloadProgress(global::RpcCommon.Hash request, grpc::CallOptions options)
       {
-        return CallInvoker.BlockingUnaryCall(__Method_GetDataUsage, null, options, request);
+        return CallInvoker.BlockingUnaryCall(__Method_GetDownloadProgress, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::Ui.UsageRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::Ui.Progress> GetDownloadProgressAsync(global::RpcCommon.Hash request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
-        return GetDataUsageAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+        return GetDownloadProgressAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::RpcCommon.DataUsage> GetDataUsageAsync(global::Ui.UsageRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::Ui.Progress> GetDownloadProgressAsync(global::RpcCommon.Hash request, grpc::CallOptions options)
       {
-        return CallInvoker.AsyncUnaryCall(__Method_GetDataUsage, null, options, request);
+        return CallInvoker.AsyncUnaryCall(__Method_GetDownloadProgress, null, options, request);
+      }
+      /// <summary>
+      /// block list
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ModifyBlockListEntry(global::Ui.BlockListRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ModifyBlockListEntry(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// block list
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ModifyBlockListEntry(global::Ui.BlockListRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ModifyBlockListEntry, null, options, request);
+      }
+      /// <summary>
+      /// block list
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ModifyBlockListEntryAsync(global::Ui.BlockListRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ModifyBlockListEntryAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// block list
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ModifyBlockListEntryAsync(global::Ui.BlockListRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ModifyBlockListEntry, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Ui.BlockListResponse GetBlockList(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetBlockList(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::Ui.BlockListResponse GetBlockList(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_GetBlockList, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Ui.BlockListResponse> GetBlockListAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return GetBlockListAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::Ui.BlockListResponse> GetBlockListAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_GetBlockList, null, options, request);
+      }
+      /// <summary>
+      /// utils
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty LogMessage(global::Ui.String request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return LogMessage(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// utils
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty LogMessage(global::Ui.String request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_LogMessage, null, options, request);
+      }
+      /// <summary>
+      /// utils
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> LogMessageAsync(global::Ui.String request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return LogMessageAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// utils
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> LogMessageAsync(global::Ui.String request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_LogMessage, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty RevealLogFile(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return RevealLogFile(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty RevealLogFile(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_RevealLogFile, null, options, request);
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> RevealLogFileAsync(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return RevealLogFileAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> RevealLogFileAsync(global::RpcCommon.Empty request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_RevealLogFile, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       public virtual global::RpcCommon.Empty Shutdown(global::RpcCommon.Empty request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
@@ -589,6 +991,54 @@ namespace Ui {
       {
         return CallInvoker.AsyncUnaryCall(__Method_Shutdown, null, options, request);
       }
+      /// <summary>
+      /// fs
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ApplyFsOperation(global::Ui.FsOperation request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ApplyFsOperation(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// fs
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual global::RpcCommon.Empty ApplyFsOperation(global::Ui.FsOperation request, grpc::CallOptions options)
+      {
+        return CallInvoker.BlockingUnaryCall(__Method_ApplyFsOperation, null, options, request);
+      }
+      /// <summary>
+      /// fs
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ApplyFsOperationAsync(global::Ui.FsOperation request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return ApplyFsOperationAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// fs
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
+      public virtual grpc::AsyncUnaryCall<global::RpcCommon.Empty> ApplyFsOperationAsync(global::Ui.FsOperation request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncUnaryCall(__Method_ApplyFsOperation, null, options, request);
+      }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
       protected override UiClient NewInstance(ClientBaseConfiguration configuration)
@@ -605,18 +1055,24 @@ namespace Ui {
       return grpc::ServerServiceDefinition.CreateBuilder()
           .AddMethod(__Method_GetObjectPath, serviceImpl.GetObjectPath)
           .AddMethod(__Method_RevealObjectInExplorer, serviceImpl.RevealObjectInExplorer)
-          .AddMethod(__Method_GetAllContainers, serviceImpl.GetAllContainers)
-          .AddMethod(__Method_GetDownloadProgress, serviceImpl.GetDownloadProgress)
-          .AddMethod(__Method_GetContainerObjects, serviceImpl.GetContainerObjects)
-          .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
           .AddMethod(__Method_ImportObjectFromDisk, serviceImpl.ImportObjectFromDisk)
           .AddMethod(__Method_PublishToTracker, serviceImpl.PublishToTracker)
+          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects)
+          .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage)
+          .AddMethod(__Method_GetAllContainers, serviceImpl.GetAllContainers)
+          .AddMethod(__Method_GetContainerObjects, serviceImpl.GetContainerObjects)
+          .AddMethod(__Method_GetContainerRootHash, serviceImpl.GetContainerRootHash)
           .AddMethod(__Method_DownloadContainer, serviceImpl.DownloadContainer)
           .AddMethod(__Method_PauseContainerDownload, serviceImpl.PauseContainerDownload)
           .AddMethod(__Method_ResumeContainerDownload, serviceImpl.ResumeContainerDownload)
-          .AddMethod(__Method_SearchForObjects, serviceImpl.SearchForObjects)
-          .AddMethod(__Method_GetDataUsage, serviceImpl.GetDataUsage)
-          .AddMethod(__Method_Shutdown, serviceImpl.Shutdown).Build();
+          .AddMethod(__Method_CancelContainerDownload, serviceImpl.CancelContainerDownload)
+          .AddMethod(__Method_GetDownloadProgress, serviceImpl.GetDownloadProgress)
+          .AddMethod(__Method_ModifyBlockListEntry, serviceImpl.ModifyBlockListEntry)
+          .AddMethod(__Method_GetBlockList, serviceImpl.GetBlockList)
+          .AddMethod(__Method_LogMessage, serviceImpl.LogMessage)
+          .AddMethod(__Method_RevealLogFile, serviceImpl.RevealLogFile)
+          .AddMethod(__Method_Shutdown, serviceImpl.Shutdown)
+          .AddMethod(__Method_ApplyFsOperation, serviceImpl.ApplyFsOperation).Build();
     }
 
     /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the service binding logic.
@@ -628,18 +1084,24 @@ namespace Ui {
     {
       serviceBinder.AddMethod(__Method_GetObjectPath, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::Ui.Path>(serviceImpl.GetObjectPath));
       serviceBinder.AddMethod(__Method_RevealObjectInExplorer, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::RpcCommon.Empty>(serviceImpl.RevealObjectInExplorer));
-      serviceBinder.AddMethod(__Method_GetAllContainers, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.GuidList>(serviceImpl.GetAllContainers));
-      serviceBinder.AddMethod(__Method_GetDownloadProgress, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::Ui.Progress>(serviceImpl.GetDownloadProgress));
-      serviceBinder.AddMethod(__Method_GetContainerObjects, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::Fs.ObjectList>(serviceImpl.GetContainerObjects));
-      serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Hash>(serviceImpl.GetContainerRootHash));
       serviceBinder.AddMethod(__Method_ImportObjectFromDisk, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.ObjectFromDiskOptions, global::RpcCommon.Guid>(serviceImpl.ImportObjectFromDisk));
       serviceBinder.AddMethod(__Method_PublishToTracker, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.PublishingOptions, global::RpcCommon.Empty>(serviceImpl.PublishToTracker));
+      serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.SearchRequest, global::Ui.SearchResponseList>(serviceImpl.SearchForObjects));
+      serviceBinder.AddMethod(__Method_GetDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.UsageRequest, global::RpcCommon.DataUsage>(serviceImpl.GetDataUsage));
+      serviceBinder.AddMethod(__Method_GetAllContainers, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.GuidList>(serviceImpl.GetAllContainers));
+      serviceBinder.AddMethod(__Method_GetContainerObjects, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::Fs.ObjectList>(serviceImpl.GetContainerObjects));
+      serviceBinder.AddMethod(__Method_GetContainerRootHash, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Hash>(serviceImpl.GetContainerRootHash));
       serviceBinder.AddMethod(__Method_DownloadContainer, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.DownloadContainerOptions, global::RpcCommon.Empty>(serviceImpl.DownloadContainer));
       serviceBinder.AddMethod(__Method_PauseContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.PauseContainerDownload));
       serviceBinder.AddMethod(__Method_ResumeContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.ResumeContainerDownload));
-      serviceBinder.AddMethod(__Method_SearchForObjects, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.SearchRequest, global::Ui.SearchResponseList>(serviceImpl.SearchForObjects));
-      serviceBinder.AddMethod(__Method_GetDataUsage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.UsageRequest, global::RpcCommon.DataUsage>(serviceImpl.GetDataUsage));
+      serviceBinder.AddMethod(__Method_CancelContainerDownload, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Guid, global::RpcCommon.Empty>(serviceImpl.CancelContainerDownload));
+      serviceBinder.AddMethod(__Method_GetDownloadProgress, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Hash, global::Ui.Progress>(serviceImpl.GetDownloadProgress));
+      serviceBinder.AddMethod(__Method_ModifyBlockListEntry, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.BlockListRequest, global::RpcCommon.Empty>(serviceImpl.ModifyBlockListEntry));
+      serviceBinder.AddMethod(__Method_GetBlockList, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::Ui.BlockListResponse>(serviceImpl.GetBlockList));
+      serviceBinder.AddMethod(__Method_LogMessage, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.String, global::RpcCommon.Empty>(serviceImpl.LogMessage));
+      serviceBinder.AddMethod(__Method_RevealLogFile, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.Empty>(serviceImpl.RevealLogFile));
       serviceBinder.AddMethod(__Method_Shutdown, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::RpcCommon.Empty, global::RpcCommon.Empty>(serviceImpl.Shutdown));
+      serviceBinder.AddMethod(__Method_ApplyFsOperation, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Ui.FsOperation, global::RpcCommon.Empty>(serviceImpl.ApplyFsOperation));
     }
 
   }

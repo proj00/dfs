@@ -26,9 +26,6 @@ namespace node
                 Console.WriteLine("Please provide a valid port number as the first argument (integer between 1 and 65535).");
                 return;
             }
-#if !DEBUG
-            servicePort = 42069;
-#endif
 
             NodeState state = new(TimeSpan.FromMinutes(1));
             NodeRpc rpc = new(state);
@@ -85,7 +82,8 @@ namespace node
             var builder = WebApplication.CreateBuilder();
 
             builder.Services.AddGrpc();
-            builder.Services.AddCors(o => o.AddPolicy("AllowAll", policy =>
+            const string policyName = "AllowLocal";
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
                 policy.SetIsOriginAllowed(origin => new Uri(origin).IsLoopback)
                       .AllowAnyMethod()
@@ -101,7 +99,7 @@ namespace node
                 options.ListenLocalhost(port
                     , o =>
                 {
-                    o.Protocols = HttpProtocols.Http1;
+                    o.Protocols = HttpProtocols.Http2;
                 }
                 );
 #if DEBUG
@@ -121,9 +119,8 @@ namespace node
 #endif
 
             app.UseRouting();
-            app.UseCors("AllowAll");
-            app.UseGrpcWeb();
-            app.MapGrpcService<UiService>().EnableGrpcWeb().RequireCors("AllowAll");
+            app.UseCors(policyName);
+            app.MapGrpcService<UiService>().RequireCors(policyName);
 
             await app.StartAsync();
             return app;

@@ -150,7 +150,10 @@ namespace node.IpcService
 
             var objects = state.Manager.GetContainerTree(container);
 
-            var response = await tracker.Publish(objects);
+            var response = await tracker.Publish(objects
+                .Select(o => new PublishedObject { Object = o, TransactionGuid = /*tbd*/"" })
+                .ToList());
+
             _ = await tracker.SetContainerRootHash(container, state.Manager.Container[container]);
             foreach (var file in objects
                 .Select(o => o.Object)

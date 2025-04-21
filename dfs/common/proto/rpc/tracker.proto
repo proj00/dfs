@@ -7,14 +7,19 @@ import "rpc_common.proto";
 
 service Tracker
 {
-	rpc Publish(stream fs.ObjectWithHash) returns (rpc_common.Empty);
 	rpc GetObjectTree(rpc_common.Hash) returns (stream fs.ObjectWithHash);
 	rpc MarkReachable(stream MarkRequest) returns (rpc_common.Empty);
 	rpc MarkUnreachable(stream MarkRequest) returns (rpc_common.Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
+
 	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
+
+	// container transactions
 	rpc SetContainerRootHash(ContainerRootHash) returns (rpc_common.Empty);
-	rpc DeleteObjectHash(rpc_common.Hash) returns (rpc_common.Empty);
+	rpc Publish(stream PublishedObject) returns (rpc_common.Empty);
+	rpc StartTransaction(rpc_common.Empty) returns (TransactionStartResponse);
+	rpc CheckTransactionState(rpc_common.Guid) returns (TransactionStateResponse);
+
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 	rpc GetDataUsage(rpc_common.Empty) returns (rpc_common.DataUsage);
 	rpc ReportDataUsage(UsageReport) returns (rpc_common.Empty);
@@ -24,6 +29,13 @@ message ContainerRootHash
 {
 	string guid = 1;
 	rpc_common.Hash hash = 2;
+	string transactionGuid = 3;
+}
+
+message PublishedObject
+{
+	string transactionGuid = 1;
+	fs.ObjectWithHash object = 2;
 }
 
 message PeerRequest
@@ -52,4 +64,23 @@ message UsageReport
 {
 	bool is_upload = 1;
 	int64 bytes = 2;
+}
+
+message TransactionStartResponse
+{
+	string guid = 1;
+	int64 ttl_ms = 2;
+}
+
+enum TransactionState
+{
+	Pending = 0;
+	Ok = 1;
+	Failed = 2;
+	Expired = 3;
+}
+
+message TransactionStateResponse
+{
+	TransactionState state = 1;
 }

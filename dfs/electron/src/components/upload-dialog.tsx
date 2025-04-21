@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { FolderUp } from "lucide-react";
-import { GetNodeService } from "@/IpcService/NodeServiceClient";
+import { GetNodeService } from "@/IpcService/GetNodeService";
 
 interface UploadDialogProps {
   open: boolean;
@@ -22,7 +22,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
     const service = await GetNodeService();
     const path = (await window.electronAPI.selectFolder()) ?? "";
     console.log(`got: ${path}`);
-    await service.ImportObjectFromDisk(path, 1024);
+    await service.ImportObjectFromDisk({ path, chunkSize: 1024 });
     console.log(`imported: ${path}`);
   };
 

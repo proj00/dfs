@@ -10,6 +10,7 @@ import { UnknownFieldHandler } from "@protobuf-ts/runtime";
 import type { PartialMessage } from "@protobuf-ts/runtime";
 import { reflectionMergePartial } from "@protobuf-ts/runtime";
 import { MessageType } from "@protobuf-ts/runtime";
+import { ObjectWithHash } from "./fs/filesystem";
 /**
  * :)
  *
@@ -52,9 +53,9 @@ export interface SearchResponse {
    */
   guid: string;
   /**
-   * @generated from protobuf field: repeated bytes hash = 2;
+   * @generated from protobuf field: fs.ObjectWithHash object = 2;
    */
-  hash: Uint8Array[];
+  object?: ObjectWithHash;
 }
 /**
  * @generated from protobuf message rpc_common.DataUsage
@@ -345,19 +346,12 @@ class SearchResponse$Type extends MessageType<SearchResponse> {
   constructor() {
     super("rpc_common.SearchResponse", [
       { no: 1, name: "guid", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-      {
-        no: 2,
-        name: "hash",
-        kind: "scalar",
-        repeat: 2 /*RepeatType.UNPACKED*/,
-        T: 12 /*ScalarType.BYTES*/,
-      },
+      { no: 2, name: "object", kind: "message", T: () => ObjectWithHash },
     ]);
   }
   create(value?: PartialMessage<SearchResponse>): SearchResponse {
     const message = globalThis.Object.create(this.messagePrototype!);
     message.guid = "";
-    message.hash = [];
     if (value !== undefined)
       reflectionMergePartial<SearchResponse>(this, message, value);
     return message;
@@ -376,8 +370,13 @@ class SearchResponse$Type extends MessageType<SearchResponse> {
         case /* string guid */ 1:
           message.guid = reader.string();
           break;
-        case /* repeated bytes hash */ 2:
-          message.hash.push(reader.bytes());
+        case /* fs.ObjectWithHash object */ 2:
+          message.object = ObjectWithHash.internalBinaryRead(
+            reader,
+            reader.uint32(),
+            options,
+            message.object,
+          );
           break;
         default:
           let u = options.readUnknownField;
@@ -406,9 +405,13 @@ class SearchResponse$Type extends MessageType<SearchResponse> {
     /* string guid = 1; */
     if (message.guid !== "")
       writer.tag(1, WireType.LengthDelimited).string(message.guid);
-    /* repeated bytes hash = 2; */
-    for (let i = 0; i < message.hash.length; i++)
-      writer.tag(2, WireType.LengthDelimited).bytes(message.hash[i]);
+    /* fs.ObjectWithHash object = 2; */
+    if (message.object)
+      ObjectWithHash.internalBinaryWrite(
+        message.object,
+        writer.tag(2, WireType.LengthDelimited).fork(),
+        options,
+      ).join();
     let u = options.writeUnknownFields;
     if (u !== false)
       (u == true ? UnknownFieldHandler.onWrite : u)(

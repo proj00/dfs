@@ -11,17 +11,22 @@
     "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
-    "test-build": "npx tsc -b",
+    "test-build": "npm run fix-proto && npx tsc -b",
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
     "publish-backend-release": "powershell -ExecutionPolicy Bypass -File ./build_backend_release.ps1",
-    "fix-proto": "npx protoc -I . --ts_out ./src/types --proto_path ../common/proto ../common/proto/rpc/uiservice.proto ../common/proto/fs/filesystem.proto ../common/proto/rpc_common.proto"
+    "get-descriptor": "npx pbjs -t json -r -o src/types/descriptors.json ./../common/proto/rpc/uiservice.proto -p ./../common/proto",
+    "generate-rpc": "npx buf generate \"../common/proto\"",
+    "generate-wrapper": "ts-node --compiler-options \"{\\\"noUnusedLocals\\\": false}\" utils/codegen.ts",
+    "fix-proto": "npm run get-descriptor && npm run generate-rpc && npm run generate-wrapper"
   },
   "author": {
     "name": "http500"
   },
   "description": "university course project",
   "devDependencies": {
+    "@bufbuild/buf": "^1.52.1",
+    "@bufbuild/protobuf": "^2.2.5",
     "@electron-forge/cli": "^7.8.0",
     "@electron-forge/maker-deb": "^7.8.0",
     "@electron-forge/maker-rpm": "^7.8.0",
@@ -43,7 +48,6 @@
     "css-loader": "^6.11.0",
     "electron": "35.1.5",
     "electron-devtools-installer": "^4.0.0",
-    "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
@@ -53,6 +57,8 @@
     "postcss": "^8.5.3",
     "postcss-loader": "^8.1.1",
     "postcss-preset-env": "^10.1.5",
+    "protobufjs": "^7.5.0",
+    "protobufjs-cli": "^1.1.3",
     "style-loader": "^3.3.4",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",
@@ -65,7 +71,8 @@
     "webpack-dev-server": "^5.2.1"
   },
   "dependencies": {
-    "@protobuf-ts/grpcweb-transport": "^2.9.6",
+    "@grpc/grpc-js": "^1.13.3",
+    "@protobuf-ts/grpc-transport": "^2.9.6",
     "@protobuf-ts/runtime": "^2.9.6",
     "@protobuf-ts/runtime-rpc": "^2.9.6",
     "@radix-ui/react-dialog": "^1.1.7",
@@ -85,6 +92,7 @@
     "radix-ui": "^1.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.2.0"
+    "tailwind-merge": "^3.2.0",
+    "ts-morph": "^25.0.1"
   }
 }

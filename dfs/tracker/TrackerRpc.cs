@@ -117,14 +117,14 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> Publish(IAsyncStreamReader<ObjectWithHash> requestStream, ServerCallContext context)
+        public override async Task<Empty> Publish(IAsyncStreamReader<PublishedObject> requestStream, ServerCallContext context)
         {
             try
             {
                 await foreach (var obj in requestStream.ReadAllAsync())
                 {
-                    string hashBase64 = obj.Hash.ToBase64();
-                    _filesystemManager.ObjectByHash[ByteString.FromBase64(hashBase64)] = obj;
+                    string hashBase64 = obj.Object.Hash.ToBase64();
+                    _filesystemManager.ObjectByHash[ByteString.FromBase64(hashBase64)] = obj.Object;
                 }
                 return new Empty();
             }
@@ -151,13 +151,6 @@ namespace tracker
             return Task.FromResult(new Empty());
         }
 
-        public override Task<Empty> DeleteObjectHash(Hash request, ServerCallContext context)
-        {
-            string hashBase64 = request.Data.ToBase64();
-            _filesystemManager.ObjectByHash.Remove(ByteString.FromBase64(hashBase64));
-            return Task.FromResult(new Empty());
-        }
-
         public override async Task SearchForObjects(SearchRequest request, IServerStreamWriter<SearchResponse> responseStream, ServerCallContext context)
         {
             using var re = new IronRe2.Regex(request.Query);
@@ -175,16 +168,18 @@ namespace tracker
                 var matches = _filesystemManager
                                   .GetContainerTree(container)
                                   .Where(o => re.IsMatch(o.Object.Name))
-                                  .ToList();
+                                  .Select(o => new SearchResponse
+                                  {
+                                      Guid = container.ToString(),
+                                      Object = o,
+                                  }).ToList();
                 if (matches.Count == 0)
                     continue;
 
-                var response = new SearchResponse
+                foreach (var match in matches)
                 {
-                    Guid = container.ToString()
-                };
-                response.Hash.AddRange(matches.Select(o => o.Hash));
-                await responseStream.WriteAsync(response);
+                    await responseStream.WriteAsync(match);
+                }
             }
         }
 

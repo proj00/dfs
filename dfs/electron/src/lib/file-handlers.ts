@@ -1,5 +1,6 @@
-import { GetNodeService } from "@/IpcService/NodeServiceClient";
+import { GetNodeService } from "@/IpcService/GetNodeService";
 import type { File, Folder } from "./types";
+import { hashFromBase64 } from "./utils";
 
 /**
  * Shared handler functions for file and folder operations
@@ -9,7 +10,7 @@ import type { File, Folder } from "./types";
 export const handleFileOpen = async (file: File) => {
   console.log(`Opening file: ${file.name} (${file.type})`);
   const service = await GetNodeService();
-  await service.RevealObjectInExplorer(file.id);
+  await service.RevealObjectInExplorer(hashFromBase64(file.id));
 };
 
 export const handleRename = async (item: File | Folder) => {

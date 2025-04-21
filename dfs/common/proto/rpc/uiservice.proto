@@ -7,20 +7,39 @@ import "rpc_common.proto";
 
 service Ui
 {
+	// fs operations
 	rpc GetObjectPath(rpc_common.Hash) returns (Path);
 	rpc RevealObjectInExplorer(rpc_common.Hash) returns (rpc_common.Empty);
+	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (rpc_common.Guid);
+
+	// tracker interaction
+	rpc PublishToTracker(PublishingOptions) returns (rpc_common.Empty);
+	rpc SearchForObjects(SearchRequest) returns (SearchResponseList);
+	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
+
+	// container queries
 	rpc GetAllContainers(rpc_common.Empty) returns (rpc_common.GuidList);
-	rpc GetDownloadProgress(rpc_common.Hash) returns (Progress);
 	rpc GetContainerObjects(rpc_common.Guid) returns (fs.ObjectList);
 	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
-	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (rpc_common.Guid);
-	rpc PublishToTracker(PublishingOptions) returns (rpc_common.Empty);
+
+	// download management
 	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
 	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
 	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
-	rpc SearchForObjects(SearchRequest) returns (SearchResponseList);
-	rpc GetDataUsage(UsageRequest) returns (rpc_common.DataUsage);
+	rpc CancelContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
+	rpc GetDownloadProgress(rpc_common.Hash) returns (Progress);
+
+	// block list
+	rpc ModifyBlockListEntry(BlockListRequest) returns (rpc_common.Empty);
+	rpc GetBlockList(rpc_common.Empty) returns (BlockListResponse);
+
+	// utils
+	rpc LogMessage(String) returns (rpc_common.Empty);
+	rpc RevealLogFile(rpc_common.Empty) returns (rpc_common.Empty);
 	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
+
+	// fs
+	rpc ApplyFsOperation(FsOperation) returns (rpc_common.Empty);
 }
 
 message ObjectOptions
@@ -78,4 +97,41 @@ message UsageRequest
 message SearchResponseList
 {
 	repeated rpc_common.SearchResponse results = 1;
+}
+
+message BlockListRequest
+{
+	string url = 1;
+	bool inWhitelist = 2;
+	bool shouldRemove = 3;
+}
+
+message BlockListEntry
+{
+	string url = 1;
+	bool inWhitelist = 2;
+}
+
+message BlockListResponse
+{
+	repeated BlockListEntry entries = 1;
+}
+
+message FsOperation
+{
+	rpc_common.Hash source = 1;
+	rpc_common.Hash destination = 2;
+
+	// used for copy/move
+	optional string newName = 3;
+
+	OperationType operation = 4;
+}
+
+enum OperationType
+{
+	Copy = 0;
+	Move = 1;
+	Create = 2;
+	Delete = 3;
 }
