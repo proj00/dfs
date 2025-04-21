@@ -1,9 +1,6 @@
-using node.IpcService;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using RocksDbSharp;
-using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace node
@@ -32,7 +29,7 @@ namespace node
             var publicServer = await StartPublicNodeServerAsync(rpc);
             var publicUrl = publicServer.Urls.First();
 
-            UiService service = new(state, rpc, "publicUrl");
+            UiService service = new(state, "publicUrl");
             var privateServer = await StartGrpcWebServerAsync(service, servicePort);
 
             await service.ShutdownEvent.WaitAsync();
