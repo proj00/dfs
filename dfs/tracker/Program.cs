@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace tracker
 {
@@ -9,27 +10,31 @@ namespace tracker
     {
         static async Task Main(string[] args)
         {
+            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory("logs");
+            ILogger logger = loggerFactory.CreateLogger("Main");
             FilesystemManager filesystemManager = new FilesystemManager();
-            TrackerRpc rpc = new TrackerRpc(filesystemManager);
+            TrackerRpc rpc = new(filesystemManager, logger);
             const int port = 50330;
-            var app = await StartPublicServerAsync(rpc, port);
+            var app = await StartPublicServerAsync(rpc, port, loggerFactory);
 
-            Console.WriteLine("Running...");
+            logger.LogInformation("Running...");
             var boundPort = new Uri(app.Urls.First()).Port;
 
-            Console.WriteLine($"Server is listening on port {boundPort}");
-            Console.WriteLine("Press any key to quit...");
+            logger.LogInformation($"Server is listening on port {boundPort}");
+            logger.LogInformation("Press any key to quit...");
             Console.ReadKey();
 
             await app.StopAsync();
         }
 
-        private static async Task<WebApplication> StartPublicServerAsync(TrackerRpc rpc, int port)
+        private static async Task<WebApplication> StartPublicServerAsync(TrackerRpc rpc, int port, ILoggerFactory loggerFactory)
         {
             var builder = WebApplication.CreateBuilder();
 
             string policyName = "AllowAll";
             builder.Services.AddGrpc();
+            builder.Services.AddSingleton(loggerFactory);
+            builder.Services.AddLogging();
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
                 policy.AllowAnyOrigin()

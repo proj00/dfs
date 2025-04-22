@@ -200,7 +200,7 @@ function generateWrapper(
       });
     }
     file.saveSync();
-    console.log(`Wrote ${file.getFilePath()}`);
+    console.info(`Wrote ${file.getFilePath()}`);
   } else {
     throw new Error(`Service "${targetServiceName}" not found.`);
   }
@@ -286,7 +286,7 @@ function generateObject(project: Project, outputName: string) {
     }
 
     file.saveSync();
-    console.log(`Wrote ${file.getFilePath()}`);
+    console.info(`Wrote ${file.getFilePath()}`);
   } else {
     throw new Error(`Service "${targetServiceName}" not found.`);
   }
@@ -358,7 +358,7 @@ function generateInterface(
     });
 
     file.saveSync();
-    console.log(`Wrote ${file.getFilePath()}`);
+    console.info(`Wrote ${file.getFilePath()}`);
   } else {
     throw new Error(`Service "${targetServiceName}" not found.`);
   }

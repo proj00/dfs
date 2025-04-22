@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { File } from "../../lib/types";
+import log from "electron-log/renderer";
 
 interface FileActionMenuProps {
   file: File;
@@ -48,7 +49,7 @@ export function FileActionMenu({
           onClick={async (e) => {
             e.stopPropagation();
             window.electronAPI.writeClipboard(file.containerGuid);
-            console.log(`Copied file GUID: ${file.containerGuid}`);
+            log.info(`Copied file GUID: ${file.containerGuid}`);
           }}
         >
           Copy container GUID

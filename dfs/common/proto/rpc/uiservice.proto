@@ -34,7 +34,7 @@ service Ui
 	rpc GetBlockList(rpc_common.Empty) returns (BlockListResponse);
 
 	// utils
-	rpc LogMessage(String) returns (rpc_common.Empty);
+	rpc LogMessage(LogRequest) returns (rpc_common.Empty);
 	rpc RevealLogFile(rpc_common.Empty) returns (rpc_common.Empty);
 	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
 
@@ -134,4 +134,19 @@ enum OperationType
 	Move = 1;
 	Create = 2;
 	Delete = 3;
+}
+
+message LogRequest
+{
+	string message = 1;
+	LogCategory category = 2;
+}
+
+enum LogCategory
+{
+	Info = 0;
+	Warning = 1;
+	Error = 2;
+	Debug = 3;
+	Trace = 4;
 }

@@ -15,6 +15,7 @@ import {
   calculatePercentage,
   createPollCallback,
 } from "../lib/utils";
+import log from "electron-log/renderer";
 
 interface DownloadManagerProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function DownloadManager({
       const data = await backendService.GetDataUsage();
       setDataUsage(data);
     } catch (error) {
-      console.error("Failed to fetch data usage:", error);
+      log.error("Failed to fetch data usage:", error);
     }
   };
 
@@ -85,7 +86,7 @@ export function DownloadManager({
 
       setDownloads(downloadItems);
     } catch (error) {
-      console.error("Failed to fetch download progress:", error);
+      log.error("Failed to fetch download progress:", error);
     }
   };
 

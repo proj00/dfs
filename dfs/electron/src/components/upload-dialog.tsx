@@ -10,6 +10,7 @@ import {
 } from "./ui/dialog";
 import { FolderUp } from "lucide-react";
 import { GetNodeService } from "@/IpcService/GetNodeService";
+import log from "electron-log/renderer";
 
 interface UploadDialogProps {
   open: boolean;
@@ -18,12 +19,12 @@ interface UploadDialogProps {
 
 export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
   const handleFileSelect = async () => {
-    console.log("picking...");
+    log.info("picking...");
     const service = await GetNodeService();
     const path = (await window.electronAPI.selectFolder()) ?? "";
-    console.log(`got: ${path}`);
+    log.info(`got: ${path}`);
     await service.ImportObjectFromDisk({ path, chunkSize: 1024 });
-    console.log(`imported: ${path}`);
+    log.info(`imported: ${path}`);
   };
 
   return (

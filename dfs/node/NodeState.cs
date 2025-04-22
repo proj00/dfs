@@ -2,6 +2,7 @@
 using Fs;
 using Google.Protobuf;
 using Grpc.Net.Client;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,16 @@ namespace node
         public Dictionary<ByteString, (long, long)> FileProgress { get; }
         private PersistentDictionary<string, string> Whitelist { get; }
         private PersistentDictionary<string, string> Blacklist { get; }
-        public NodeState(TimeSpan channelTtl)
+
+        private ILoggerFactory loggerFactory;
+        public ILogger Logger { get; private set; }
+        public string LogPath { get; private set; }
+        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath)
         {
+            this.loggerFactory = loggerFactory;
+            Logger = this.loggerFactory.CreateLogger("Node");
+            LogPath = logPath;
+
             NodeChannel = new ChannelCache(channelTtl);
             TrackerChannel = new ChannelCache(channelTtl);
             Manager = new FilesystemManager();
@@ -50,16 +59,33 @@ namespace node
                 valueSerializer: Encoding.UTF8.GetBytes,
                 valueDeserializer: Encoding.UTF8.GetString
             );
+            LogPath = logPath;
         }
 
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
         {
+            if (options == null)
+            {
+                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
+            }
+            else
+            {
+                options.LoggerFactory = loggerFactory;
+            }
             var channel = NodeChannel.GetOrCreate(uri, options);
             return new NodeClient(channel);
         }
 
         public TrackerClient GetTrackerClient(Uri uri, GrpcChannelOptions? options = null)
         {
+            if (options == null)
+            {
+                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
+            }
+            else
+            {
+                options.LoggerFactory = loggerFactory;
+            }
             var channel = TrackerChannel.GetOrCreate(uri, options);
             return new TrackerClient(channel);
         }

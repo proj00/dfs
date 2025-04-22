@@ -10,6 +10,7 @@ using Tracker;
 using Microsoft.VisualStudio.Threading;
 using Grpc.Core.Utils;
 using Ui;
+using Microsoft.Extensions.Logging;
 
 namespace node
 {
@@ -310,14 +311,37 @@ namespace node
             return state.GetBlockList();
         }
 
-        public override Task<RpcCommon.Empty> LogMessage(Ui.String request, ServerCallContext context)
+        public override async Task<RpcCommon.Empty> LogMessage(LogRequest request, ServerCallContext context)
         {
-            return base.LogMessage(request, context);
+            switch (request.Category)
+            {
+                case LogCategory.Error:
+                    state.Logger.LogError(request.Message);
+                    break;
+                case LogCategory.Warning:
+                    state.Logger.LogWarning(request.Message);
+                    break;
+                case LogCategory.Info:
+                    state.Logger.LogInformation(request.Message);
+                    break;
+                case LogCategory.Debug:
+                    state.Logger.LogDebug(request.Message);
+                    break;
+                case LogCategory.Trace:
+                    state.Logger.LogTrace(request.Message);
+                    break;
+                default:
+                    state.Logger.LogInformation(request.Message);
+                    break;
+            }
+            return new RpcCommon.Empty();
         }
 
-        public override Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
+        public override async Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
         {
-            return base.RevealLogFile(request, context);
+            Process.Start("explorer.exe", state.LogPath);
+
+            return new RpcCommon.Empty();
         }
 
         public override Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)

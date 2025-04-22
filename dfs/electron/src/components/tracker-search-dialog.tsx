@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { File } from "@/lib/types";
+import log from "electron-log/renderer";
 
 interface TrackerSearchDialogProps {
   open: boolean;
@@ -64,7 +65,7 @@ export function TrackerSearchDialog({
 
       setSearchResults([]);
     } catch (err) {
-      console.error("Search failed:", err);
+      log.error("Search failed:", err);
       setError(
         "Failed to search tracker. Please check the tracker URI and try again.",
       );
@@ -76,9 +77,9 @@ export function TrackerSearchDialog({
   const handleCopyGuid = async (guid: string) => {
     try {
       window.electronAPI.writeClipboard(guid);
-      console.log(`Copied GUID: ${guid}`);
+      log.info(`Copied GUID: ${guid}`);
     } catch (err) {
-      console.error("Failed to copy GUID:", err);
+      log.error("Failed to copy GUID:", err);
     }
   };
 

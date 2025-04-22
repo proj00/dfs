@@ -8,6 +8,9 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
+using Microsoft.Extensions.Logging;
+using common;
+using Microsoft.VisualStudio.Threading;
 
 namespace node
 {
@@ -19,29 +22,35 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
+            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory("logs");
+
+            ILogger logger = loggerFactory.CreateLogger("Main");
+
             Guid pipeGuid = new();
             uint parentPid = 0;
             if (!(args.Length == 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
             {
-                Console.WriteLine("Please provide a pipe GUID and a PID as the first argument.");
+                logger.LogError("Please provide a pipe GUID and a PID as the first argument.");
                 return;
             }
 
-            NodeState state = new(TimeSpan.FromMinutes(1));
+            NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath);
             NodeRpc rpc = new(state);
-            var publicServer = await StartPublicNodeServerAsync(rpc);
+            var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
             var publicUrl = publicServer.Urls.First();
 
-            UiService service = new(state, "publicUrl");
+            UiService service = new(state, publicUrl);
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
-            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams);
+            CancellationTokenSource token = new();
+            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token);
 
             await service.ShutdownEvent.WaitAsync();
+            await token.CancelAsync();
             await publicServer.StopAsync();
             await privateServer.StopAsync();
         }
 
-        private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc)
+        private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc, ILoggerFactory loggerFactory)
         {
             var builder = WebApplication.CreateBuilder();
 
@@ -79,10 +88,10 @@ namespace node
         }
 
         private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid, uint parentPid,
-            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams)
+            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
         {
             var builder = WebApplication.CreateBuilder();
-
+            builder.Logging.ClearProviders();
             builder.Services.AddGrpc();
             const string policyName = "AllowLocal";
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
@@ -93,6 +102,8 @@ namespace node
                       .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
             }));
 
+            builder.Services.AddSingleton(loggerFactory);
+            builder.Services.AddLogging();
             builder.Services.AddSingleton(service);
             builder.Services.AddGrpcReflection();
 
@@ -114,7 +125,14 @@ namespace node
                     {
                         try
                         {
-                            await stream.WaitForConnectionAsync();
+                            try
+                            {
+                                await stream.WaitForConnectionAsync(cancellationToken);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                return;
+                            }
 
                             if (GetNamedPipeClientProcessId(stream.SafePipeHandle, out var clientPid))
                             {
