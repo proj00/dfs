@@ -21,8 +21,36 @@ namespace tracker
             var boundPort = new Uri(app.Urls.First()).Port;
 
             logger.LogInformation($"Server is listening on port {boundPort}");
-            logger.LogInformation("Press any key to quit...");
-            Console.ReadKey();
+            logger.LogInformation("Press any key to quit; press a/A to view data usage...");
+            while (true)
+            {
+                char k = Console.ReadKey(true).KeyChar;
+                if (k != 'a' && k != 'A')
+                {
+                    break;
+                }
+
+                var usage = rpc.GetTotalDataUsage();
+                (string path, ILoggerFactory factory) = InternalLoggerProvider.CreateLoggerFactory("logs/usage");
+                var usageLogger = factory.CreateLogger("DataUsage");
+
+                string output = "";
+
+                output += "Data usage: \n";
+                if (usage.Length == 0)
+                {
+                    output += "No data usage found.\n";
+                }
+                else
+                {
+                    foreach (var (key, u) in usage)
+                    {
+                        output += $"URL: {key}, Up/Down: {u.Upload}/{u.Download} bytes\n";
+                    }
+                }
+                usageLogger.LogInformation(output);
+                logger.LogInformation($"Usage logs written to {path}");
+            }
 
             await app.StopAsync();
         }
