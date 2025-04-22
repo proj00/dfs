@@ -18,7 +18,7 @@
     "get-descriptor": "npx pbjs -t json -r -o src/types/descriptors.json ./../common/proto/rpc/uiservice.proto -p ./../common/proto",
     "generate-rpc": "npx buf generate \"../common/proto\"",
     "generate-wrapper": "ts-node --compiler-options \"{\\\"noUnusedLocals\\\": false}\" utils/codegen.ts",
-    "fix-proto": "npm run get-descriptor && npm run generate-rpc && npm run generate-wrapper"
+    "fix-proto": "npm run generate-rpc && npm run get-descriptor && npm run generate-wrapper"
   },
   "author": {
     "name": "http500"
