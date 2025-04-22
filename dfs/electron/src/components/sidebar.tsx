@@ -1,4 +1,5 @@
 "use client";
+import log from "electron-log/renderer";
 
 import { useState, useEffect } from "react";
 import {
@@ -113,7 +114,7 @@ export function Sidebar({
       const usage = await backendService.GetDataUsage();
       setDataUsage(usage);
     } catch (error) {
-      console.error("Failed to fetch data usage:", error);
+      log.error("Failed to fetch data usage:", error);
     }
   };
 
@@ -176,7 +177,7 @@ export function Sidebar({
         }
       }
     } catch (error) {
-      console.error("Failed to fetch download progress:", error);
+      log.error("Failed to fetch download progress:", error);
     }
   };
 
@@ -213,7 +214,7 @@ export function Sidebar({
         }
       }, 1500);
     } catch (error) {
-      console.error("Failed to publish:", error);
+      log.error("Failed to publish:", error);
       setPublishSuccess(false);
     } finally {
       setIsPublishing(false);
@@ -249,7 +250,7 @@ export function Sidebar({
         setDownloadSuccess(null);
       }, 1500);
     } catch (error) {
-      console.error("Failed to download:", error);
+      log.error("Failed to download:", error);
       setDownloadSuccess(false);
       setIsDownloading(false);
     }
@@ -593,11 +594,11 @@ export function Sidebar({
                   size="sm"
                   onClick={async () => {
                     // In a real app, this would open a directory picker
-                    console.log("Opening directory picker...");
+                    log.info("Opening directory picker...");
                     const path =
                       (await window.electronAPI.selectFolder()) ?? "";
                     setDownloadDestination(path);
-                    console.log(`picked: ${path}`);
+                    log.info(`picked: ${path}`);
                   }}
                   disabled={isDownloading}
                 >

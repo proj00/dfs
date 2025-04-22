@@ -8,6 +8,7 @@ import { Sidebar } from "./sidebar";
 import type { File, Folder } from "../lib/types";
 import { backendService } from "@/IpcService/BackendService";
 import { createPollCallback } from "@/lib/utils";
+import log from "electron-log/renderer";
 
 export function Drive() {
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -30,7 +31,7 @@ export function Drive() {
       setFolders(data.folders);
       setIsLoading(false);
     } catch (err) {
-      console.error("Error fetching drive data:", err);
+      log.error("Error fetching drive data:", err);
       setError("Failed to load drive data. Please try again.");
       setIsLoading(false);
     }
@@ -83,20 +84,20 @@ export function Drive() {
 
   // Handle container download completion
   const handleContainerDownloaded = useCallback(() => {
-    console.log("Container downloaded, refreshing data...");
+    log.info("Container downloaded, refreshing data...");
     fetchData();
   }, [fetchData]);
 
   // Handle container publish completion
   const handleContainerPublished = useCallback(() => {
-    console.log("Container published, refreshing data...");
+    log.info("Container published, refreshing data...");
     fetchData();
   }, [fetchData]);
 
   // Handle download from tracker search
   const handleDownloadContainer = useCallback(
     (containerGuid: string, trackerUri: string) => {
-      console.log(
+      log.info(
         `Downloading container ${containerGuid} from tracker ${trackerUri}`,
       );
       // Open the download dialog in the sidebar with pre-filled values

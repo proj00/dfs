@@ -6,6 +6,7 @@ import { GetNodeService } from "./GetNodeService";
 import { FromObjectWithHash, type File, type Folder } from "../lib/types";
 import { hashFromBase64 } from "@/lib/utils";
 import { NodeServiceClient } from "@/types/wrap/NodeServiceClient";
+import log from "electron-log/renderer";
 
 // Define interfaces for the backend services
 export interface BackendServiceInterface {
@@ -85,7 +86,7 @@ class BackendService implements BackendServiceInterface {
     containerId: string,
     trackerUri: string,
   ): Promise<boolean> {
-    console.log(`Publishing container ${containerId} to tracker ${trackerUri}`);
+    log.info(`Publishing container ${containerId} to tracker ${trackerUri}`);
     const service = await GetNodeService();
     await service.PublishToTracker({ containerGuid: containerId, trackerUri });
     return true;
@@ -98,7 +99,7 @@ class BackendService implements BackendServiceInterface {
   ): Promise<string[]> {
     this.trackerUris.push(trackerUri);
     destination = destination ?? "";
-    console.log(
+    log.info(
       `Downloading container ${containerGuid} from tracker ${trackerUri} into ${destination}`,
     );
 
@@ -112,7 +113,7 @@ class BackendService implements BackendServiceInterface {
         destinationDir: destination,
         maxConcurrentChunks: 20,
       })
-      .catch((e) => console.log(e));
+      .catch((e) => log.info(e));
 
     const IDs = (
       await this.getContainerObjects(service, containerGuid)

@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import type { Folder } from "../../lib/types";
+import log from "electron-log/renderer";
 
 interface FolderActionMenuProps {
   folder: Folder;
@@ -50,7 +51,7 @@ export function FolderActionMenu({
           onClick={async (e) => {
             e.stopPropagation();
             window.electronAPI.writeClipboard(folder.containerGuid);
-            console.log(`Copied folder GUID: ${folder.containerGuid}`);
+            log.info(`Copied folder GUID: ${folder.containerGuid}`);
           }}
         >
           Copy container GUID

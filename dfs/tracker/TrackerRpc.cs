@@ -6,6 +6,7 @@ using Google.Protobuf;
 using common;
 using RpcCommon;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 
 namespace tracker
@@ -16,9 +17,11 @@ namespace tracker
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly ConcurrentDictionary<string, DataUsage> dataUsage = new();
         private readonly object usageLock = new();
+        private readonly ILogger logger;
 
-        public TrackerRpc(FilesystemManager filesystemManager)
+        public TrackerRpc(FilesystemManager filesystemManager, ILogger logger)
         {
+            this.logger = logger;
             _filesystemManager = filesystemManager;
         }
 
@@ -49,7 +52,7 @@ namespace tracker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetObjectTree method: {ex.Message}");
+                logger.LogError($"Error in GetObjectTree method: {ex.Message}");
                 throw;
             }
         }
@@ -69,7 +72,7 @@ namespace tracker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetPeerList method: {ex.Message}");
+                logger.LogError($"Error in GetPeerList method: {ex.Message}");
                 throw;
             }
         }
@@ -94,7 +97,7 @@ namespace tracker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in MarkReachable method: {ex.Message}");
+                logger.LogError($"Error in MarkReachable method: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
@@ -112,7 +115,7 @@ namespace tracker
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in MarkUnreachable method: {ex.Message}");
+                logger.LogError($"Error in MarkUnreachable method: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
@@ -130,17 +133,17 @@ namespace tracker
             }
             catch (InvalidProtocolBufferException ex)
             {
-                Console.WriteLine($"Error in Publish method: {ex.Message}");
+                logger.LogError($"Error in Publish method: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
             }
             catch (RpcException ex)
             {
-                Console.WriteLine($"Error in Publish method: {ex.Message}");
+                logger.LogError($"Error in Publish method: {ex.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error in Publish method: {ex.Message}");
+                logger.LogError($"Unexpected error in Publish method: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
