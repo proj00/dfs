@@ -40,6 +40,4 @@ jobs:
       - name: Test UI
         working-directory: ./dfs/electron
         run: |
-          npm ci
-          npm run test-build
-          npx jest
+          npm ci && npm run test-build && npx jest
