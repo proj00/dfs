@@ -7,6 +7,7 @@ using common;
 using RpcCommon;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 
 namespace tracker
@@ -15,12 +16,19 @@ namespace tracker
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly ConcurrentDictionary<string, DataUsage> dataUsage = new();
+        private readonly PersistentDictionary<string, DataUsage> dataUsage;
         private readonly object usageLock = new();
         private readonly ILogger logger;
 
         public TrackerRpc(FilesystemManager filesystemManager, ILogger logger)
         {
+            dataUsage = new(
+                Path.Combine(filesystemManager.DbPath, "DataUsage"),
+                keySerializer: Encoding.UTF8.GetBytes,
+                keyDeserializer: Encoding.UTF8.GetString,
+                valueSerializer: o => o.ToByteArray(),
+                valueDeserializer: DataUsage.Parser.ParseFrom
+            );
             this.logger = logger;
             _filesystemManager = filesystemManager;
         }
@@ -200,11 +208,22 @@ namespace tracker
             }
         }
 
+        public (string key, DataUsage usage)[] GetTotalDataUsage()
+        {
+            List<(string key, DataUsage usage)> list = [];
+            dataUsage.ForEach((key, value) =>
+            {
+                list.Add((key, value));
+                return true;
+            });
+            return list.ToArray();
+        }
+
         public override async Task<Empty> ReportDataUsage(UsageReport request, ServerCallContext context)
         {
             var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
             string ip = match.Success ? match.Groups[1].Value : "";
-            DataUsage change = new DataUsage { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
+            DataUsage change = new() { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
             if (dataUsage.TryGetValue(ip, out var usage))
             {
                 usage.Upload += change.Upload;
