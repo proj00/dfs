@@ -1,15 +1,9 @@
 ﻿using common;
-using Fs;
 using Google.Protobuf;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
-using Node;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 using Ui;
 using static Node.Node;
 using static Tracker.Tracker;
@@ -22,20 +16,17 @@ namespace node
         public FilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
-        public PersistentDictionary<ByteString, (long, long)> FileProgress { get; }
         private PersistentDictionary<string, string> Whitelist { get; }
         private PersistentDictionary<string, string> Blacklist { get; }
-        public PersistentDictionary<ByteString, IncompleteFile> IncompleteFiles { get; private set; }
-        public PersistentDictionary<ByteString, FileChunk> IncompleteChunks { get; private set; }
+        public DownloadManager Downloads { get; }
 
         private ILoggerFactory loggerFactory;
-        private readonly System.Threading.Lock fileProgressLock;
 
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
+        private CancellationTokenSource cts = new CancellationTokenSource();
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath)
         {
-            fileProgressLock = new();
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
             LogPath = logPath;
@@ -66,33 +57,7 @@ namespace node
                 valueDeserializer: Encoding.UTF8.GetString
             );
             LogPath = logPath;
-            IncompleteFiles = new(System.IO.Path.Combine(Manager.DbPath, "IncompleteFiles"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: IncompleteFile.Parser.ParseFrom
-            );
-            IncompleteChunks = new(System.IO.Path.Combine(Manager.DbPath, "IncompleteChunks"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: FileChunk.Parser.ParseFrom
-            );
-            FileProgress = new(
-                System.IO.Path.Combine(Manager.DbPath, "FileProgress"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: (a) => Encoding.UTF8.GetBytes($"{a.Item1} {a.Item2}"),
-                valueDeserializer: str =>
-                {
-                    var parts = Encoding.UTF8.GetString(str).Split(' ');
-                    if (parts.Length != 2)
-                    {
-                        throw new ArgumentException("Invalid format for FileProgress");
-                    }
-                    return (long.Parse(parts[0]), long.Parse(parts[1]));
-                }
-            );
+            Downloads = new DownloadManager(Manager.DbPath);
         }
 
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
@@ -201,16 +166,6 @@ namespace node
                 return true;
             });
             return response;
-        }
-
-        public void UpdateFileProgress(ByteString hash, long newProgress)
-        {
-            lock (fileProgressLock)
-            {
-                var progress = FileProgress[hash];
-                progress.Item1 += newProgress;
-                FileProgress[hash] = progress;
-            }
         }
     }
 }
