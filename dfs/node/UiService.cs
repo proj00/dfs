@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Threading;
 using Grpc.Core.Utils;
 using Ui;
 using Microsoft.Extensions.Logging;
+using Node;
 
 namespace node
 {
@@ -21,6 +22,8 @@ namespace node
         private NodeState state;
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
+        private readonly ConcurrentDictionary<string, System.Threading.Lock> fileLocks = new();
+        private readonly ConcurrentDictionary<ByteString, System.Threading.Lock> chunkParentLocks = new();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
         public T ExceptionWrap<T>(Func<T> func)
@@ -70,6 +73,7 @@ namespace node
                 return list;
             });
         }
+
         public override async Task<Ui.Progress> GetDownloadProgress(RpcCommon.Hash request, ServerCallContext context)
         {
             (long current, long total) = state.FileProgress[request.Data];
@@ -203,83 +207,111 @@ namespace node
             var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
                 .Where(obj => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File)
-                .Select(obj => DownloadFile(obj, tracker, destinationDir, semaphore, guid.Value));
+                .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir));
 
             await Task.WhenAll(fileTasks);
         }
 
-        private async Task DownloadFile(ObjectWithHash obj, ITrackerWrapper tracker, string destinationDir, SemaphoreSlim semaphore, Guid containerGuid)
+        private IncompleteFile GetIncompleteFile(ObjectWithHash obj, string trackerUri, string destinationDir)
         {
-            List<Task> chunkTasks = [];
-
             var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
             System.IO.Directory.CreateDirectory(dir);
             dir = dir + "\\" + obj.Object.Name;
-            using var stream = new FileStream(dir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-            object streamLock = new();
 
             state.FileProgress[obj.Hash] = (0, obj.Object.File.Size);
             var i = 0;
+            IncompleteFile file = new() { DestinationDir = dir, File = obj, TrackerUri = trackerUri };
             foreach (var hash in obj.Object.File.Hashes.Hash)
             {
-                chunkTasks.Add(DownloadChunk(hash, obj.Hash, obj.Object.File.Hashes.ChunkSize * i, tracker, stream, streamLock, semaphore, containerGuid));
+                var chunk = new FileChunk()
+                {
+                    Hash = obj.Object.File.Hashes.Hash[i],
+                    Offset = obj.Object.File.Hashes.ChunkSize * i,
+                    FileHash = obj.Hash
+                };
+
+                file.RemainingChunks.Add(chunk);
                 i++;
             }
 
-            await Task.WhenAll(chunkTasks);
             state.PathByHash[obj.Hash] = dir;
+            return file;
         }
 
-        private async Task DownloadChunk(ByteString hash, ByteString fileHash, int chunkOffset, ITrackerWrapper tracker,
-            FileStream stream, object streamLock, SemaphoreSlim semaphore, Guid containerGuid)
+        private async Task DownloadChunkAsync(FileChunk chunk, int chunkSize, string trackerUri, CancellationToken token)
         {
-            await semaphore.WaitAsync();
+            var tracker = new TrackerWrapper(trackerUri, state);
+            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
+                .ToList();
+
+            if (peers.Count == 0)
+            {
+                state.Logger.LogWarning($"No peers found for chunk {chunk.Hash.ToBase64()}");
+                return;
+            }
+
+            // for now, pick a random peer (chunk tasks are persistent and we can just add simple retries later)
+            var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
+            var peerClient = state.GetNodeClient(new Uri(peers[index]));
+            var peerCall = peerClient.GetChunk(new ChunkRequest()
+            {
+                Hash = chunk.FileHash,
+                TrackerUri = tracker.GetUri(),
+                Offset = chunk.CurrentCount
+            }, null, null, token);
+
             try
             {
-                if (pauseEvents.TryGetValue(containerGuid, out var pauseEvent))
+                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
                 {
-                    await pauseEvent.WaitAsync();
+                    chunk.Contents.Add(message.Response);
+                    chunk.CurrentCount += message.Response.Length;
+                    state.UpdateFileProgress(chunk.FileHash, message.Response.Length);
                 }
-                List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 }))
-                    .Where(s => !state.IsInBlockList(s))
-                    .ToList();
-
-                if (peers.Count == 0)
-                {
-                    throw new Exception("No peers found");
-                }
-
-                // for now, pick a random peer
-                var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
-                var peerClient = state.GetNodeClient(new Uri(peers[index]));
-                var peerCall = peerClient.GetChunk(new Node.ChunkRequest() { Hash = hash, TrackerUri = tracker.GetUri() });
-
-                List<Node.ChunkResponse> response = [];
-                await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
-                {
-                    response.Add(message);
-                }
-
-                long written = 0;
-                lock (streamLock)
-                {
-                    stream.Seek(chunkOffset, SeekOrigin.Begin);
-                    foreach (var item in response)
-                    {
-                        stream.Write(item.Response.Span);
-                        (long current, long total) = state.FileProgress[fileHash];
-                        current += item.Response.Span.Length;
-                        written += item.Response.Span.Length;
-                        state.FileProgress[fileHash] = (current, total);
-                    }
-                }
-
-                await tracker.MarkReachable(hash, nodeURI);
-                await tracker.ReportDataUsage(false, written);
             }
-            finally
+            catch (OperationCanceledException)
             {
-                semaphore.Release();
+                state.Logger.LogWarning("Download stoped for chunk {0}, will attempt retries later", chunk.Hash);
+            }
+
+            if (chunk.CurrentCount == chunkSize)
+            {
+                state.CompleteChunks[chunk.Hash] = chunk;
+            }
+        }
+
+        private void HandleCompleteChunk(FileChunk chunk)
+        {
+            var parentLock = chunkParentLocks.GetOrAdd(chunk.FileHash, _ => new Lock());
+
+            IncompleteFile? parentFile = null;
+            lock (parentLock)
+            {
+                parentFile = state.IncompleteFiles[chunk.FileHash];
+                parentFile.RemainingChunks.Remove(chunk);
+                if (parentFile.RemainingChunks.Count > 0)
+                {
+                    state.IncompleteFiles[chunk.FileHash] = parentFile;
+                }
+                else
+                {
+                    state.IncompleteFiles.Remove(chunk.FileHash);
+                }
+            }
+            if (parentFile == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            var fileLock = fileLocks.GetOrAdd(parentFile.DestinationDir, _ => new Lock());
+            lock (fileLock)
+            {
+                using var stream = new FileStream(parentFile.DestinationDir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                stream.Seek(chunk.Offset, SeekOrigin.Begin);
+                foreach (var data in chunk.Contents)
+                {
+                    stream.Write(data.ToByteArray());
+                }
             }
         }
 

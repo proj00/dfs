@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf;
 using Grpc.Core;
 using Node;
+using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,25 +40,36 @@ namespace node
 
             var size = parentObj.File.Hashes.ChunkSize;
             var chunkIndex = parentObj.File.Hashes.Hash.IndexOf(request.Hash);
-            var offset = chunkIndex * size;
+            var offset = chunkIndex * size + request.Offset;
+            var remainingSize = size - request.Offset;
 
             using var stream = new FileStream(state.PathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            var buffer = new byte[size];
+            var buffer = new byte[remainingSize];
             stream.Seek(offset, SeekOrigin.Begin);
-            var total = await stream.ReadAsync(buffer, 0, size);
+
+            var total = await stream.ReadAsync(buffer, 0, (int)remainingSize);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
+            var used = 0;
 
             for (int i = 0; i < total; i += subchunk)
             {
+                var res = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i));
+                used += res.Length;
+
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
-                    Response = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i))
+                    Response = res
                 });
+
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
 
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            await tracker.ReportDataUsage(true, total);
+            await tracker.ReportDataUsage(true, used);
         }
     }
 }

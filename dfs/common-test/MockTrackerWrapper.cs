@@ -43,7 +43,7 @@ namespace common_test
             return obj.Values.ToList();
         }
 
-        public async Task<List<string>> GetPeerList(PeerRequest request)
+        public async Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token)
         {
             if (peers.ContainsKey(request.ChunkHash))
             {

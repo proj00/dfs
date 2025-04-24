@@ -109,6 +109,11 @@ namespace common
             {
                 foreach (var obj in objects)
                 {
+                    if (ObjectByHash.ContainsKey(obj.Hash))
+                    {
+                        continue;
+                    }
+
                     ObjectByHash[obj.Hash] = obj;
                     switch (obj.Object.TypeCase)
                     {
@@ -136,7 +141,13 @@ namespace common
                 }
 
                 var g = guid ?? Guid.NewGuid();
+                if (Container.TryGetValue(g, out var oldRoot))
+                {
+                    NewerVersion[oldRoot] = rootObject;
+                }
+
                 Container[g] = rootObject;
+
                 return g;
             }
         }
@@ -153,7 +164,6 @@ namespace common
 
                 return GetObjectTree(root);
             }
-
         }
 
         public List<ObjectWithHash> GetObjectTree(ByteString root)
@@ -206,8 +216,5 @@ namespace common
                 }
             }
         }
-
-
-
     }
 }

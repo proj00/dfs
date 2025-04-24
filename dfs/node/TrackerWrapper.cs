@@ -38,14 +38,21 @@ namespace node
             return objects;
         }
 
-        public async Task<List<string>> GetPeerList(PeerRequest request)
+        public async Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token)
         {
             using var response = client.GetPeerList(request);
 
             List<string> peers = [];
-            await foreach (var peer in response.ResponseStream.ReadAllAsync())
+            try
             {
-                peers.Add(peer.Peer);
+                await foreach (var peer in response.ResponseStream.ReadAllAsync(token))
+                {
+                    peers.Add(peer.Peer);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return [];
             }
 
             return peers;

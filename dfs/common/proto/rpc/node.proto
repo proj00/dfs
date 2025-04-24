@@ -2,6 +2,8 @@
 
 package node;
 
+import "fs/filesystem.proto";
+
 service Node
 {
 	rpc GetChunk (ChunkRequest) returns (stream ChunkResponse);
@@ -11,9 +13,27 @@ message ChunkRequest
 {
 	bytes hash = 1;
 	string trackerUri = 2;
+	int64 offset = 3;
 }
 
 message ChunkResponse
 {
 	bytes response = 1;
+}
+
+message FileChunk
+{
+	bytes hash = 1;
+	bytes fileHash = 2;
+	repeated bytes contents = 3;
+	int64 offset = 4;
+	int64 currentCount = 5;
+}
+
+message IncompleteFile
+{
+	fs.ObjectWithHash file = 1;
+	repeated FileChunk remainingChunks = 2;
+	string trackerUri = 3;
+	string destinationDir = 4;
 }
