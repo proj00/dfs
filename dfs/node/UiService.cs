@@ -12,6 +12,7 @@ using Grpc.Core.Utils;
 using Ui;
 using Microsoft.Extensions.Logging;
 using Node;
+using System.Threading.Channels;
 
 namespace node
 {
@@ -19,11 +20,18 @@ namespace node
     [ComVisible(true)]
     public class UiService : Ui.Ui.UiBase
     {
+        private class FileStateChange
+        {
+            public ByteString fileHash;
+            public FileStatus newStatus;
+        }
+
         private NodeState state;
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
-        private readonly ConcurrentDictionary<string, System.Threading.Lock> fileLocks = new();
-        private readonly ConcurrentDictionary<ByteString, System.Threading.Lock> chunkParentLocks = new();
+        private readonly ConcurrentDictionary<ByteString, System.Threading.Lock> fileLocks;
+        private readonly ConcurrentDictionary<ByteString, System.Threading.Lock> chunkLocks;
+        private readonly Channel<FileStateChange> stateChannel = Channel.CreateUnbounded<FileStateChange>();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
         public T ExceptionWrap<T>(Func<T> func)
@@ -40,6 +48,8 @@ namespace node
 
         public UiService(NodeState state, string nodeURI)
         {
+            chunkLocks = new(new HashUtils.ByteStringComparer());
+            fileLocks = new(new HashUtils.ByteStringComparer());
             ShutdownEvent = new AsyncManualResetEvent(true);
             ShutdownEvent.Reset();
             this.state = state;
@@ -170,20 +180,33 @@ namespace node
             }
         }
 
-        public override async Task<RpcCommon.Empty> PauseContainerDownload(RpcCommon.Guid request, ServerCallContext context)
+        public override async Task<RpcCommon.Empty> PauseFileDownload(RpcCommon.Hash request, ServerCallContext context)
         {
-            var guid = Guid.Parse(request.Guid_);
-            var pauseEvent = pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
-            pauseEvent.Reset();
+            var fileLock = fileLocks.GetOrAdd(request.Data, _ => new Lock());
+            lock (fileLock)
+            {
+                var file = state.IncompleteFiles[request.Data];
+                if (file.Status == FileStatus.Active)
+                {
+                    file.Status = FileStatus.Paused;
+                }
+                state.IncompleteFiles[request.Data] = file;
+            }
             return new RpcCommon.Empty();
         }
 
-        public override async Task<RpcCommon.Empty> ResumeContainerDownload(RpcCommon.Guid request, ServerCallContext context)
+        public override async Task<RpcCommon.Empty> ResumeFileDownload(RpcCommon.Hash request, ServerCallContext context)
         {
-            var guid = Guid.Parse(request.Guid_);
-            if (pauseEvents.TryGetValue(guid, out var pauseEvent))
+            var fileLock = fileLocks.GetOrAdd(request.Data, _ => new Lock());
+            lock (fileLock)
             {
-                pauseEvent.Set();
+                var file = state.IncompleteFiles[request.Data];
+                if (file.Status == FileStatus.Paused)
+                {
+                    file.Status = FileStatus.Pending;
+                }
+                state.IncompleteFiles[request.Data] = file;
+
             }
             return new RpcCommon.Empty();
         }
@@ -204,12 +227,16 @@ namespace node
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
             guid = state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
 
-            var semaphore = new SemaphoreSlim(maxConcurrentChunks);
             var fileTasks = objects
                 .Where(obj => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File)
                 .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir));
 
-            await Task.WhenAll(fileTasks);
+            foreach (var incompleteFile in fileTasks)
+            {
+                state.IncompleteFiles[incompleteFile.File.Hash] = incompleteFile;
+                state.FileProgress[incompleteFile.File.Hash] = (0, incompleteFile.File.Object.File.Size);
+                state.PathByHash[incompleteFile.File.Hash] = incompleteFile.DestinationDir;
+            }
         }
 
         private IncompleteFile GetIncompleteFile(ObjectWithHash obj, string trackerUri, string destinationDir)
@@ -218,7 +245,6 @@ namespace node
             System.IO.Directory.CreateDirectory(dir);
             dir = dir + "\\" + obj.Object.Name;
 
-            state.FileProgress[obj.Hash] = (0, obj.Object.File.Size);
             var i = 0;
             IncompleteFile file = new() { DestinationDir = dir, File = obj, TrackerUri = trackerUri };
             foreach (var hash in obj.Object.File.Hashes.Hash)
@@ -227,27 +253,38 @@ namespace node
                 {
                     Hash = obj.Object.File.Hashes.Hash[i],
                     Offset = obj.Object.File.Hashes.ChunkSize * i,
-                    FileHash = obj.Hash
+                    FileHash = obj.Hash,
+                    Size = Math.Min(obj.Object.File.Hashes.ChunkSize, obj.Object.File.Size - obj.Object.File.Hashes.ChunkSize * i)
                 };
 
-                file.RemainingChunks.Add(chunk);
+                state.IncompleteChunks[HashUtils.ConcatHashes([chunk.FileHash, chunk.Hash])] = chunk;
                 i++;
             }
 
-            state.PathByHash[obj.Hash] = dir;
             return file;
         }
 
-        private async Task DownloadChunkAsync(FileChunk chunk, int chunkSize, string trackerUri, CancellationToken token)
+        private async Task UpdateChunkAsync(FileChunk chunk, CancellationToken token)
         {
-            var tracker = new TrackerWrapper(trackerUri, state);
+            chunk = await DownloadChunkAsync(chunk, token);
+            state.IncompleteChunks[HashUtils.GetChunkHash(chunk)] = chunk;
+        }
+
+        private async Task<FileChunk> DownloadChunkAsync(FileChunk chunk, CancellationToken token)
+        {
+            if (chunk.CurrentCount == chunk.Size)
+            {
+                throw new ArgumentException("Already downloaded");
+            }
+
+            var tracker = new TrackerWrapper(chunk.TrackerUri, state);
             List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
                 .ToList();
 
             if (peers.Count == 0)
             {
                 state.Logger.LogWarning($"No peers found for chunk {chunk.Hash.ToBase64()}");
-                return;
+                return chunk;
             }
 
             // for now, pick a random peer (chunk tasks are persistent and we can just add simple retries later)
@@ -271,46 +308,59 @@ namespace node
             }
             catch (OperationCanceledException)
             {
-                state.Logger.LogWarning("Download stoped for chunk {0}, will attempt retries later", chunk.Hash);
+                state.Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", chunk.Hash);
             }
 
-            if (chunk.CurrentCount == chunkSize)
+            if (chunk.CurrentCount == chunk.Size)
             {
-                state.CompleteChunks[chunk.Hash] = chunk;
+                byte[] thing = new byte[chunk.Size];
+                int offset = 0;
+                foreach (var data in chunk.Contents)
+                {
+                    Array.Copy(data.ToByteArray(), 0, thing, offset, data.Length);
+                    offset += data.Length;
+                }
+
+                if (chunk.Hash != HashUtils.GetHash(thing))
+                {
+                    state.Logger.LogError($"Hash mismatch for chunk {chunk.Hash.ToBase64()}");
+                    chunk.Contents.Clear();
+                    state.UpdateFileProgress(chunk.FileHash, -chunk.Size);
+                    chunk.CurrentCount = 0;
+                }
             }
+
+            return chunk;
         }
 
-        private void HandleCompleteChunk(FileChunk chunk)
+        private async Task HandleCompleteChunkAsync(FileChunk chunk)
         {
-            var parentLock = chunkParentLocks.GetOrAdd(chunk.FileHash, _ => new Lock());
+            var chunkLock = chunkLocks.GetOrAdd(HashUtils.GetChunkHash(chunk), _ => new Lock());
 
-            IncompleteFile? parentFile = null;
-            lock (parentLock)
+            bool isComplete = false;
+            lock (chunkLock)
             {
-                parentFile = state.IncompleteFiles[chunk.FileHash];
-                parentFile.RemainingChunks.Remove(chunk);
-                if (parentFile.RemainingChunks.Count > 0)
+                state.IncompleteChunks.Remove(HashUtils.GetChunkHash(chunk));
+                int remaining = 0;
+                state.IncompleteChunks.PrefixScan(chunk.FileHash, (k, v) =>
                 {
-                    state.IncompleteFiles[chunk.FileHash] = parentFile;
-                }
-                else
+                    remaining++;
+                });
+
+                if (remaining == 0)
                 {
-                    state.IncompleteFiles.Remove(chunk.FileHash);
+                    isComplete = true;
                 }
             }
-            if (parentFile == null)
-            {
-                throw new ArgumentNullException();
-            }
 
-            var fileLock = fileLocks.GetOrAdd(parentFile.DestinationDir, _ => new Lock());
+            var fileLock = fileLocks.GetOrAdd(chunk.FileHash, _ => new Lock());
             lock (fileLock)
             {
-                using var stream = new FileStream(parentFile.DestinationDir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                using var stream = new FileStream(chunk.DestinationDir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
                 stream.Seek(chunk.Offset, SeekOrigin.Begin);
                 foreach (var data in chunk.Contents)
                 {
-                    stream.Write(data.ToByteArray());
+                    stream.Write(data.Span);
                 }
             }
         }
@@ -325,11 +375,6 @@ namespace node
         {
             ShutdownEvent.Set();
             return new RpcCommon.Empty();
-        }
-
-        public override Task<RpcCommon.Empty> CancelContainerDownload(RpcCommon.Guid request, ServerCallContext context)
-        {
-            return base.CancelContainerDownload(request, context);
         }
 
         public override async Task<RpcCommon.Empty> ModifyBlockListEntry(BlockListRequest request, ServerCallContext context)

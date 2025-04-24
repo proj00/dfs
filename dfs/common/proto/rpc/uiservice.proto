@@ -24,9 +24,8 @@ service Ui
 
 	// download management
 	rpc DownloadContainer(DownloadContainerOptions) returns (rpc_common.Empty);
-	rpc PauseContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
-	rpc ResumeContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
-	rpc CancelContainerDownload(rpc_common.Guid) returns (rpc_common.Empty);
+	rpc PauseFileDownload(rpc_common.Hash) returns (rpc_common.Empty);
+	rpc ResumeFileDownload(rpc_common.Hash) returns (rpc_common.Empty);
 	rpc GetDownloadProgress(rpc_common.Hash) returns (Progress);
 
 	// block list

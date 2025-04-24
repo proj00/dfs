@@ -28,12 +28,16 @@ message FileChunk
 	repeated bytes contents = 3;
 	int64 offset = 4;
 	int64 currentCount = 5;
+	int64 size = 6;
+	string trackerUri = 7;
+	string destinationDir = 8;
+	DownloadStatus status = 9;
 }
 
-message IncompleteFile
+enum DownloadStatus
 {
-	fs.ObjectWithHash file = 1;
-	repeated FileChunk remainingChunks = 2;
-	string trackerUri = 3;
-	string destinationDir = 4;
+	Pending = 0;
+	Active = 1;
+	Paused = 2;
+	Complete = 3;
 }

@@ -26,7 +26,7 @@ namespace node
         private PersistentDictionary<string, string> Whitelist { get; }
         private PersistentDictionary<string, string> Blacklist { get; }
         public PersistentDictionary<ByteString, IncompleteFile> IncompleteFiles { get; private set; }
-        public PersistentDictionary<ByteString, FileChunk> CompleteChunks { get; private set; }
+        public PersistentDictionary<ByteString, FileChunk> IncompleteChunks { get; private set; }
 
         private ILoggerFactory loggerFactory;
         private readonly System.Threading.Lock fileProgressLock;
@@ -72,7 +72,7 @@ namespace node
                 valueSerializer: o => o.ToByteArray(),
                 valueDeserializer: IncompleteFile.Parser.ParseFrom
             );
-            CompleteChunks = new(System.IO.Path.Combine(Manager.DbPath, "CompleteChunks"),
+            IncompleteChunks = new(System.IO.Path.Combine(Manager.DbPath, "IncompleteChunks"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: ByteString.CopyFrom,
                 valueSerializer: o => o.ToByteArray(),

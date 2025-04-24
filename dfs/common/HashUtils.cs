@@ -1,4 +1,5 @@
 ﻿using Google.Protobuf;
+using Node;
 using Org.BouncyCastle.Crypto.Digests;
 using System.Diagnostics.CodeAnalysis;
 
@@ -44,6 +45,23 @@ namespace common
             }
 
             return GetHash([.. total]);
+        }
+
+        public static ByteString ConcatHashes(ByteString[] hashes)
+        {
+            var total = new List<byte>();
+
+            foreach (var h in hashes)
+            {
+                total.AddRange(h);
+            }
+
+            return ByteString.CopyFrom([.. total]);
+        }
+
+        public static ByteString GetChunkHash(FileChunk chunk)
+        {
+            return ConcatHashes([chunk.FileHash, chunk.Hash]);
         }
 
         public class ByteStringComparer : IEqualityComparer<ByteString>, IComparer<ByteString>

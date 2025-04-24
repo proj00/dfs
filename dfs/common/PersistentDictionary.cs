@@ -1,4 +1,5 @@
-﻿using Grpc.Net.Client.Balancer;
+﻿using Google.Protobuf;
+using Grpc.Net.Client.Balancer;
 using RocksDbSharp;
 using System;
 using System.Collections;
@@ -97,6 +98,38 @@ namespace common
 
                 value = valueDeserializer(result);
                 return true;
+            }
+        }
+
+        // Only works with fixed length keys
+        public void PrefixScan(ByteString prefix, Action<_Key, _Value> action)
+        {
+            lock (dbLock)
+            {
+                int length = 0;
+                using (var tempIt = db.NewIterator())
+                {
+                    tempIt.SeekToFirst();
+                    if (!tempIt.Valid())
+                    {
+                        return;
+                    }
+                    length = tempIt.Key().Length;
+                }
+
+                var actualPrefix = HashUtils.ConcatHashes([prefix, ByteString.CopyFrom(new byte[length - prefix.Length])]).ToByteArray();
+
+                using var it = db.NewIterator();
+                for (it.Seek(actualPrefix); it.Valid(); it.Next())
+                {
+                    if (!it.Key().SequenceEqual(actualPrefix))
+                    {
+                        break;
+                    }
+                    var key = keyDeserializer(it.Key());
+                    var value = valueDeserializer(it.Value());
+                    action(key, value);
+                }
             }
         }
 
