@@ -7,6 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
+  # .NET Build and Test Job
   build:
     runs-on: windows-latest
     permissions: read-all
@@ -22,7 +23,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: checkout all the submodules
+      - name: Checkout submodules
         uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -41,12 +42,13 @@ jobs:
       - name: Install dotnet-coverage Tool
         run: dotnet tool install --global dotnet-coverage
 
-      - name: Restore dependencies
+      - name: Restore .NET dependencies
         run: dotnet restore dfs/dfs.slnf
 
-      - name: Build .NET
+      - name: Build .NET project
         run: dotnet build --no-restore dfs/dfs.slnf
 
+  # .NET Test and Coverage Collection Job
   test:
     runs-on: windows-latest
     needs: build
@@ -61,7 +63,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Run .NET tests
+      - name: Run .NET tests and collect code coverage
         run: |
           dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
 
@@ -69,21 +71,21 @@ jobs:
         run: |
           dotnet-coverage collect --output ./coverage
           dotnet-coverage report --format cobertura --output ./coverage/coverage.xml
-        working-directory: ./
 
-      - name: Upload .NET Coverage Report
-        uses: actions/upload-artifact@v4
+      - name: Upload .NET Coverage Report to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          name: dotnet-coverage-report
-          path: ./coverage/coverage.xml
+          files: ./coverage/coverage.xml
+          name: dotnet-coverage
 
+  # UI Test Job (Jest)
   ui-tests:
     runs-on: windows-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache npm
+      - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
           path: ~/.npm
@@ -99,12 +101,12 @@ jobs:
         working-directory: ./dfs/electron
         run: npm run test-build
 
-      - name: Run Jest tests
+      - name: Run Jest tests with coverage
         working-directory: ./dfs/electron
-        run: npx jest
+        run: npx jest --coverage
 
-      - name: Upload Jest Coverage Report
-        uses: actions/upload-artifact@v4
+      - name: Upload Jest Coverage Report to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          name: coverage-report
-          path: ./dfs/electron/coverage/lcov-report/index.html
+          files: ./dfs/electron/coverage/lcov-report/lcov-report.json
+          name: jest-coverage
