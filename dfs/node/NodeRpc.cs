@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Node;
 using Org.BouncyCastle.Tls;
 using System;
@@ -64,6 +65,7 @@ namespace node
                     Response = res
                 });
 
+                state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
                 if (context.CancellationToken.IsCancellationRequested)
                 {
                     break;

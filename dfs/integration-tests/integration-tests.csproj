@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
@@ -11,6 +11,10 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
+	<Target Name="PreBuildKillExecutables" BeforeTargets="Build">
+		<Exec Command="taskkill /F /IM node.exe 2>nul || exit 0" />
+		<Exec Command="taskkill /F /IM tracker.exe 2>nul || exit 0" />
+	</Target>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>

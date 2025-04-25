@@ -93,7 +93,7 @@ namespace node
             (string path, int chunkSize) = (request.Path, request.ChunkSize);
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
             {
-                throw new Exception("Invalid chunk size");
+                throw new RpcException(Grpc.Core.Status.DefaultCancelled, "Invalid chunk size");
             }
 
             ObjectWithHash[] objects = [];
@@ -250,6 +250,7 @@ namespace node
             if (peers.Count == 0)
             {
                 chunk.Status = DownloadStatus.Pending;
+                Debug.Assert(false, "no peers");
                 state.Logger.LogWarning($"No peers found for chunk {hash.ToBase64()}");
                 return chunk;
             }
@@ -266,16 +267,17 @@ namespace node
 
             try
             {
-                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
                 {
                     chunk.Contents.Add(message.Response);
                     chunk.CurrentCount += message.Response.Length;
+                    state.Logger.LogInformation($"Received {message.Response.Length} bytes");
                     await state.Downloads.UpdateFileProgressAsync(chunk.FileHash, message.Response.Length);
                 }
             }
-            catch
+            catch (Exception e)
             {
-                state.Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", chunk.Hash);
+                state.Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
             }
 
             if (chunk.CurrentCount == chunk.Size)
@@ -301,8 +303,6 @@ namespace node
                     }
                     await (new TrackerWrapper(chunk.TrackerUri, state)).MarkReachable([chunk.FileHash], nodeURI);
                     chunk.Status = DownloadStatus.Complete;
-                    Debug.Assert(false, "yay");
-                    Debug.Assert(false, $"yay: {(await state.Downloads.GetIncompleteFilesAsync()).Length}");
                 }
             }
             else

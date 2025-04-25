@@ -160,7 +160,11 @@ namespace integration_tests
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            await file.WriteLineAsync("hello world");
+            for (int i = 0; i < 1024; i++)
+            {
+                await file.WriteLineAsync("hello world");
+            }
+
             await file.FlushAsync();
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
@@ -200,7 +204,7 @@ namespace integration_tests
             { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
 
             var progress = new Ui.Progress();
-            int delay = 20000;
+            int delay = 10000000;
             do
             {
                 delay -= 500;
@@ -208,7 +212,7 @@ namespace integration_tests
                 {
                     Assert.Fail("Download timed out");
                 }
-                await Task.Delay(500);
+                await Task.Delay(2000);
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash });
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);

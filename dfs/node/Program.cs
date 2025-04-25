@@ -3,17 +3,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using System.IO.Pipes;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
-using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using common;
 using Microsoft.VisualStudio.Threading;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net;
+using System.Diagnostics;
 
 namespace node
 {
@@ -101,17 +99,19 @@ namespace node
                     o.Protocols = HttpProtocols.Http2;
                 });
             });
-            builder.Services.AddGrpcReflection();
 
             var app = builder.Build();
             IWebHostEnvironment env = app.Environment;
-#if DEBUG
-            app.MapGrpcReflectionService();
-#endif
 
             app.UseRouting();
             app.UseCors(policyName);
             app.MapGrpcService<NodeRpc>().RequireCors(policyName);
+#pragma warning disable ASP0014 // Suggest using top level route registrations
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGrpcService<NodeRpc>();
+            });
+#pragma warning restore ASP0014 // Suggest using top level route registrations
 
             await app.StartAsync();
             return app;
@@ -135,7 +135,6 @@ namespace node
             builder.Services.AddSingleton(loggerFactory);
             builder.Services.AddLogging();
             builder.Services.AddSingleton(service);
-            builder.Services.AddGrpcReflection();
 
             builder.WebHost.UseNamedPipes(options =>
             {
@@ -203,13 +202,16 @@ namespace node
             var app = builder.Build();
 
             IWebHostEnvironment env = app.Environment;
-#if DEBUG
-            app.MapGrpcReflectionService();
-#endif
 
             app.UseRouting();
             app.UseCors(policyName);
             app.MapGrpcService<UiService>().RequireCors(policyName);
+#pragma warning disable ASP0014 // Suggest using top level route registrations
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGrpcService<UiService>();
+            });
+#pragma warning restore ASP0014 // Suggest using top level route registrations
 
             await app.StartAsync();
             return app;
