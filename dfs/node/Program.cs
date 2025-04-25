@@ -25,27 +25,31 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
-            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory("logs");
+            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs");
 
             ILogger logger = loggerFactory.CreateLogger("Main");
 
             Guid pipeGuid = new();
             uint parentPid = 0;
-            if (!(args.Length == 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
+
+            if (!(args.Length >= 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
             {
                 logger.LogError("Please provide a pipe GUID and a PID as the first argument.");
                 return;
             }
 
-            NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath);
+            using NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath, args.Length >= 3 ? args[2] : Path.Combine("./db", Guid.NewGuid().ToString()));
+
+            int debugPort = args.Length >= 4 ? int.Parse(args[3]) : 42069;
+
             NodeRpc rpc = new(state);
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
             var publicUrl = new Uri(publicServer.Urls.First());
 
             UiService service = new(state, $"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}");
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
-            CancellationTokenSource token = new();
-            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token);
+            using CancellationTokenSource token = new();
+            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);
 
             await service.ShutdownEvent.WaitAsync();
             await token.CancelAsync();
@@ -114,7 +118,7 @@ namespace node
         }
 
         private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid, uint parentPid,
-            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken, int debugPort)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
@@ -164,9 +168,6 @@ namespace node
                             {
 #if !DEBUG
                                 if (!IsAncestor(parentPid, clientPid))
-#else
-                                if (false)
-#endif
                                 {
                                     Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
                                     await stream.DisposeAsync(); // forcefully kill connection
@@ -175,6 +176,7 @@ namespace node
                                 {
                                     Console.WriteLine($"Authorized PID: {clientPid}");
                                 }
+#endif
                             }
                         }
                         catch (Exception ex)
@@ -192,7 +194,7 @@ namespace node
                     o.Protocols = HttpProtocols.Http2;
                 });
 #if DEBUG
-                options.ListenLocalhost(42069, o =>
+                options.ListenLocalhost(debugPort, o =>
                 {
                     o.Protocols = HttpProtocols.Http2;
                 });

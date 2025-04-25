@@ -4,6 +4,7 @@ using Node;
 using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,18 +22,19 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (state.IsInBlockList(context.Peer))
+            if (await state.IsInBlockListAsync(context.Peer))
             {
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }
 
-            if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out RpcCommon.HashList? parent))
+            RpcCommon.HashList? parent = await state.Manager.ChunkParents.TryGetValue(request.Hash);
+            if (parent == null)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
             var parentHash = parent.Data[0];
-            var parentObj = state.Manager.ObjectByHash[parentHash].Object;
+            var parentObj = (await state.Manager.ObjectByHash.GetAsync(parentHash)).Object;
             if (parentObj == null)
             {
                 throw new RpcException(new Status(StatusCode.Internal, "internal failure"));
@@ -43,7 +45,7 @@ namespace node
             var offset = chunkIndex * size + request.Offset;
             var remainingSize = size - request.Offset;
 
-            using var stream = new FileStream(state.PathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = new FileStream(await state.PathByHash.GetAsync(parentHash), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             var buffer = new byte[remainingSize];
             stream.Seek(offset, SeekOrigin.Begin);

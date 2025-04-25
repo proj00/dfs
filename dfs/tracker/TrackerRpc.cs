@@ -12,32 +12,38 @@ using System.Text;
 
 namespace tracker
 {
-    public class TrackerRpc : Tracker.Tracker.TrackerBase
+    public class TrackerRpc : Tracker.Tracker.TrackerBase, IDisposable
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly PersistentDictionary<string, DataUsage> dataUsage;
-        private readonly object usageLock = new();
+        private readonly PersistentCache<string, DataUsage> dataUsage;
         private readonly ILogger logger;
 
-        public TrackerRpc(FilesystemManager filesystemManager, ILogger logger)
+        public TrackerRpc(ILogger logger, string dbPath)
         {
+            _filesystemManager = new FilesystemManager(dbPath);
             dataUsage = new(
-                Path.Combine(filesystemManager.DbPath, "DataUsage"),
+                Path.Combine(_filesystemManager.DbPath, "DataUsage"),
                 keySerializer: Encoding.UTF8.GetBytes,
                 keyDeserializer: Encoding.UTF8.GetString,
                 valueSerializer: o => o.ToByteArray(),
                 valueDeserializer: DataUsage.Parser.ParseFrom
             );
             this.logger = logger;
-            _filesystemManager = filesystemManager;
         }
 
-        public override Task<Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
+        public void Dispose()
         {
-            if (_filesystemManager.Container.TryGetValue(System.Guid.Parse(request.Guid_), out var rootHash))
+            _filesystemManager.Dispose();
+            dataUsage.Dispose();
+        }
+
+        public override async Task<Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
+        {
+            var rootHash = await _filesystemManager.Container.TryGetValue(System.Guid.Parse(request.Guid_));
+            if (rootHash != null)
             {
-                return Task.FromResult(new Hash { Data = rootHash });
+                return new Hash { Data = rootHash };
             }
             throw new RpcException(new Status(StatusCode.NotFound, "Container root hash not found."));
         }
@@ -46,9 +52,9 @@ namespace tracker
         {
             try
             {
-                if (_filesystemManager.ObjectByHash.ContainsKey(request.Data))
+                if (await _filesystemManager.ObjectByHash.ContainsKey(request.Data))
                 {
-                    foreach (var o in _filesystemManager.GetObjectTree(request.Data))
+                    foreach (var o in await _filesystemManager.GetObjectTree(request.Data))
                     {
                         await responseStream.WriteAsync(o);
                     }
@@ -87,51 +93,57 @@ namespace tracker
 
         public override async Task<Empty> MarkReachable(MarkRequest request, ServerCallContext context)
         {
-            try
+            return await Task.Run(() =>
             {
-                foreach (var req in request.Hash)
+                try
                 {
-                    string hashBase64 = req.ToBase64();
-                    if (_peers.TryGetValue(hashBase64, out List<string>? value))
+                    foreach (var req in request.Hash)
                     {
-                        value.Add(request.Peer);
+                        string hashBase64 = req.ToBase64();
+                        if (_peers.TryGetValue(hashBase64, out List<string>? value))
+                        {
+                            value.Add(request.Peer);
+                        }
+                        else
+                        {
+                            _peers[hashBase64] = [request.Peer];
+                        }
                     }
-                    else
-                    {
-                        _peers[hashBase64] = [request.Peer];
-                    }
+                    return new Empty();
                 }
-                return new Empty();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Error in MarkReachable method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
-            }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Error in MarkReachable method: {ex.Message}");
+                    throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
+                }
+            });
         }
 
         public override async Task<Empty> MarkUnreachable(MarkRequest request, ServerCallContext context)
         {
-            try
+            return await Task.Run(() =>
             {
-                foreach (var req in request.Hash)
+                try
                 {
-                    string hashBase64 = req.ToBase64();
-                    _peers[hashBase64].Remove(request.Peer);
+                    foreach (var req in request.Hash)
+                    {
+                        string hashBase64 = req.ToBase64();
+                        _peers[hashBase64].Remove(request.Peer);
+                    }
+                    return new Empty();
                 }
-                return new Empty();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Error in MarkUnreachable method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
-            }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Error in MarkUnreachable method: {ex.Message}");
+                    throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
+                }
+            });
         }
 
-        public override Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
+        public override async Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
         {
-            _filesystemManager.Container[System.Guid.Parse(request.Guid)] = request.Hash.Data;
-            return Task.FromResult(new Empty());
+            await _filesystemManager.Container.SetAsync(System.Guid.Parse(request.Guid), request.Hash.Data);
+            return new Empty();
         }
 
         public override async Task SearchForObjects(SearchRequest request, IServerStreamWriter<SearchResponse> responseStream, ServerCallContext context)
@@ -140,7 +152,7 @@ namespace tracker
 
             // collect all container GUIDs
             var allContainers = new List<System.Guid>();
-            _filesystemManager.Container.ForEach((guid, bs) =>
+            await _filesystemManager.Container.ForEach((guid, bs) =>
             {
                 allContainers.Add(guid);
                 return true;
@@ -148,8 +160,8 @@ namespace tracker
 
             foreach (var container in allContainers)
             {
-                var matches = _filesystemManager
-                                  .GetContainerTree(container)
+                var matches = (await _filesystemManager
+                                  .GetContainerTree(container))
                                   .Where(o => re.IsMatch(o.Object.Name))
                                   .Select(o => new SearchResponse
                                   {
@@ -172,7 +184,7 @@ namespace tracker
             string ip = match.Success ? match.Groups[1].Value : "";
             try
             {
-                return dataUsage[ip];
+                return await dataUsage.GetAsync(ip);
             }
             catch
             {
@@ -180,10 +192,10 @@ namespace tracker
             }
         }
 
-        public (string key, DataUsage usage)[] GetTotalDataUsage()
+        public async Task<(string key, DataUsage usage)[]> GetTotalDataUsage()
         {
             List<(string key, DataUsage usage)> list = [];
-            dataUsage.ForEach((key, value) =>
+            await dataUsage.ForEach((key, value) =>
             {
                 list.Add((key, value));
                 return true;
@@ -196,15 +208,18 @@ namespace tracker
             var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
             string ip = match.Success ? match.Groups[1].Value : "";
             DataUsage change = new() { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
-            if (dataUsage.TryGetValue(ip, out var usage))
+
+            await dataUsage.MutateAsync(ip, (usage) =>
             {
+                if (usage == null)
+                {
+                    return change;
+                }
+
                 usage.Upload += change.Upload;
                 usage.Download += change.Download;
-            }
-            else
-            {
-                dataUsage[ip] = change;
-            }
+                return usage;
+            });
 
             return new Empty();
         }
@@ -229,7 +244,7 @@ namespace tracker
                     objects.Add(obj.Object);
                 }
                 foreach (var o in objects)
-                    _filesystemManager.ObjectByHash[o.Hash] = o;
+                    await _filesystemManager.ObjectByHash.SetAsync(o.Hash, o);
                 return new Empty();
             }
             catch (InvalidProtocolBufferException ex)

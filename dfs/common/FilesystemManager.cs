@@ -9,22 +9,20 @@ using Tracker;
 
 namespace common
 {
-    public class FilesystemManager
+    public sealed class FilesystemManager : IDisposable
     {
-        private const string DbBasePath = "./db";
+        private readonly AsyncLock _syncRoot = new();
+        public PersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
+        public PersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
+        public PersistentCache<Guid, ByteString> Container { get; private set; }
+        public PersistentCache<ByteString, RpcCommon.HashList> Parent { get; private set; }
+        public PersistentCache<ByteString, ByteString> NewerVersion { get; private set; }
+        public string DbPath { get; private set; }
 
-        private readonly object _syncRoot = new object();
-        public PersistentDictionary<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
-        public PersistentDictionary<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
-        public PersistentDictionary<Guid, ByteString> Container { get; private set; }
-        public PersistentDictionary<ByteString, RpcCommon.HashList> Parent { get; private set; }
-        public PersistentDictionary<ByteString, ByteString> NewerVersion { get; private set; }
-
-        public string DbPath { get; private set; } = Path.Combine(DbBasePath, Guid.NewGuid().ToString());
-
-        public FilesystemManager()
+        public FilesystemManager(string dbBasePath)
         {
-            ObjectByHash = new PersistentDictionary<ByteString, ObjectWithHash>(
+            DbPath = dbBasePath;
+            ObjectByHash = new PersistentCache<ByteString, ObjectWithHash>(
                 Path.Combine(DbPath, "ObjectByHash"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: bytes => ByteString.CopyFrom(bytes),
@@ -32,7 +30,7 @@ namespace common
                 valueDeserializer: bytes => ObjectWithHash.Parser.ParseFrom(bytes)
             );
 
-            ChunkParents = new PersistentDictionary<ByteString, RpcCommon.HashList>(
+            ChunkParents = new PersistentCache<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "ChunkParents"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
@@ -40,7 +38,7 @@ namespace common
                 RpcCommon.HashList.Parser.ParseFrom
             );
 
-            Container = new PersistentDictionary<Guid, ByteString>(
+            Container = new PersistentCache<Guid, ByteString>(
                 Path.Combine(DbPath, "Container"),
                 guid => guid.ToByteArray(),
                 bytes => new Guid(bytes),
@@ -48,7 +46,7 @@ namespace common
                 bytes => ByteString.CopyFrom(bytes)
             );
 
-            Parent = new PersistentDictionary<ByteString, RpcCommon.HashList>(
+            Parent = new PersistentCache<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "Parent"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
@@ -56,7 +54,7 @@ namespace common
                 RpcCommon.HashList.Parser.ParseFrom
             );
 
-            NewerVersion = new PersistentDictionary<ByteString, ByteString>(
+            NewerVersion = new PersistentCache<ByteString, ByteString>(
                 Path.Combine(DbPath, "NewerVersion"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
@@ -67,41 +65,44 @@ namespace common
 
         public void Dispose()
         {
-            ObjectByHash.Dispose();
             ChunkParents.Dispose();
+            ObjectByHash.Dispose();
             Container.Dispose();
             Parent.Dispose();
             NewerVersion.Dispose();
+            _syncRoot.Dispose();
         }
 
-        public Guid CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid? guid = null)
+        public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid? guid = null)
         {
-            lock (_syncRoot)
+            ArgumentNullException.ThrowIfNull(objects);
+            using (await _syncRoot.LockAsync())
             {
                 foreach (var obj in objects)
                 {
-                    if (ObjectByHash.ContainsKey(obj.Hash))
+                    if (await ObjectByHash.ContainsKey(obj.Hash))
                     {
                         continue;
                     }
 
-                    ObjectByHash[obj.Hash] = obj;
+                    await ObjectByHash.SetAsync(obj.Hash, obj);
                     switch (obj.Object.TypeCase)
                     {
                         case FileSystemObject.TypeOneofCase.File:
-                            SetFileChunkParents(obj);
+                            await SetFileChunkParents(obj);
                             break;
                         case FileSystemObject.TypeOneofCase.Directory:
                             foreach (var child in obj.Object.Directory.Entries)
                             {
-                                if (Parent.TryGetValue(child, out RpcCommon.HashList? value))
+                                var value = await Parent.TryGetValue(child);
+                                if (value != null)
                                 {
                                     value.Data.Add(obj.Hash);
-                                    Parent[child] = value;
+                                    await Parent.SetAsync(child, value);
                                 }
                                 else
                                 {
-                                    Parent[child] = new RpcCommon.HashList() { Data = { obj.Hash } };
+                                    await Parent.SetAsync(child, new RpcCommon.HashList() { Data = { obj.Hash } });
                                 }
                             }
                             break;
@@ -113,26 +114,26 @@ namespace common
                 }
 
                 var g = guid ?? Guid.NewGuid();
-                if (Container.TryGetValue(g, out var oldRoot))
+                ByteString? oldRoot = await Container.TryGetValue(g);
+                if (oldRoot != null)
                 {
-                    NewerVersion[oldRoot] = rootObject;
+                    await NewerVersion.SetAsync(oldRoot, rootObject);
                 }
 
-                Container[g] = rootObject;
+                await Container.SetAsync(g, rootObject);
 
                 return g;
             }
         }
 
-        public List<ObjectWithHash> GetContainerTree(Guid containerGuid)
+        public async Task<List<ObjectWithHash>> GetContainerTree(Guid containerGuid)
         {
-            lock (_syncRoot)
+            using (await _syncRoot.LockAsync())
             {
-                ByteString root;
-                if (Container.TryGetValue(containerGuid, out root))
+                ByteString? root = await Container.TryGetValue(containerGuid);
+                if (root != null)
                 {
-                    return GetObjectTree(root);
-
+                    return await GetObjectTree(root, true);
                 }
                 else
                 {
@@ -141,14 +142,14 @@ namespace common
             }
         }
 
-        public List<ObjectWithHash> GetObjectTree(ByteString root)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString root, bool noLock = false)
         {
-            lock (_syncRoot)
+            using (await _syncRoot.LockAsync(noLock))
             {
                 Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
-                void Traverse(ByteString hash)
+                async Task Traverse(ByteString hash)
                 {
-                    var o = ObjectByHash[hash];
+                    var o = await ObjectByHash.GetAsync(hash);
                     obj[hash] = o;
                     if (o.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
                     {
@@ -157,39 +158,37 @@ namespace common
 
                     foreach (var next in o.Object.Directory.Entries)
                     {
-                        Traverse(next);
+                        await Traverse(next);
                     }
                 }
 
-                Traverse(root);
+                await Traverse(root);
                 return [.. obj.Values];
             }
         }
 
-        public void SetFileChunkParents(ObjectWithHash fileObject)
+        private async Task SetFileChunkParents(ObjectWithHash fileObject)
         {
-            lock (_syncRoot)
+            if (fileObject.Object.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
             {
-                if (fileObject.Object.TypeCase != Fs.FileSystemObject.TypeOneofCase.File)
+                throw new ArgumentException("fileObject doesn't represent a file");
+            }
+
+            var parentHash = fileObject.Hash;
+            var file = fileObject.Object.File;
+            foreach (var chunkHash in file.Hashes.Hash)
+            {
+                // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
+                // in comparison to reads, so this is... fine?
+                RpcCommon.HashList? parents = await ChunkParents.TryGetValue(chunkHash);
+                if (parents != null)
                 {
-                    throw new ArgumentException("fileObject doesn't represent a file");
+                    parents.Data.Add(parentHash);
+                    await ChunkParents.SetAsync(chunkHash, parents);
+                    continue;
                 }
 
-                var parentHash = fileObject.Hash;
-                var file = fileObject.Object.File;
-                foreach (var chunkHash in file.Hashes.Hash)
-                {
-                    // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
-                    // in comparison to reads, so this is... fine?
-                    if (ChunkParents.TryGetValue(chunkHash, out RpcCommon.HashList? parents))
-                    {
-                        parents.Data.Add(parentHash);
-                        ChunkParents[chunkHash] = parents;
-                        continue;
-                    }
-
-                    ChunkParents[chunkHash] = new RpcCommon.HashList() { Data = { parentHash } };
-                }
+                await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } });
             }
         }
     }

@@ -9,21 +9,32 @@ using static Tracker.Tracker;
 
 namespace node
 {
-    class TrackerWrapper : ITrackerWrapper
+    public class TrackerWrapper : ITrackerWrapper
     {
         public TrackerClient client { get; }
-        public string GetUri() => trackerUri;
-        private readonly string trackerUri;
+        public string GetUri() => trackerUri.ToString();
+        private readonly Uri trackerUri;
+
+        public TrackerWrapper(TrackerClient client, string trackerUri)
+        {
+            this.client = client;
+            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri))
+            {
+                throw new Exception($"invalid uri: {trackerUri}");
+            }
+            ArgumentNullException.ThrowIfNull(uri);
+            this.trackerUri = uri;
+        }
 
         public TrackerWrapper(string trackerUri, NodeState state)
         {
-            this.trackerUri = trackerUri;
-            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri) || uri == null)
+            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri))
             {
-                throw new Exception("invalid uri");
+                throw new Exception($"invalid uri: {trackerUri}");
             }
-
+            ArgumentNullException.ThrowIfNull(uri);
             client = state.GetTrackerClient(uri);
+            this.trackerUri = uri;
         }
 
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
@@ -76,7 +87,7 @@ namespace node
             });
         }
 
-        public async Task<Empty> Publish(List<PublishedObject> objects)
+        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects)
         {
             using var call = client.Publish();
             foreach (var obj in objects)

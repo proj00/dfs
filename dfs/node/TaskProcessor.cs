@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace node
 {
-    public class TaskProcessor : IDisposable
+    public class TaskProcessor : IAsyncDisposable, IDisposable
     {
         private readonly Channel<Func<Task>> channel;
         private readonly SemaphoreSlim semaphore;
@@ -67,7 +67,18 @@ namespace node
         {
             cts.Cancel();
             channel.Writer.Complete();
+#pragma warning disable VSTHRD002
             cmdLoop.Wait();
+#pragma warning restore VSTHRD002
+            semaphore.Dispose();
+            cts.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await cts.CancelAsync();
+            channel.Writer.Complete();
+            await cmdLoop.WaitAsync(CancellationToken.None);
             semaphore.Dispose();
             cts.Dispose();
         }

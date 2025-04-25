@@ -54,23 +54,21 @@ namespace common_test
             return [];
         }
 
-        public async Task<Empty> MarkReachable(ByteString hash, string nodeURI)
+        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI)
         {
-            if (!peers.ContainsKey(hash))
-            {
-                peers[hash] = [];
-            }
-            peers[hash] = [peerId];
+            foreach (var h in hash)
+                peers[h] = [nodeURI];
             return new();
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString hash, string nodeURI)
+        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI)
         {
-            peers[hash] = [];
+            foreach (var h in hash)
+                peers[h] = [];
             return new();
         }
 
-        public async Task<Empty> Publish(List<PublishedObject> objects)
+        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects)
         {
             foreach (var obj in objects)
             {

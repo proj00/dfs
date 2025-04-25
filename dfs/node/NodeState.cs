@@ -10,14 +10,14 @@ using static Tracker.Tracker;
 
 namespace node
 {
-    public class NodeState
+    public class NodeState : IDisposable
     {
-        public PersistentDictionary<ByteString, string> PathByHash { get; }
+        public PersistentCache<ByteString, string> PathByHash { get; }
         public FilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
-        private PersistentDictionary<string, string> Whitelist { get; }
-        private PersistentDictionary<string, string> Blacklist { get; }
+        private PersistentCache<string, string> Whitelist { get; }
+        private PersistentCache<string, string> Blacklist { get; }
         public DownloadManager Downloads { get; }
 
         private ILoggerFactory loggerFactory;
@@ -25,7 +25,7 @@ namespace node
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
         private CancellationTokenSource cts = new CancellationTokenSource();
-        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath)
+        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
         {
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
@@ -33,9 +33,9 @@ namespace node
 
             NodeChannel = new ChannelCache(channelTtl);
             TrackerChannel = new ChannelCache(channelTtl);
-            Manager = new FilesystemManager();
+            Manager = new FilesystemManager(dbPath);
 
-            PathByHash = new PersistentDictionary<ByteString, string>(
+            PathByHash = new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(Manager.DbPath, "PathByHash"),
                 bs => bs.ToByteArray(),
                 ByteString.CopyFrom,
@@ -88,22 +88,22 @@ namespace node
             return new TrackerClient(channel);
         }
 
-        public void FixBlockList(BlockListRequest request)
+        public async Task FixBlockListAsync(BlockListRequest request)
         {
             _ = IPNetwork.Parse(request.Url);
 
-            PersistentDictionary<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
-            if (request.ShouldRemove && reference.ContainsKey(request.Url))
+            PersistentCache<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
+            if (request.ShouldRemove && await reference.ContainsKey(request.Url))
             {
-                reference.Remove(request.Url);
+                await reference.Remove(request.Url);
             }
             else
             {
-                reference[request.Url] = request.Url;
+                await reference.SetAsync(request.Url, request.Url);
             }
         }
 
-        public bool IsInBlockList(string url)
+        public async Task<bool> IsInBlockListAsync(string url)
         {
             if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
             {
@@ -111,10 +111,10 @@ namespace node
                 return false;
             }
 
-            bool passWhitelist = Whitelist.CountEstimate == 0;
+            bool passWhitelist = await Whitelist.CountEstimate() == 0;
             if (!passWhitelist)
             {
-                Whitelist.ForEach((uri, _) =>
+                await Whitelist.ForEach((uri, _) =>
                 {
                     if (IPNetwork.TryParse(uri, out var network))
                     {
@@ -133,10 +133,10 @@ namespace node
                 return false;
             }
 
-            bool passBlacklist = Blacklist.CountEstimate == 0;
+            bool passBlacklist = await Blacklist.CountEstimate() == 0;
             if (!passBlacklist)
             {
-                Blacklist.ForEach((uri, _) =>
+                await Blacklist.ForEach((uri, _) =>
                 {
                     if (IPNetwork.TryParse(uri, out var network))
                     {
@@ -152,20 +152,33 @@ namespace node
             return !passBlacklist;
         }
 
-        public BlockListResponse GetBlockList()
+        public async Task<BlockListResponse> GetBlockListAsync()
         {
             var response = new BlockListResponse();
-            Whitelist.ForEach((string key, string value) =>
+            await Whitelist.ForEach((string key, string value) =>
             {
                 response.Entries.Add(new BlockListEntry { InWhitelist = true, Url = key });
                 return true;
             });
-            Blacklist.ForEach((string key, string value) =>
+            await Blacklist.ForEach((string key, string value) =>
             {
                 response.Entries.Add(new BlockListEntry { InWhitelist = false, Url = key });
                 return true;
             });
             return response;
+        }
+
+        public void Dispose()
+        {
+            cts.Cancel();
+            cts.Dispose();
+            NodeChannel.Dispose();
+            TrackerChannel.Dispose();
+            Manager.Dispose();
+            PathByHash.Dispose();
+            Whitelist.Dispose();
+            Blacklist.Dispose();
+            LogPath = string.Empty;
         }
     }
 }

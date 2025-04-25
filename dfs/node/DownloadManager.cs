@@ -3,7 +3,9 @@ using Fs;
 using Google.Protobuf;
 using Node;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks.Dataflow;
@@ -11,7 +13,6 @@ using System.Threading.Tasks.Dataflow;
 namespace node
 {
     using UpdateCallback = Func<FileChunk, CancellationToken, Task<FileChunk>>;
-    using CompletionCallback = Func<FileChunk, Task>;
 
     public class DownloadManager : IDisposable
     {
@@ -22,21 +23,17 @@ namespace node
             public FileChunk[] Chunk { get; set; } = [];
         }
 
-        private readonly System.Threading.Lock fileProgressLock = new();
-        private PersistentDictionary<ByteString, (long, long)> FileProgress;
+        private PersistentCache<ByteString, Ui.Progress> FileProgress;
         private readonly Channel<StateChange> channel;
         private UpdateCallback? updateCallback = null;
-        private CompletionCallback? completionCallback = null;
         private readonly Task readLoop;
         private readonly CancellationTokenSource tokenSource = new();
         private readonly ConcurrentDictionary<ByteString, CancellationTokenSource> fileTokens;
         private readonly TaskProcessor downloadProcessor;
-        private readonly TaskProcessor completionProcessor;
 
         public DownloadManager(string dbPath, int taskCapacity = 100000)
         {
             downloadProcessor = new TaskProcessor(20, taskCapacity);
-            completionProcessor = new TaskProcessor(20, taskCapacity);
             fileTokens = new(new HashUtils.ByteStringComparer());
             channel = Channel.CreateBounded<StateChange>(new BoundedChannelOptions(taskCapacity)
             {
@@ -48,16 +45,8 @@ namespace node
                 System.IO.Path.Combine(dbPath, "FileProgress"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: (a) => Encoding.UTF8.GetBytes($"{a.Item1} {a.Item2}"),
-                valueDeserializer: str =>
-                {
-                    var parts = Encoding.UTF8.GetString(str).Split(' ');
-                    if (parts.Length != 2)
-                    {
-                        throw new ArgumentException("Invalid format for FileProgress");
-                    }
-                    return (long.Parse(parts[0]), long.Parse(parts[1]));
-                }
+                valueSerializer: (a) => a.ToByteArray(),
+                valueDeserializer: Ui.Progress.Parser.ParseFrom
             );
 
             readLoop = Task.Run(() => ProcessCommandsAsync(tokenSource.Token,
@@ -71,7 +60,7 @@ namespace node
         }
 
         private async Task ProcessCommandsAsync(CancellationToken token,
-            PersistentDictionary<ByteString, FileChunk> chunkTasks)
+            PersistentCache<ByteString, FileChunk> chunkTasks)
         {
             try
             {
@@ -86,20 +75,19 @@ namespace node
                                     break;
                                 }
 
-                                //await completionProcessor.AddAsync(() => CompleteAsync(message.Chunk));
-                                await CompleteAsync(message.Chunk[0]);
+                                await chunkTasks.Remove(message.Chunk[0].Hash);
                                 break;
                             }
                         case DownloadStatus.Pending:
                             {
                                 fileTokens[message.Hash] = new CancellationTokenSource();
-                                var chunks = GetChildChunks(chunkTasks, message.Hash);
+                                var chunks = await GetChildChunksAsync(chunkTasks, message.Hash);
                                 if (chunks.Count == 0)
                                     chunks.AddRange(message.Chunk ?? []);
                                 foreach (var chunk in chunks)
                                 {
                                     chunk.Status = DownloadStatus.Pending;
-                                    chunkTasks[chunk.Hash] = chunk;
+                                    await chunkTasks.SetAsync(chunk.Hash, chunk);
                                     //await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
                                 }
                                 try
@@ -109,9 +97,9 @@ namespace node
                                         await UpdateAsync(chunk, fileTokens[message.Hash].Token);
                                     }
                                 }
-                                catch
+                                catch (Exception e)
                                 {
-                                    Console.WriteLine("");
+                                    Console.WriteLine(e.StackTrace);
                                 }
 
                                 break;
@@ -120,7 +108,7 @@ namespace node
                             {
                                 if (message.Chunk != null)
                                 {
-                                    chunkTasks[message.Chunk[0].Hash] = message.Chunk[0];
+                                    await chunkTasks.SetAsync(message.Chunk[0].Hash, message.Chunk[0]);
                                     break;
                                 }
 
@@ -128,6 +116,7 @@ namespace node
                                 if (fileTokens.TryRemove(hash, out var tokenSource))
                                 {
                                     await tokenSource.CancelAsync();
+                                    tokenSource.Dispose();
                                 }
 
                                 break;
@@ -140,7 +129,7 @@ namespace node
             catch (OperationCanceledException)
             {
                 List<FileChunk> chunks = [];
-                chunkTasks.ForEach((k, v) =>
+                await chunkTasks.ForEach((k, v) =>
                 {
                     if (v.Status == DownloadStatus.Complete)
                     {
@@ -153,14 +142,14 @@ namespace node
 
                 foreach (var chunk in chunks)
                 {
-                    chunkTasks[chunk.Hash] = chunk;
+                    await chunkTasks.SetAsync(chunk.Hash, chunk);
                 }
             }
 
-            static List<FileChunk> GetChildChunks(PersistentDictionary<ByteString, FileChunk> chunkTasks, ByteString hash)
+            static async Task<List<FileChunk>> GetChildChunksAsync(PersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
             {
                 List<FileChunk> chunks = [];
-                chunkTasks.PrefixScan(hash, (k, v) =>
+                await chunkTasks.PrefixScan(hash, (k, v) =>
                 {
                     chunks.Add(v);
                     return;
@@ -179,11 +168,6 @@ namespace node
             long change = chunk.CurrentCount;
             chunk.Status = DownloadStatus.Active;
             chunk = await updateCallback(chunk, token);
-            change = chunk.CurrentCount - change;
-            if (change != 0)
-            {
-                UpdateFileProgress(chunk.Hash, change);
-            }
 
             await channel.Writer.WriteAsync(
                 new()
@@ -196,65 +180,53 @@ namespace node
             );
         }
 
-        public async Task CompleteAsync(FileChunk chunk)
-        {
-            if (completionCallback == null)
-            {
-                return;
-            }
-            await completionCallback(chunk);
-        }
-
         public void AddChunkUpdateCallback(UpdateCallback callback)
         {
             updateCallback = callback;
         }
-        public void AddChunkCompletionCallback(CompletionCallback callback)
-        {
-            completionCallback = callback;
-        }
 
-        private void UpdateFileProgress(ByteString hash, long newProgress)
+        public async Task UpdateFileProgressAsync(ByteString hash, long newProgress)
         {
-            lock (fileProgressLock)
+            await FileProgress.MutateAsync(hash, (v) =>
             {
-                var progress = FileProgress[hash];
-                progress.Item1 += newProgress;
-                FileProgress[hash] = progress;
-            }
-        }
-
-        public (long, long) GetFileProgress(ByteString hash)
-        {
-            lock (fileProgressLock)
-            {
-                if (FileProgress.TryGetValue(hash, out var p))
+                if (v == null)
                 {
-                    return p;
+                    throw new InvalidOperationException("this should never happen");
                 }
+                Debug.Assert(newProgress != 0, $"{newProgress}");
+                v.Current += newProgress;
+                return v;
+            });
+        }
+
+        public async Task<Ui.Progress> GetFileProgressAsync(ByteString hash)
+        {
+            var p = await FileProgress.TryGetValue(hash);
+            if (p != null)
+            {
+                return p;
             }
             throw new NullReferenceException();
         }
 
-        public async Task AddNewFileAsync(IncompleteFile file, FileChunk[] chunks, ByteString fileHash)
+        public async Task AddNewFileAsync(IncompleteFile file, FileChunk[] chunks)
         {
-            await channel.Writer.WriteAsync(new StateChange { Hash = fileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
+            await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
+            await channel.Writer.WriteAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
         }
 
-        public ByteString[] GetIncompleteFiles()
+        public async Task<ByteString[]> GetIncompleteFilesAsync()
         {
             List<ByteString> hashes = [];
-            lock (fileProgressLock)
+
+            await FileProgress.ForEach((k, v) =>
             {
-                FileProgress.ForEach((k, v) =>
+                if (v.Current != v.Total)
                 {
-                    if (v.Item1 != v.Item2)
-                    {
-                        hashes.Add(k);
-                    }
-                    return true;
-                });
-            }
+                    hashes.Add(k);
+                }
+                return true;
+            });
 
             return [.. hashes];
         }

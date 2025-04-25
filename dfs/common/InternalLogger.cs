@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    public class InternalLoggerProvider : ILoggerProvider
+    public sealed class InternalLoggerProvider : ILoggerProvider
     {
         private readonly string _path;
 
@@ -29,16 +29,15 @@ namespace common
             return (logPath, LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Debug);
+                builder.SetMinimumLevel(LogLevel.Warning);
                 builder.AddProvider(new InternalLoggerProvider(logPath));
             }));
         }
     }
 
-    class InternalLogger : ILogger
+    sealed class InternalLogger : ILogger
     {
         private readonly string _filePath;
-        private static readonly Lock _lock = new();
 
         public InternalLogger(string filePath) => _filePath = filePath;
 
@@ -48,10 +47,7 @@ namespace common
         public void Log<TState>(LogLevel logLevel, EventId eventId,
             TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            lock (_lock)
-            {
-                File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            }
+            File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
         }
     }
 }
