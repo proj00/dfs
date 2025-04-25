@@ -39,10 +39,10 @@ jobs:
           node-version: "22.x"
 
       - name: Restore dependencies
-        run: dotnet restore dfs/dfs.sln
+        run: dotnet restore dfs/dfs.slnf
 
       - name: Build .NET
-        run: dotnet build --no-restore dfs/dfs.sln
+        run: dotnet build --no-restore dfs/dfs.slnf
 
   test:
     runs-on: windows-latest
@@ -60,11 +60,12 @@ jobs:
 
       - name: Run .NET tests
         run: |
-          for i in {1..3}; do
-              dotnet test --parallel none --verbosity normal dfs/dfs.sln && break
-              echo "Retry $i failed... retrying in 5s"
-              sleep 5
-          done
+          for ($i = 1; $i -le 3; $i++) {
+            dotnet test --parallel none --verbosity normal dfs/dfs.sln
+            if ($?) { break }
+            Write-Host "Retry $i failed... retrying in 5s"
+            Start-Sleep -Seconds 5
+          }
 
   ui-tests:
     runs-on: windows-latest
