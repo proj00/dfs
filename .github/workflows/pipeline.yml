@@ -39,9 +39,6 @@ jobs:
         with:
           node-version: "22.x"
 
-      - name: Install dotnet-coverage Tool
-        run: dotnet tool install --global dotnet-coverage
-
       - name: Restore .NET dependencies
         run: dotnet restore dfs/dfs.slnf
 
@@ -66,6 +63,9 @@ jobs:
       - name: Run .NET tests and collect code coverage
         run: |
           dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
+
+      - name: Install dotnet-coverage Tool
+        run: dotnet tool install --global dotnet-coverage
 
       - name: Generate Coverage Report with dotnet-coverage
         run: |
