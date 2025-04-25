@@ -62,20 +62,12 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
-
-      - name: Install dotnet-coverage Tool
-        run: dotnet tool install --global dotnet-coverage
-
-      - name: Generate Coverage Report with dotnet-coverage
-        run: |
-          dotnet-coverage collect --output ./coverage
-          dotnet-coverage report --format cobertura --output ./coverage/coverage.xml
+          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 
       - name: Upload .NET Coverage Report to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/coverage.xml
+          files: dfs/integration-tests/coverage.opencover.xml
           name: dotnet-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
 
