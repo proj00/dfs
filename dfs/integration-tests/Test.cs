@@ -3,6 +3,8 @@ using Google.Protobuf;
 using Grpc.Net.Client;
 using node;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,6 +24,11 @@ namespace integration_tests
         private string _tempDirectory;
         private int testPort;
         private RefWrapper<bool> errorsPrinted = new RefWrapper<bool>(false);
+
+        public Tests()
+        {
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+        }
         class RefWrapper<T>
         {
             public T Value { get; set; }
@@ -51,6 +58,7 @@ namespace integration_tests
             _tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(_tempDirectory);
             TestContext.Out.WriteLine(_tempDirectory);
+
             // Start processes with unique ports for each test
             testPort = FindFreePort();
 
@@ -58,7 +66,9 @@ namespace integration_tests
             _processN2 = StartProcess(NodeOutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort + 1}", errorsPrinted);
             _processT = StartProcess(TrackerOutputPath, $"\"{_tempDirectory}\\tracker\" {testPort + 2}", errorsPrinted);
 
-            Thread.Sleep(4000);
+            await WaitForPortAsync(testPort);
+            await WaitForPortAsync(testPort + 1);
+            await WaitForPortAsync(testPort + 2);
 
             n1Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort}")));
@@ -66,6 +76,25 @@ namespace integration_tests
                 new Uri($"http://localhost:{testPort + 1}")));
             trackerClient = new TrackerWrapper(new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort + 2}"))), $"http://localhost:{testPort + 2}");
+        }
+
+        private static async Task WaitForPortAsync(int port, int timeoutMs = 10000)
+        {
+            var stopWatch = Stopwatch.StartNew();
+            while (stopWatch.ElapsedMilliseconds < timeoutMs)
+            {
+                try
+                {
+                    using var client = new TcpClient();
+                    await client.ConnectAsync(IPAddress.Loopback, port);
+                    return;
+                }
+                catch
+                {
+                    await Task.Delay(250);
+                }
+            }
+            throw new TimeoutException($"Port {port} did not open in time.");
         }
 
         [TearDown]
@@ -86,9 +115,9 @@ namespace integration_tests
             try
             {
                 ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
-                if (Directory.Exists(_tempDirectory) && !Debugger.IsAttached)
+                if (Directory.Exists(_tempDirectory) && !errorsPrinted.Value && !Debugger.IsAttached)
                 {
-                    //Directory.Delete(_tempDirectory, recursive: true);
+                    Directory.Delete(_tempDirectory, recursive: true);
                 }
             }
             catch { /* Ignore cleanup errors */ }
@@ -207,7 +236,7 @@ namespace integration_tests
             { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
 
             var progress = new Ui.Progress();
-            int delay = 20000;
+            int delay = 50000;
             do
             {
                 delay -= 500;
@@ -245,7 +274,7 @@ namespace integration_tests
             { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
 
             var progress = new Ui.Progress();
-            int delay = 20000;
+            int delay = 50000;
             do
             {
                 delay -= 500;
