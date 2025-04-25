@@ -54,17 +54,17 @@ class BackendService implements BackendServiceInterface {
   private trackerUris: string[] = [];
 
   async GetDataUsage(): Promise<DataUsage> {
-    const service = await GetNodeService();
+    //const service = await GetNodeService();
     let usage: DataUsage = {
       totalBytesSent: 0,
       totalBytesReceived: 0,
     };
 
-    for (const uri of this.trackerUris) {
-      const stats = await service.GetDataUsage({ trackerUri: uri });
-      usage.totalBytesReceived += Number(stats.download);
-      usage.totalBytesSent += Number(stats.upload);
-    }
+    // for (const uri of this.trackerUris) {
+    //   const stats = await service.GetDataUsage({ trackerUri: uri });
+    //   usage.totalBytesReceived += Number(stats.download);
+    //   usage.totalBytesSent += Number(stats.upload);
+    // }
 
     return usage;
   }

@@ -1,4 +1,5 @@
 ﻿using Google.Protobuf;
+using Node;
 using Org.BouncyCastle.Crypto.Digests;
 using System.Diagnostics.CodeAnalysis;
 
@@ -36,6 +37,8 @@ namespace common
 
         public static ByteString CombineHashes(ByteString[] hashes)
         {
+            ArgumentNullException.ThrowIfNull(hashes);
+
             var total = new List<byte>();
 
             foreach (var h in hashes)
@@ -46,13 +49,35 @@ namespace common
             return GetHash([.. total]);
         }
 
+        public static ByteString ConcatHashes(ByteString[] hashes)
+        {
+            ArgumentNullException.ThrowIfNull(hashes);
+            var total = new List<byte>();
+
+            foreach (var h in hashes)
+            {
+                total.AddRange(h);
+            }
+
+            return ByteString.CopyFrom([.. total]);
+        }
+
+        public static ByteString GetChunkHash(FileChunk chunk)
+        {
+            ArgumentNullException.ThrowIfNull(chunk);
+
+            return ConcatHashes([chunk.FileHash, chunk.Hash]);
+        }
+
         public class ByteStringComparer : IEqualityComparer<ByteString>, IComparer<ByteString>
         {
             public int Compare(ByteString? x, ByteString? y)
             {
-                if (x == null || y == null || x.Length != y.Length)
+                ArgumentNullException.ThrowIfNull(x);
+                ArgumentNullException.ThrowIfNull(y);
+                if (x.Length != y.Length)
                 {
-                    throw new ArgumentNullException();
+                    throw new ArgumentException("Compare failed; invalid arguments (null / mismatched lengths)");
                 }
 
                 for (int i = 0; i < x.Length; i++)
@@ -74,6 +99,8 @@ namespace common
 
             public int GetHashCode([DisallowNull] ByteString obj)
             {
+                ArgumentNullException.ThrowIfNull(obj);
+
                 return obj.GetHashCode();
             }
         }

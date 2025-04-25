@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, clipboard, dialog, ipcMain } from "electron";
 import path from "path";
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
@@ -37,6 +37,19 @@ const levelToCategory = new Map<LogLevel, LogCategory>([
 const isDev = !app.isPackaged || process.env.NODE_ENV === "development";
 let grpcClient: UiClient | undefined = undefined;
 let backendProcess: ChildProcess | undefined = undefined;
+log.hooks.push((message: LogMessage) => {
+  if (grpcClient != null) {
+    NodeServiceHandler.logMessage(
+      {
+        category: levelToCategory.get(message.level) ?? LogCategory.Info,
+        message: JSON.stringify(message.data),
+      },
+      grpcClient,
+    );
+  }
+  return message;
+});
+log.initialize({ spyRendererConsole: true });
 
 const createWindow = async (): Promise<void> => {
   const pipe: UUID = !isDev ? randomUUID() : NULL_UUID;
@@ -58,20 +71,6 @@ const createWindow = async (): Promise<void> => {
     ChannelCredentials.createInsecure(),
   );
   NodeServiceHandler.register(grpcClient, ipcMain);
-
-  log.initialize({ spyRendererConsole: true });
-  log.hooks.push((message: LogMessage) => {
-    if (grpcClient != null) {
-      NodeServiceHandler.logMessage(
-        {
-          category: levelToCategory.get(message.level) ?? LogCategory.Info,
-          message: JSON.stringify(message.data),
-        },
-        grpcClient,
-      );
-    }
-    return message;
-  });
 
   Object.assign(console, log.functions);
 
@@ -122,6 +121,13 @@ app.on("before-quit", async () => {
   backendProcess?.kill();
   backendProcess = undefined;
 });
+
+ipcMain.handle(
+  "write-clipboard",
+  (_event: Electron.IpcMainInvokeEvent, args: any[]) => {
+    clipboard.writeText(args[0]);
+  },
+);
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

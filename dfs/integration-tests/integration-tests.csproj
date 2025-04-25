@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
@@ -11,10 +11,18 @@
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
+	<Target Name="PreBuildKillExecutables" BeforeTargets="Build">
+		<Exec Command="taskkill /F /IM node.exe 2&gt;nul || exit 0" />
+		<Exec Command="taskkill /F /IM tracker.exe 2&gt;nul || exit 0" />
+	</Target>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0-preview-25107-01" />
     <PackageReference Include="NUnit" Version="4.3.2" />
@@ -26,9 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\common-test\common-test.csproj" />
     <ProjectReference Include="..\node\node.csproj" />
     <ProjectReference Include="..\tracker\tracker.csproj" />
-    <ProjectReference Include="..\electron\electron.esproj" />
   </ItemGroup>
 
   <ItemGroup>

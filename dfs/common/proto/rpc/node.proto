@@ -11,9 +11,38 @@ message ChunkRequest
 {
 	bytes hash = 1;
 	string trackerUri = 2;
+	int64 offset = 3;
 }
 
 message ChunkResponse
 {
 	bytes response = 1;
+}
+
+message FileChunk
+{
+	bytes hash = 1;
+	bytes fileHash = 2;
+	repeated bytes contents = 3;
+	int64 offset = 4;
+	int64 currentCount = 5;
+	int64 size = 6;
+	string trackerUri = 7;
+	string destinationDir = 8;
+	DownloadStatus status = 9;
+}
+
+message IncompleteFile
+{
+	DownloadStatus status = 1;
+	int64 size = 2;
+}
+
+enum DownloadStatus
+{
+	Pending = 0;
+	Active = 1;
+	Paused = 2;
+	Complete = 3;
+	Stop = 4;
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    public class ChannelCache
+    public sealed class ChannelCache : IDisposable
     {
         private MemoryCache cache;
         private readonly TimeSpan timeToLive;
@@ -20,13 +20,18 @@ namespace common
             this.timeToLive = timeToLive;
         }
 
+        public void Dispose()
+        {
+            cache.Dispose();
+        }
+
         public GrpcChannel GetOrCreate(Uri uri, GrpcChannelOptions? options = null)
         {
             return cache.GetOrCreate(uri, entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = timeToLive;
                 return GrpcChannel.ForAddress(uri, options ?? new GrpcChannelOptions());
-            }) ?? throw new Exception("Failed to fetch channel from cache");
+            }) ?? throw new ArgumentException("Failed to fetch channel from cache");
         }
     }
 }

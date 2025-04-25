@@ -3,6 +3,7 @@ using Google.Protobuf;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,10 +12,12 @@ using Tracker;
 
 namespace common
 {
-    public static class FilesystemUtils
+    public static partial class FilesystemUtils
     {
         public static Fs.FileSystemObject GetFileObject(string path, int chunkSize)
         {
+            Debug.Assert(System.IO.File.Exists(path), $"file not found: {path}");
+
             var info = new FileInfo(path);
 
             var obj = new Fs.FileSystemObject
@@ -29,7 +32,10 @@ namespace common
 
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var buffer = new byte[chunkSize];
-            for (int i = 0; i < obj.File.Size / chunkSize + (obj.File.Size % chunkSize == 0 ? 0 : 1); i++)
+            long chunkCount = obj.File.Size / chunkSize;
+            chunkCount += obj.File.Size % chunkSize == 0 ? 0 : 1;
+            Debug.Assert(chunkCount > 0, path);
+            for (int i = 0; i < chunkCount; i++)
             {
                 int actualRead = stream.Read(buffer, 0, chunkSize);
                 if (actualRead < chunkSize)
@@ -37,10 +43,10 @@ namespace common
                     Array.Fill<byte>(buffer, 0, actualRead, chunkSize - actualRead);
                 }
 
-                var hash = HashUtils.GetHash(buffer);
+                var hash = HashUtils.GetHash(buffer.AsSpan(0, actualRead));
                 obj.File.Hashes.Hash.Add(hash);
             }
-
+            Debug.Assert(obj.File.Hashes.Hash.Count > 0);
             return obj;
         }
 
@@ -69,7 +75,7 @@ namespace common
             int targetLength = BitConverter.ToInt16(buffer, 10);
             string targetPath = Encoding.Unicode.GetString(buffer, targetOffset + 20, targetLength);
 
-            if (targetPath.StartsWith(@"\\?\"))
+            if (targetPath.StartsWith(@"\\?\", System.StringComparison.Ordinal))
             {
                 targetPath = targetPath.Substring(4);
             }
@@ -85,22 +91,21 @@ namespace common
             var target = GetLinkTarget(path);
             if (target == null)
             {
-                throw new Exception("GetLinkObject didn't receive symlink");
+                throw new FileNotFoundException("GetLinkObject didn't receive symlink");
             }
 
-            obj.Link = new Fs.Link();
+            obj.Link = new();
             obj.Link.TargetPath = target;
             return obj;
         }
 
-        public static Fs.FileSystemObject GetDirectoryObject(string path, List<ByteString> hashes)
+        public static Fs.FileSystemObject GetDirectoryObject(string path, IReadOnlyList<ByteString> hashes)
         {
             var obj = new Fs.FileSystemObject
             {
                 Name = Path.GetFileName(path)
             };
 
-            hashes.Sort(new HashUtils.ByteStringComparer());
             obj.Directory = new Fs.Directory();
             foreach (var hash in hashes.Distinct())
             {
@@ -161,7 +166,8 @@ namespace common
         private const int FSCTL_GET_REPARSE_POINT = 0x000900A8;
         private const int IO_REPARSE_TAG_SYMLINK = unchecked((int)0xA000000C);
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern SafeFileHandle CreateFile(
             string lpFileName,
             int dwDesiredAccess,
@@ -171,6 +177,8 @@ namespace common
             FileAttributes dwFlagsAndAttributes,
             IntPtr hTemplateFile);
 
+        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool DeviceIoControl(
             SafeFileHandle hDevice,

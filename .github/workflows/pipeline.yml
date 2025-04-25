@@ -1,6 +1,3 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
 name: Project build
 
 on:
@@ -10,6 +7,7 @@ on:
     branches: ["main"]
 
 jobs:
+  # .NET Build and Test Job
   build:
     runs-on: windows-latest
     permissions: read-all
@@ -17,27 +15,92 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: checkout all the submodules
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Checkout submodules
         uses: actions/checkout@v2
         with:
           submodules: recursive
+
+      - name: Cache .NET SDK
+        uses: actions/cache@v3
+        with:
+          path: ~/.dotnet
+          key: ${{ runner.os }}-dotnet-sdk-${{ matrix.dotnet-version }}
 
       - name: Use Node.js (22.x)
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
 
-      - name: Restore dependencies
-        run: dotnet restore dfs/dfs.sln
+      - name: Restore .NET dependencies
+        run: dotnet restore dfs/dfs.slnf
 
-      - name: Build .NET
-        run: dotnet build --no-restore dfs/dfs.sln
+      - name: Build .NET project
+        run: dotnet build --no-restore dfs/dfs.slnf
 
-      - name: Test
-        run: dotnet test --no-build --verbosity normal dfs/dfs.sln
-
+  # .NET Test and Coverage Collection Job
+  test:
+    runs-on: windows-latest
+    needs: build
+    steps:
       - uses: actions/checkout@v4
-      - name: Test UI
-        working-directory: ./dfs/electron
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run .NET tests and collect code coverage
         run: |
-          npm ci && npm run test-build && npx jest
+          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+
+      - name: Upload .NET Coverage Report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: dfs/integration-tests/coverage.opencover.xml
+          name: dotnet-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # UI Test Job (Jest)
+  ui-tests:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Restore npm dependencies
+        working-directory: ./dfs/electron
+        run: npm ci
+
+      - name: Build UI
+        working-directory: ./dfs/electron
+        run: npm run test-build
+
+      - name: Run Jest tests with coverage
+        working-directory: ./dfs/electron
+        run: npx jest --coverage
+
+      - name: Upload Jest Coverage Report to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./dfs/electron/coverage/lcov-report/lcov-report.json
+          name: jest-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}

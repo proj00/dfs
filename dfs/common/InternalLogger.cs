@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    public class InternalLoggerProvider : ILoggerProvider
+    public sealed class InternalLoggerProvider : ILoggerProvider
     {
         private readonly string _path;
 
@@ -35,11 +35,10 @@ namespace common
         }
     }
 
-    class InternalLogger : ILogger
+    sealed class InternalLogger : ILogger
     {
         private readonly string _filePath;
-        private static readonly Lock _lock = new();
-
+        //private readonly Lock fileLock = new();
         public InternalLogger(string filePath) => _filePath = filePath;
 
         IDisposable ILogger.BeginScope<TState>(TState state) => null!;
@@ -48,10 +47,11 @@ namespace common
         public void Log<TState>(LogLevel logLevel, EventId eventId,
             TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            lock (_lock)
-            {
-                File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            }
+            Console.WriteLine($"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
+            //lock (fileLock)
+            //{
+            //    File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
+            //}
         }
     }
 }

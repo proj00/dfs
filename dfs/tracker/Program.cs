@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace tracker
 {
@@ -10,11 +11,10 @@ namespace tracker
     {
         static async Task Main(string[] args)
         {
-            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory("logs");
+            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs");
             ILogger logger = loggerFactory.CreateLogger("Main");
-            FilesystemManager filesystemManager = new FilesystemManager();
-            TrackerRpc rpc = new(filesystemManager, logger);
-            const int port = 50330;
+            using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()));
+            int port = args.Length >= 2 ? int.Parse(args[1]) : 50330;
             var app = await StartPublicServerAsync(rpc, port, loggerFactory);
 
             logger.LogInformation("Running...");
@@ -24,13 +24,22 @@ namespace tracker
             logger.LogInformation("Press any key to quit; press a/A to view data usage...");
             while (true)
             {
-                char k = Console.ReadKey(true).KeyChar;
+                char k = ' ';
+                try
+                {
+                    k = Console.ReadKey(true).KeyChar;
+                }
+                catch { }
+                if (k == ' ')
+                {
+                    continue;
+                }
                 if (k != 'a' && k != 'A')
                 {
                     break;
                 }
 
-                var usage = rpc.GetTotalDataUsage();
+                var usage = await rpc.GetTotalDataUsage();
                 (string path, ILoggerFactory factory) = InternalLoggerProvider.CreateLoggerFactory("logs/usage");
                 var usageLogger = factory.CreateLogger("DataUsage");
 
@@ -59,10 +68,12 @@ namespace tracker
         {
             var builder = WebApplication.CreateBuilder();
 
+            // Define the CORS policy
             string policyName = "AllowAll";
             builder.Services.AddGrpc();
             builder.Services.AddSingleton(loggerFactory);
             builder.Services.AddLogging();
+
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
                 policy.AllowAnyOrigin()
@@ -75,15 +86,22 @@ namespace tracker
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenAnyIP(port);
+                options.ListenAnyIP(port, o =>
+                {
+                    o.Protocols = HttpProtocols.Http2;
+                });
             });
 
             var app = builder.Build();
 
             app.UseRouting();
             app.UseCors(policyName);
+
+            app.MapGrpcService<TrackerRpc>().RequireCors(policyName);
+
             await app.StartAsync();
             return app;
         }
+
     }
 }

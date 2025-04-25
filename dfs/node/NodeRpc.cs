@@ -1,8 +1,11 @@
 ﻿using Google.Protobuf;
 using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Node;
+using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,18 +23,19 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (state.IsInBlockList(context.Peer))
+            if (await state.IsInBlockListAsync(context.Peer))
             {
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }
 
-            if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out ByteString[]? parent))
+            RpcCommon.HashList? parent = await state.Manager.ChunkParents.TryGetValue(request.Hash);
+            if (parent == null)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
-            var parentHash = parent[0];
-            var parentObj = state.Manager.ObjectByHash[parentHash].Object;
+            var parentHash = parent.Data[0];
+            var parentObj = (await state.Manager.ObjectByHash.GetAsync(parentHash)).Object;
             if (parentObj == null)
             {
                 throw new RpcException(new Status(StatusCode.Internal, "internal failure"));
@@ -39,25 +43,37 @@ namespace node
 
             var size = parentObj.File.Hashes.ChunkSize;
             var chunkIndex = parentObj.File.Hashes.Hash.IndexOf(request.Hash);
-            var offset = chunkIndex * size;
+            var offset = chunkIndex * size + request.Offset;
+            var remainingSize = size - request.Offset;
 
-            using var stream = new FileStream(state.PathByHash[parentHash], FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = new FileStream(await state.PathByHash.GetAsync(parentHash), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-            var buffer = new byte[size];
+            var buffer = new byte[remainingSize];
             stream.Seek(offset, SeekOrigin.Begin);
-            var total = await stream.ReadAsync(buffer, 0, size);
+
+            var total = await stream.ReadAsync(buffer, 0, (int)remainingSize);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
+            var used = 0;
 
             for (int i = 0; i < total; i += subchunk)
             {
+                var res = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i));
+                used += res.Length;
+
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
-                    Response = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i))
+                    Response = res
                 });
+
+                state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
 
             var tracker = new TrackerWrapper(request.TrackerUri, state);
-            await tracker.ReportDataUsage(true, total);
+            await tracker.ReportDataUsage(true, used);
         }
     }
 }

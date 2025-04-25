@@ -3,14 +3,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using System.IO.Pipes;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
-using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using common;
 using Microsoft.VisualStudio.Threading;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Net;
+using System.Diagnostics;
 
 namespace node
 {
@@ -22,27 +23,31 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
-            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory("logs");
+            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs");
 
             ILogger logger = loggerFactory.CreateLogger("Main");
 
             Guid pipeGuid = new();
             uint parentPid = 0;
-            if (!(args.Length == 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
+
+            if (!(args.Length >= 2 && Guid.TryParse(args[0], out pipeGuid) && uint.TryParse(args[1], out parentPid)))
             {
                 logger.LogError("Please provide a pipe GUID and a PID as the first argument.");
                 return;
             }
 
-            NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath);
+            using NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath, args.Length >= 3 ? args[2] : Path.Combine("./db", Guid.NewGuid().ToString()));
+
+            int debugPort = args.Length >= 4 ? int.Parse(args[3]) : 42069;
+
             NodeRpc rpc = new(state);
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
-            var publicUrl = publicServer.Urls.First();
+            var publicUrl = new Uri(publicServer.Urls.First());
 
-            UiService service = new(state, publicUrl);
+            UiService service = new(state, $"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}");
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
-            CancellationTokenSource token = new();
-            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token);
+            using CancellationTokenSource token = new();
+            var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);
 
             await service.ShutdownEvent.WaitAsync();
             await token.CancelAsync();
@@ -50,10 +55,32 @@ namespace node
             await privateServer.StopAsync();
         }
 
+        public static string? GetLocalIPv4()
+        {
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up ||
+                    ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var ipProps = ni.GetIPProperties();
+                foreach (UnicastIPAddressInformation ip in ipProps.UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        !IPAddress.IsLoopback(ip.Address))
+                    {
+                        return ip.Address.ToString();
+                    }
+                }
+            }
+            return null;
+        }
+
         private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc, ILoggerFactory loggerFactory)
         {
             var builder = WebApplication.CreateBuilder();
 
+            // Define CORS policy
             string policyName = "AllowAll";
             builder.Services.AddGrpc();
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
@@ -73,26 +100,27 @@ namespace node
                     o.Protocols = HttpProtocols.Http2;
                 });
             });
-            builder.Services.AddGrpcReflection();
 
             var app = builder.Build();
             IWebHostEnvironment env = app.Environment;
-#if DEBUG
-            app.MapGrpcReflectionService();
-#endif
 
             app.UseRouting();
             app.UseCors(policyName);
+
+            app.MapGrpcService<NodeRpc>().RequireCors(policyName);
+
             await app.StartAsync();
+
             return app;
         }
 
         private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid, uint parentPid,
-            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken)
+    ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken, int debugPort)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
             builder.Services.AddGrpc();
+
             const string policyName = "AllowLocal";
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
@@ -105,18 +133,17 @@ namespace node
             builder.Services.AddSingleton(loggerFactory);
             builder.Services.AddLogging();
             builder.Services.AddSingleton(service);
-            builder.Services.AddGrpcReflection();
 
             builder.WebHost.UseNamedPipes(options =>
             {
                 options.CreateNamedPipeServerStream = (context) =>
                 {
                     var stream = new NamedPipeServerStream(
-                            context.NamedPipeEndPoint.PipeName,
-                            PipeDirection.InOut,
-                            NamedPipeServerStream.MaxAllowedServerInstances,
-                            PipeTransmissionMode.Byte,
-                            System.IO.Pipes.PipeOptions.Asynchronous);
+                        context.NamedPipeEndPoint.PipeName,
+                        PipeDirection.InOut,
+                        NamedPipeServerStream.MaxAllowedServerInstances,
+                        PipeTransmissionMode.Byte,
+                        System.IO.Pipes.PipeOptions.Asynchronous);
 
                     var connectionId = Guid.NewGuid().ToString();
                     pipeStreams[connectionId] = stream;
@@ -131,24 +158,22 @@ namespace node
                             }
                             catch (OperationCanceledException)
                             {
-                                return;
+                                return; // Exit if operation was cancelled
                             }
 
                             if (GetNamedPipeClientProcessId(stream.SafePipeHandle, out var clientPid))
                             {
 #if !DEBUG
-                                if (!IsAncestor(parentPid, clientPid))
-#else
-                                if (false)
+                        if (!IsAncestor(parentPid, clientPid))
+                        {
+                            Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
+                            await stream.DisposeAsync(); // forcefully disconnect
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Authorized PID: {clientPid}");
+                        }
 #endif
-                                {
-                                    Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
-                                    await stream.DisposeAsync(); // forcefully kill connection
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Authorized PID: {clientPid}");
-                                }
                             }
                         }
                         catch (Exception ex)
@@ -165,27 +190,27 @@ namespace node
                 {
                     o.Protocols = HttpProtocols.Http2;
                 });
+
 #if DEBUG
-                options.ListenLocalhost(42069, o =>
+                options.ListenLocalhost(debugPort, o =>
                 {
                     o.Protocols = HttpProtocols.Http2;
                 });
 #endif
             });
-            var app = builder.Build();
 
-            IWebHostEnvironment env = app.Environment;
-#if DEBUG
-            app.MapGrpcReflectionService();
-#endif
+            var app = builder.Build();
 
             app.UseRouting();
             app.UseCors(policyName);
+
             app.MapGrpcService<UiService>().RequireCors(policyName);
 
-            await app.StartAsync();
+            await app.StartAsync(cancellationToken);
             return app;
         }
+
+
 
         static bool IsAncestor(uint ancestorPid, uint childPid)
         {
