@@ -61,7 +61,7 @@ jobs:
       - name: Run .NET tests
         run: |
           for ($i = 1; $i -le 3; $i++) {
-            dotnet test --parallel none --verbosity normal dfs/dfs.sln
+            dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.sln
             if ($?) { break }
             Write-Host "Retry $i failed... retrying in 5s"
             Start-Sleep -Seconds 5
