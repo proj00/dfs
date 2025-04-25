@@ -24,7 +24,16 @@ namespace tracker
             logger.LogInformation("Press any key to quit; press a/A to view data usage...");
             while (true)
             {
-                char k = Console.ReadKey(true).KeyChar;
+                char k = ' ';
+                try
+                {
+                    k = Console.ReadKey(true).KeyChar;
+                }
+                catch { }
+                if (k == ' ')
+                {
+                    continue;
+                }
                 if (k != 'a' && k != 'A')
                 {
                     break;

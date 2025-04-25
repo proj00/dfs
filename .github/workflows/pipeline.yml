@@ -38,6 +38,9 @@ jobs:
         with:
           node-version: "22.x"
 
+      - name: Install dotnet-coverage Tool
+        run: dotnet tool install --global dotnet-coverage
+
       - name: Restore dependencies
         run: dotnet restore dfs/dfs.slnf
 
@@ -60,12 +63,22 @@ jobs:
 
       - name: Run .NET tests
         run: |
-          for ($i = 1; $i -le 3; $i++) {
-            dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.sln
-            if ($?) { break }
-            Write-Host "Retry $i failed... retrying in 5s"
-            Start-Sleep -Seconds 5
-          }
+          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
+
+      - name: Collect test results
+        run: |
+          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
+          - name: Generate Coverage Report with dotnet-coverage
+          run: |
+            dotnet-coverage collect --output ./coverage
+            dotnet-coverage report --format cobertura --output ./coverage/coverage.xml
+          working-directory: ./
+
+      - name: Upload .NET Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: dotnet-coverage-report
+          path: ./coverage/coverage.xml
 
   ui-tests:
     runs-on: windows-latest
@@ -92,3 +105,9 @@ jobs:
       - name: Run Jest tests
         working-directory: ./dfs/electron
         run: npx jest
+
+      - name: Upload Jest Coverage Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: ./dfs/electron/coverage/lcov-report/index.html
