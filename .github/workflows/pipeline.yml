@@ -75,7 +75,7 @@ jobs:
           working-directory: ./
 
       - name: Upload .NET Coverage Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: dotnet-coverage-report
           path: ./coverage/coverage.xml
@@ -107,7 +107,7 @@ jobs:
         run: npx jest
 
       - name: Upload Jest Coverage Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: ./dfs/electron/coverage/lcov-report/index.html
