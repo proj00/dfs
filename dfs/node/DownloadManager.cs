@@ -88,19 +88,19 @@ namespace node
                                 {
                                     chunk.Status = DownloadStatus.Pending;
                                     await chunkTasks.SetAsync(chunk.Hash, chunk);
-                                    //await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                                    await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
                                 }
-                                try
-                                {
-                                    foreach (var chunk in chunks)
-                                    {
-                                        await UpdateAsync(chunk, fileTokens[message.Hash].Token);
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine(e.StackTrace);
-                                }
+                                //try
+                                //{
+                                //    foreach (var chunk in chunks)
+                                //    {
+                                //        await UpdateAsync(chunk, fileTokens[message.Hash].Token);
+                                //    }
+                                //}
+                                //catch (Exception e)
+                                //{
+                                //    Console.WriteLine(e.StackTrace);
+                                //}
 
                                 break;
                             }

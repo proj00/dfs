@@ -38,7 +38,7 @@ namespace common
     sealed class InternalLogger : ILogger
     {
         private readonly string _filePath;
-        private readonly Lock fileLock = new();
+        //private readonly Lock fileLock = new();
         public InternalLogger(string filePath) => _filePath = filePath;
 
         IDisposable ILogger.BeginScope<TState>(TState state) => null!;
@@ -47,10 +47,11 @@ namespace common
         public void Log<TState>(LogLevel logLevel, EventId eventId,
             TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            lock (fileLock)
-            {
-                File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            }
+            Console.WriteLine($"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
+            //lock (fileLock)
+            //{
+            //    File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
+            //}
         }
     }
 }

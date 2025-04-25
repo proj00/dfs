@@ -188,7 +188,10 @@ namespace integration_tests
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            await file.WriteLineAsync("hello world");
+            for (int i = 0; i < 1024; i++)
+            {
+                await file.WriteLineAsync("hello world");
+            }
             await file.FlushAsync();
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
@@ -204,7 +207,7 @@ namespace integration_tests
             { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
 
             var progress = new Ui.Progress();
-            int delay = 10000000;
+            int delay = 20000;
             do
             {
                 delay -= 500;
@@ -213,6 +216,46 @@ namespace integration_tests
                     Assert.Fail("Download timed out");
                 }
                 await Task.Delay(2000);
+                progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash });
+                await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
+            } while (progress.Current != progress.Total);
+        }
+        [Test]
+        public async Task TestDownloadWithPauseResume()
+        {
+            var directory = Directory.CreateDirectory(
+                Path.Combine(_tempDirectory, "test1"));
+            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
+            for (int i = 0; i < 1024; i++)
+            {
+                await file.WriteLineAsync("hello world");
+            }
+            await file.FlushAsync();
+            await TestContext.Out.WriteLineAsync(_tempDirectory);
+
+            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName });
+            Assert.That(resp, Is.Not.Null);
+            Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
+            var parts = await n1Client.GetContainerObjectsAsync(resp);
+
+            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" });
+            Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
+
+            var res2 = await n2Client.DownloadContainerAsync(new()
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
+
+            var progress = new Ui.Progress();
+            int delay = 20000;
+            do
+            {
+                delay -= 500;
+                if (delay <= 0)
+                {
+                    Assert.Fail("Download timed out");
+                }
+                await Task.Delay(2000);
+                await n2Client.PauseFileDownloadAsync(new() { Data = parts.Data[1].Hash });
+                await n2Client.ResumeFileDownloadAsync(new() { Data = parts.Data[1].Hash });
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash });
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);

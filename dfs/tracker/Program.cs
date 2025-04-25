@@ -59,10 +59,12 @@ namespace tracker
         {
             var builder = WebApplication.CreateBuilder();
 
+            // Define the CORS policy
             string policyName = "AllowAll";
             builder.Services.AddGrpc();
             builder.Services.AddSingleton(loggerFactory);
             builder.Services.AddLogging();
+
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
                 policy.AllowAnyOrigin()
@@ -85,17 +87,12 @@ namespace tracker
 
             app.UseRouting();
             app.UseCors(policyName);
+
             app.MapGrpcService<TrackerRpc>().RequireCors(policyName);
-            app.UseRouting();
-#pragma warning disable ASP0014 // Suggest using top level route registrations
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<TrackerRpc>();
-            });
-#pragma warning restore ASP0014 // Suggest using top level route registrations
 
             await app.StartAsync();
             return app;
         }
+
     }
 }

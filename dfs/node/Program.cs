@@ -80,6 +80,7 @@ namespace node
         {
             var builder = WebApplication.CreateBuilder();
 
+            // Define CORS policy
             string policyName = "AllowAll";
             builder.Services.AddGrpc();
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
@@ -105,24 +106,21 @@ namespace node
 
             app.UseRouting();
             app.UseCors(policyName);
+
             app.MapGrpcService<NodeRpc>().RequireCors(policyName);
-#pragma warning disable ASP0014 // Suggest using top level route registrations
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<NodeRpc>();
-            });
-#pragma warning restore ASP0014 // Suggest using top level route registrations
 
             await app.StartAsync();
+
             return app;
         }
 
         private static async Task<WebApplication> StartGrpcWebServerAsync(UiService service, Guid pipeGuid, uint parentPid,
-            ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken, int debugPort)
+    ConcurrentDictionary<string, NamedPipeServerStream> pipeStreams, ILoggerFactory loggerFactory, CancellationToken cancellationToken, int debugPort)
         {
             var builder = WebApplication.CreateBuilder();
             builder.Logging.ClearProviders();
             builder.Services.AddGrpc();
+
             const string policyName = "AllowLocal";
             builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
             {
@@ -141,11 +139,11 @@ namespace node
                 options.CreateNamedPipeServerStream = (context) =>
                 {
                     var stream = new NamedPipeServerStream(
-                            context.NamedPipeEndPoint.PipeName,
-                            PipeDirection.InOut,
-                            NamedPipeServerStream.MaxAllowedServerInstances,
-                            PipeTransmissionMode.Byte,
-                            System.IO.Pipes.PipeOptions.Asynchronous);
+                        context.NamedPipeEndPoint.PipeName,
+                        PipeDirection.InOut,
+                        NamedPipeServerStream.MaxAllowedServerInstances,
+                        PipeTransmissionMode.Byte,
+                        System.IO.Pipes.PipeOptions.Asynchronous);
 
                     var connectionId = Guid.NewGuid().ToString();
                     pipeStreams[connectionId] = stream;
@@ -160,21 +158,21 @@ namespace node
                             }
                             catch (OperationCanceledException)
                             {
-                                return;
+                                return; // Exit if operation was cancelled
                             }
 
                             if (GetNamedPipeClientProcessId(stream.SafePipeHandle, out var clientPid))
                             {
 #if !DEBUG
-                                if (!IsAncestor(parentPid, clientPid))
-                                {
-                                    Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
-                                    await stream.DisposeAsync(); // forcefully kill connection
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"Authorized PID: {clientPid}");
-                                }
+                        if (!IsAncestor(parentPid, clientPid))
+                        {
+                            Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
+                            await stream.DisposeAsync(); // forcefully disconnect
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Authorized PID: {clientPid}");
+                        }
 #endif
                             }
                         }
@@ -192,6 +190,7 @@ namespace node
                 {
                     o.Protocols = HttpProtocols.Http2;
                 });
+
 #if DEBUG
                 options.ListenLocalhost(debugPort, o =>
                 {
@@ -199,23 +198,19 @@ namespace node
                 });
 #endif
             });
-            var app = builder.Build();
 
-            IWebHostEnvironment env = app.Environment;
+            var app = builder.Build();
 
             app.UseRouting();
             app.UseCors(policyName);
-            app.MapGrpcService<UiService>().RequireCors(policyName);
-#pragma warning disable ASP0014 // Suggest using top level route registrations
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapGrpcService<UiService>();
-            });
-#pragma warning restore ASP0014 // Suggest using top level route registrations
 
-            await app.StartAsync();
+            app.MapGrpcService<UiService>().RequireCors(policyName);
+
+            await app.StartAsync(cancellationToken);
             return app;
         }
+
+
 
         static bool IsAncestor(uint ancestorPid, uint childPid)
         {
