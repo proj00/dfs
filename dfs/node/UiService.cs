@@ -162,15 +162,12 @@ namespace node
                 .ToList());
 
             _ = await tracker.SetContainerRootHash(container, state.Manager.Container[container]);
-            foreach (var file in objects
+            var hashes = objects
                 .Select(o => o.Object)
-                .Where(obj => obj.TypeCase == FileSystemObject.TypeOneofCase.File))
-            {
-                foreach (var chunk in file.File.Hashes.Hash)
-                {
-                    await tracker.MarkReachable(chunk, nodeURI);
-                }
-            }
+                .Where(obj => obj.TypeCase == FileSystemObject.TypeOneofCase.File)
+                .SelectMany(obj => obj.File.Hashes.Hash)
+                .ToArray();
+            await tracker.MarkReachable(hashes, nodeURI);
         }
 
         public override async Task<RpcCommon.Empty> PauseFileDownload(RpcCommon.Hash request, ServerCallContext context)
@@ -191,6 +188,10 @@ namespace node
             var guid = Guid.Parse(request.ContainerGuid);
             var hash = await tracker.GetContainerRootHash(guid);
             await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
+            if (!System.IO.Directory.Exists(request.DestinationDir))
+            {
+                throw new ArgumentException("Invalid destination directory");
+            }
             await DownloadObjectByHash(hash, guid, tracker, request.DestinationDir, request.MaxConcurrentChunks);
 
             return new RpcCommon.Empty();
@@ -225,7 +226,7 @@ namespace node
             {
                 chunks.Add(new()
                 {
-                    Hash = obj.Object.File.Hashes.Hash[i],
+                    Hash = HashUtils.ConcatHashes([obj.Hash, hash]),
                     Offset = obj.Object.File.Hashes.ChunkSize * i,
                     FileHash = obj.Hash,
                     Size = Math.Min(obj.Object.File.Hashes.ChunkSize, obj.Object.File.Size - obj.Object.File.Hashes.ChunkSize * i),
@@ -252,13 +253,17 @@ namespace node
             }
 
             var tracker = new TrackerWrapper(chunk.TrackerUri, state);
-            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
+            Debug.Assert(chunk.Hash.Length == 128);
+            var hash = ByteString.CopyFrom(chunk.Hash.Span.Slice(chunk.Hash.Length / 2));
+            Debug.Assert(state.Manager.ChunkParents.ContainsKey(hash));
+
+            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 }, token))
                 .ToList();
 
             if (peers.Count == 0)
             {
                 chunk.Status = DownloadStatus.Pending;
-                state.Logger.LogWarning($"No peers found for chunk {chunk.Hash.ToBase64()}");
+                state.Logger.LogWarning($"No peers found for chunk {hash.ToBase64()}");
                 return chunk;
             }
 
@@ -267,7 +272,7 @@ namespace node
             var peerClient = state.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {
-                Hash = chunk.FileHash,
+                Hash = hash,
                 TrackerUri = tracker.GetUri(),
                 Offset = chunk.CurrentCount
             }, null, null, token);
@@ -280,7 +285,7 @@ namespace node
                     chunk.CurrentCount += message.Response.Length;
                 }
             }
-            catch (OperationCanceledException)
+            catch
             {
                 state.Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", chunk.Hash);
             }
@@ -295,9 +300,9 @@ namespace node
                     offset += data.Length;
                 }
 
-                if (chunk.Hash != HashUtils.GetHash(thing))
+                if (hash != HashUtils.GetHash(thing))
                 {
-                    state.Logger.LogError($"Hash mismatch for chunk {chunk.Hash.ToBase64()}");
+                    state.Logger.LogError($"Hash mismatch for chunk {hash.ToBase64()}");
                     chunk.Contents.Clear();
                     chunk.CurrentCount = 0;
                 }
@@ -326,13 +331,14 @@ namespace node
                     stream.Write(data.Span);
                 }
             }
-            await (new TrackerWrapper(chunk.TrackerUri, state)).MarkReachable(chunk.FileHash, nodeURI);
+            await (new TrackerWrapper(chunk.TrackerUri, state)).MarkReachable([chunk.FileHash], nodeURI);
         }
 
         public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state);
-            return await tracker.GetDataUsage();
+            //var tracker = new TrackerWrapper(request.TrackerUri, state);
+            //return await tracker.GetDataUsage();
+            return new RpcCommon.DataUsage();
         }
 
         public override async Task<RpcCommon.Empty> Shutdown(RpcCommon.Empty request, ServerCallContext context)

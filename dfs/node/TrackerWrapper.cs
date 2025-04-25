@@ -58,22 +58,22 @@ namespace node
             return peers;
         }
 
-        public async Task<Empty> MarkReachable(ByteString hash, string nodeURI)
+        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI)
         {
-            using var call = client.MarkReachable();
-            await call.RequestStream.WriteAsync(new MarkRequest { Hash = hash, Peer = nodeURI });
-            await call.RequestStream.CompleteAsync();
-
-            return await call;
+            return await client.MarkReachableAsync(new MarkRequest
+            {
+                Hash = { hash },
+                Peer = nodeURI
+            });
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString hash, string nodeURI)
+        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI)
         {
-            using var call = client.MarkUnreachable();
-            await call.RequestStream.WriteAsync(new MarkRequest { Hash = hash, Peer = nodeURI });
-            await call.RequestStream.CompleteAsync();
-
-            return await call;
+            return await client.MarkUnreachableAsync(new MarkRequest
+            {
+                Hash = { hash },
+                Peer = nodeURI
+            });
         }
 
         public async Task<Empty> Publish(List<PublishedObject> objects)

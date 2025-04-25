@@ -26,12 +26,12 @@ namespace node
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }
 
-            if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out ByteString[]? parent))
+            if (!state.Manager.ChunkParents.TryGetValue(request.Hash, out RpcCommon.HashList? parent))
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
-            var parentHash = parent[0];
+            var parentHash = parent.Data[0];
             var parentObj = state.Manager.ObjectByHash[parentHash].Object;
             if (parentObj == null)
             {

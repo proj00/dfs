@@ -85,20 +85,20 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> MarkReachable(IAsyncStreamReader<MarkRequest> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkReachable(MarkRequest request, ServerCallContext context)
         {
             try
             {
-                await foreach (var req in requestStream.ReadAllAsync())
+                foreach (var req in request.Hash)
                 {
-                    string hashBase64 = req.Hash.ToBase64();
+                    string hashBase64 = req.ToBase64();
                     if (_peers.TryGetValue(hashBase64, out List<string>? value))
                     {
-                        value.Add(req.Peer);
+                        value.Add(request.Peer);
                     }
                     else
                     {
-                        _peers[hashBase64] = [req.Peer];
+                        _peers[hashBase64] = [request.Peer];
                     }
                 }
                 return new Empty();
@@ -110,48 +110,20 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> MarkUnreachable(IAsyncStreamReader<MarkRequest> requestStream, ServerCallContext context)
+        public override async Task<Empty> MarkUnreachable(MarkRequest request, ServerCallContext context)
         {
             try
             {
-                await foreach (var req in requestStream.ReadAllAsync())
+                foreach (var req in request.Hash)
                 {
-                    string hashBase64 = req.Hash.ToBase64();
-                    _peers[hashBase64].Remove(req.Peer);
+                    string hashBase64 = req.ToBase64();
+                    _peers[hashBase64].Remove(request.Peer);
                 }
                 return new Empty();
             }
             catch (Exception ex)
             {
                 logger.LogError($"Error in MarkUnreachable method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
-            }
-        }
-
-        public override async Task<Empty> Publish(IAsyncStreamReader<PublishedObject> requestStream, ServerCallContext context)
-        {
-            try
-            {
-                await foreach (var obj in requestStream.ReadAllAsync())
-                {
-                    string hashBase64 = obj.Object.Hash.ToBase64();
-                    _filesystemManager.ObjectByHash[ByteString.FromBase64(hashBase64)] = obj.Object;
-                }
-                return new Empty();
-            }
-            catch (InvalidProtocolBufferException ex)
-            {
-                logger.LogError($"Error in Publish method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
-            }
-            catch (RpcException ex)
-            {
-                logger.LogError($"Error in Publish method: {ex.Message}");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Unexpected error in Publish method: {ex.Message}");
                 throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
             }
         }
@@ -235,6 +207,46 @@ namespace tracker
             }
 
             return new Empty();
+        }
+
+        public override Task<TransactionStartResponse> StartTransaction(Empty request, ServerCallContext context)
+        {
+            return base.StartTransaction(request, context);
+        }
+
+        public override Task<TransactionStateResponse> CheckTransactionState(RpcCommon.Guid request, ServerCallContext context)
+        {
+            return base.CheckTransactionState(request, context);
+        }
+
+        public override async Task<Empty> Publish(IAsyncStreamReader<PublishedObject> requestStream, ServerCallContext context)
+        {
+            try
+            {
+                List<ObjectWithHash> objects = [];
+                await foreach (var obj in requestStream.ReadAllAsync())
+                {
+                    objects.Add(obj.Object);
+                }
+                foreach (var o in objects)
+                    _filesystemManager.ObjectByHash[o.Hash] = o;
+                return new Empty();
+            }
+            catch (InvalidProtocolBufferException ex)
+            {
+                logger.LogError($"Error in Publish method: {ex.Message}");
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
+            }
+            catch (RpcException ex)
+            {
+                logger.LogError($"Error in Publish method: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Unexpected error in Publish method: {ex.Message}");
+                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
+            }
         }
     }
 }

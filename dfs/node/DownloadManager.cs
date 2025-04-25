@@ -19,7 +19,7 @@ namespace node
         {
             public ByteString Hash { get; set; } = ByteString.Empty;
             public DownloadStatus NewStatus { get; set; } = DownloadStatus.Pending;
-            public FileChunk? Chunk { get; set; } = null;
+            public FileChunk[] Chunk { get; set; } = [];
         }
 
         private readonly System.Threading.Lock fileProgressLock = new();
@@ -43,14 +43,6 @@ namespace node
                 SingleReader = true,
                 SingleWriter = false,
             });
-
-            PersistentDictionary<ByteString, FileChunk> incompleteChunks
-            = new(System.IO.Path.Combine(dbPath, "IncompleteChunks"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: FileChunk.Parser.ParseFrom
-            );
 
             FileProgress = new(
                 System.IO.Path.Combine(dbPath, "FileProgress"),
@@ -89,28 +81,37 @@ namespace node
                     {
                         case DownloadStatus.Complete:
                             {
-                                if (message.Chunk == null)
+                                if (message.Chunk == null || message.Chunk.Length == 0)
                                 {
                                     break;
                                 }
 
-                                await completionProcessor.AddAsync(() => CompleteAsync(message.Chunk));
-
+                                //await completionProcessor.AddAsync(() => CompleteAsync(message.Chunk));
+                                await CompleteAsync(message.Chunk[0]);
                                 break;
                             }
                         case DownloadStatus.Pending:
                             {
-                                if (message.Chunk != null)
-                                {
-                                    throw new Exception("Chunk should be null");
-                                }
-
                                 fileTokens[message.Hash] = new CancellationTokenSource();
-                                foreach (var chunk in GetChildChunks(chunkTasks, message.Hash))
+                                var chunks = GetChildChunks(chunkTasks, message.Hash);
+                                if (chunks.Count == 0)
+                                    chunks.AddRange(message.Chunk ?? []);
+                                foreach (var chunk in chunks)
                                 {
                                     chunk.Status = DownloadStatus.Pending;
                                     chunkTasks[chunk.Hash] = chunk;
-                                    await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                                    //await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                                }
+                                try
+                                {
+                                    foreach (var chunk in chunks)
+                                    {
+                                        await UpdateAsync(chunk, fileTokens[message.Hash].Token);
+                                    }
+                                }
+                                catch
+                                {
+                                    Console.WriteLine("");
                                 }
 
                                 break;
@@ -119,7 +120,7 @@ namespace node
                             {
                                 if (message.Chunk != null)
                                 {
-                                    chunkTasks[message.Chunk.Hash] = message.Chunk;
+                                    chunkTasks[message.Chunk[0].Hash] = message.Chunk[0];
                                     break;
                                 }
 
@@ -189,7 +190,7 @@ namespace node
                 {
                     Hash = HashUtils.GetChunkHash(chunk),
                     NewStatus = chunk.Status,
-                    Chunk = chunk
+                    Chunk = [chunk]
                 },
                 CancellationToken.None
             );
@@ -237,7 +238,7 @@ namespace node
 
         public async Task AddNewFileAsync(IncompleteFile file, FileChunk[] chunks, ByteString fileHash)
         {
-            await channel.Writer.WriteAsync(new StateChange { Hash = fileHash, NewStatus = DownloadStatus.Pending });
+            await channel.Writer.WriteAsync(new StateChange { Hash = fileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
         }
 
         public ByteString[] GetIncompleteFiles()

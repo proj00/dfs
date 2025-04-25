@@ -14,6 +14,11 @@ message Guid
 	string guid = 1;
 }
 
+message HashList
+{
+	repeated bytes data = 1;
+}
+
 message GuidList
 {
 	repeated string guid = 1;

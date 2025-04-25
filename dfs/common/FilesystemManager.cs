@@ -15,9 +15,9 @@ namespace common
 
         private readonly object _syncRoot = new object();
         public PersistentDictionary<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
-        public PersistentDictionary<ByteString, ByteString[]> ChunkParents { get; private set; }
+        public PersistentDictionary<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
         public PersistentDictionary<Guid, ByteString> Container { get; private set; }
-        public PersistentDictionary<ByteString, List<ByteString>> Parent { get; private set; }
+        public PersistentDictionary<ByteString, RpcCommon.HashList> Parent { get; private set; }
         public PersistentDictionary<ByteString, ByteString> NewerVersion { get; private set; }
 
         public string DbPath { get; private set; } = Path.Combine(DbBasePath, Guid.NewGuid().ToString());
@@ -32,12 +32,12 @@ namespace common
                 valueDeserializer: bytes => ObjectWithHash.Parser.ParseFrom(bytes)
             );
 
-            ChunkParents = new PersistentDictionary<ByteString, ByteString[]>(
+            ChunkParents = new PersistentDictionary<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "ChunkParents"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
-                SerializeByteStringArray,
-                DeserializeByteStringArray
+                list => list.ToByteArray(),
+                RpcCommon.HashList.Parser.ParseFrom
             );
 
             Container = new PersistentDictionary<Guid, ByteString>(
@@ -48,12 +48,12 @@ namespace common
                 bytes => ByteString.CopyFrom(bytes)
             );
 
-            Parent = new PersistentDictionary<ByteString, List<ByteString>>(
+            Parent = new PersistentDictionary<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "Parent"),
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes),
-                list => SerializeByteStringArray(list.ToArray()),
-                bytes => DeserializeByteStringArray(bytes).ToList()
+                list => list.ToByteArray(),
+                RpcCommon.HashList.Parser.ParseFrom
             );
 
             NewerVersion = new PersistentDictionary<ByteString, ByteString>(
@@ -63,35 +63,6 @@ namespace common
                 bs => bs.ToByteArray(),
                 bytes => ByteString.CopyFrom(bytes)
             );
-        }
-
-        private static byte[] SerializeByteStringArray(ByteString[] array)
-        {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-            bw.Write(array.Length);
-            foreach (var bs in array)
-            {
-                var data = bs.ToByteArray();
-                bw.Write(data.Length);
-                bw.Write(data);
-            }
-            return ms.ToArray();
-        }
-
-        private static ByteString[] DeserializeByteStringArray(byte[] bytes)
-        {
-            using var ms = new MemoryStream(bytes);
-            using var br = new BinaryReader(ms);
-            int count = br.ReadInt32();
-            var arr = new ByteString[count];
-            for (int i = 0; i < count; i++)
-            {
-                int len = br.ReadInt32();
-                var data = br.ReadBytes(len);
-                arr[i] = ByteString.CopyFrom(data);
-            }
-            return arr;
         }
 
         public void Dispose()
@@ -123,13 +94,14 @@ namespace common
                         case FileSystemObject.TypeOneofCase.Directory:
                             foreach (var child in obj.Object.Directory.Entries)
                             {
-                                if (Parent.TryGetValue(child, out List<ByteString>? value))
+                                if (Parent.TryGetValue(child, out RpcCommon.HashList? value))
                                 {
-                                    value.Add(obj.Hash);
+                                    value.Data.Add(obj.Hash);
+                                    Parent[child] = value;
                                 }
                                 else
                                 {
-                                    Parent[child] = [obj.Hash];
+                                    Parent[child] = new RpcCommon.HashList() { Data = { obj.Hash } };
                                 }
                             }
                             break;
@@ -156,13 +128,16 @@ namespace common
         {
             lock (_syncRoot)
             {
-                var root = Container[containerGuid];
-                if (root == null)
+                ByteString root;
+                if (Container.TryGetValue(containerGuid, out root))
+                {
+                    return GetObjectTree(root);
+
+                }
+                else
                 {
                     return [];
                 }
-
-                return GetObjectTree(root);
             }
         }
 
@@ -206,13 +181,14 @@ namespace common
                 {
                     // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
                     // in comparison to reads, so this is... fine?
-                    if (ChunkParents.TryGetValue(chunkHash, out ByteString[]? parents))
+                    if (ChunkParents.TryGetValue(chunkHash, out RpcCommon.HashList? parents))
                     {
-                        ChunkParents[chunkHash] = [.. parents, parentHash];
+                        parents.Data.Add(parentHash);
+                        ChunkParents[chunkHash] = parents;
                         continue;
                     }
 
-                    ChunkParents[chunkHash] = [parentHash];
+                    ChunkParents[chunkHash] = new RpcCommon.HashList() { Data = { parentHash } };
                 }
             }
         }

@@ -11,6 +11,9 @@ using System.IO.Pipelines;
 using Microsoft.Extensions.Logging;
 using common;
 using Microsoft.VisualStudio.Threading;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Net;
 
 namespace node
 {
@@ -37,9 +40,9 @@ namespace node
             NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath);
             NodeRpc rpc = new(state);
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
-            var publicUrl = publicServer.Urls.First();
+            var publicUrl = new Uri(publicServer.Urls.First());
 
-            UiService service = new(state, publicUrl);
+            UiService service = new(state, $"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}");
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
             CancellationTokenSource token = new();
             var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token);
@@ -48,6 +51,27 @@ namespace node
             await token.CancelAsync();
             await publicServer.StopAsync();
             await privateServer.StopAsync();
+        }
+
+        public static string? GetLocalIPv4()
+        {
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up ||
+                    ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var ipProps = ni.GetIPProperties();
+                foreach (UnicastIPAddressInformation ip in ipProps.UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        !IPAddress.IsLoopback(ip.Address))
+                    {
+                        return ip.Address.ToString();
+                    }
+                }
+            }
+            return null;
         }
 
         private static async Task<WebApplication> StartPublicNodeServerAsync(NodeRpc rpc, ILoggerFactory loggerFactory)
@@ -83,6 +107,8 @@ namespace node
 
             app.UseRouting();
             app.UseCors(policyName);
+            app.MapGrpcService<NodeRpc>().RequireCors(policyName);
+
             await app.StartAsync();
             return app;
         }

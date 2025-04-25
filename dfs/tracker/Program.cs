@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace tracker
 {
@@ -75,13 +76,19 @@ namespace tracker
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenAnyIP(port);
+                options.ListenAnyIP(port, o =>
+                {
+                    o.Protocols = HttpProtocols.Http2;
+                });
             });
 
             var app = builder.Build();
 
             app.UseRouting();
             app.UseCors(policyName);
+            app.MapGrpcService<TrackerRpc>().RequireCors(policyName);
+            app.UseRouting();
+
             await app.StartAsync();
             return app;
         }

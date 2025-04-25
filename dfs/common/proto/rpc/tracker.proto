@@ -8,8 +8,8 @@ import "rpc_common.proto";
 service Tracker
 {
 	rpc GetObjectTree(rpc_common.Hash) returns (stream fs.ObjectWithHash);
-	rpc MarkReachable(stream MarkRequest) returns (rpc_common.Empty);
-	rpc MarkUnreachable(stream MarkRequest) returns (rpc_common.Empty);
+	rpc MarkReachable(MarkRequest) returns (rpc_common.Empty);
+	rpc MarkUnreachable(MarkRequest) returns (rpc_common.Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
 
 	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
@@ -52,7 +52,7 @@ message PeerResponse
 message MarkRequest
 {
 	string peer = 1;
-	bytes hash = 2;
+	repeated bytes hash = 2;
 }
 
 message SearchRequest
