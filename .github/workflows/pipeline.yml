@@ -65,14 +65,11 @@ jobs:
         run: |
           dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
 
-      - name: Collect test results
+      - name: Generate Coverage Report with dotnet-coverage
         run: |
-          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf --collect:"XPlat Code Coverage"
-          - name: Generate Coverage Report with dotnet-coverage
-          run: |
-            dotnet-coverage collect --output ./coverage
-            dotnet-coverage report --format cobertura --output ./coverage/coverage.xml
-          working-directory: ./
+          dotnet-coverage collect --output ./coverage
+          dotnet-coverage report --format cobertura --output ./coverage/coverage.xml
+        working-directory: ./
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
