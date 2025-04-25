@@ -1,6 +1,6 @@
 # dfs
 
-[Coverage](https://app.codecov.io/gh/pppss102/dfs/tree/main)
+[Coverage](https://app.codecov.io/gh/proj00/dfs)
 
 ## Development setup
 
