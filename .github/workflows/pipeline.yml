@@ -34,11 +34,6 @@ jobs:
           path: ~/.dotnet
           key: ${{ runner.os }}-dotnet-sdk-${{ matrix.dotnet-version }}
 
-      - name: Use Node.js (22.x)
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22.x"
-
       - name: Restore .NET dependencies
         run: dotnet restore dfs/dfs.slnf
 
@@ -77,6 +72,11 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
+
+      - name: Use Node.js (22.x)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
 
       - name: Cache npm dependencies
         uses: actions/cache@v3
