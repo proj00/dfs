@@ -22,7 +22,7 @@ namespace common_test
             Container = [];
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
             Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
             void Traverse(ObjectWithHash o)
@@ -54,21 +54,21 @@ namespace common_test
             return [];
         }
 
-        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI)
+        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
                 peers[h] = [nodeURI];
             return new();
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI)
+        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
                 peers[h] = [];
             return new();
         }
 
-        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects)
+        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token)
         {
             foreach (var obj in objects)
             {
@@ -78,33 +78,32 @@ namespace common_test
             return new();
         }
 
-        public async Task<ByteString> GetContainerRootHash(Guid containerGuid)
+        public async Task<ByteString> GetContainerRootHash(Guid containerGuid, CancellationToken token)
         {
             return Container[containerGuid];
         }
 
-        public async Task<Empty> SetContainerRootHash(Guid containerGuid, ByteString rootHash)
-        {
-            Container[containerGuid] = rootHash;
-            return new();
-        }
-
-        public async Task<List<SearchResponse>> SearchForObjects(string query)
+        public async Task<List<SearchResponse>> SearchForObjects(string query, CancellationToken token)
         {
             throw new NotImplementedException();
         }
 
-        public Task<DataUsage> GetDataUsage()
+        public Task<DataUsage> GetDataUsage(CancellationToken token)
         {
             throw new NotImplementedException();
         }
 
-        public Task<Empty> ReportDataUsage(bool isUpload, long bytes)
+        public Task<Empty> ReportDataUsage(bool isUpload, long bytes, CancellationToken token)
         {
             throw new NotImplementedException();
         }
 
         public string GetUri()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionStartResponse> StartTransaction(TransactionRequest transactionRequest, CancellationToken token)
         {
             throw new NotImplementedException();
         }

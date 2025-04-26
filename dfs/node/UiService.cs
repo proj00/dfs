@@ -21,6 +21,7 @@ namespace node
     public class UiService : Ui.Ui.UiBase
     {
         private NodeState state;
+        private TransactionManager transactionManager = new();
         private string nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
@@ -77,9 +78,9 @@ namespace node
 
         public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            var tracker = new TrackerWrapper(request.TrackerUri, state, CancellationToken.None);
             var list = new Ui.SearchResponseList();
-            list.Results.AddRange(await tracker.SearchForObjects(request.Query));
+            list.Results.AddRange(await tracker.SearchForObjects(request.Query, context.CancellationToken));
             return list;
         }
 
@@ -128,12 +129,12 @@ namespace node
                 throw new Exception("Invalid path");
             }
 
-            return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash)).ToString() };
+            return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash, Guid.NewGuid())).ToString() };
         }
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state, context.CancellationToken));
             return new RpcCommon.Empty();
         }
 
@@ -145,18 +146,19 @@ namespace node
             }
 
             var objects = await state.Manager.GetContainerTree(container);
+            var rootHash = await state.Manager.Container.GetAsync(container);
+            Guid newGuid = await transactionManager.PublishObjectsAsync(tracker, container, objects,
+                rootHash);
 
-            var response = await tracker.Publish(objects
-                .Select(o => new PublishedObject { Object = o, TransactionGuid = /*tbd*/"" })
-                .ToList());
+            await state.Manager.Container.SetAsync(newGuid, rootHash);
+            await state.Manager.Container.Remove(newGuid);
 
-            _ = await tracker.SetContainerRootHash(container, await state.Manager.Container.GetAsync(container));
             var hashes = objects
                 .Select(o => o.Object)
                 .Where(obj => obj.TypeCase == FileSystemObject.TypeOneofCase.File)
                 .SelectMany(obj => obj.File.Hashes.Hash)
                 .ToArray();
-            await tracker.MarkReachable(hashes, nodeURI);
+            await tracker.MarkReachable(hashes, nodeURI, CancellationToken.None);
         }
 
         public override async Task<RpcCommon.Empty> PauseFileDownload(RpcCommon.Hash request, ServerCallContext context)
@@ -173,9 +175,9 @@ namespace node
 
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state);
+            var tracker = new TrackerWrapper(request.TrackerUri, state, context.CancellationToken);
             var guid = Guid.Parse(request.ContainerGuid);
-            var hash = await tracker.GetContainerRootHash(guid);
+            var hash = await tracker.GetContainerRootHash(guid, CancellationToken.None);
             await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
             if (!System.IO.Directory.Exists(request.DestinationDir))
             {
@@ -188,8 +190,8 @@ namespace node
 
         private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
         {
-            List<ObjectWithHash> objects = await tracker.GetObjectTree(hash);
-            guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid);
+            List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
+            guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
 
             var fileTasks = objects
                 .Where(obj => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File)
@@ -240,7 +242,7 @@ namespace node
                 throw new ArgumentException("Already downloaded");
             }
 
-            var tracker = new TrackerWrapper(chunk.TrackerUri, state);
+            var tracker = new TrackerWrapper(chunk.TrackerUri, state, CancellationToken.None);
             Debug.Assert(chunk.Hash.Length == 128);
             var hash = ByteString.CopyFrom(chunk.Hash.Span.Slice(chunk.Hash.Length / 2));
 
@@ -301,7 +303,7 @@ namespace node
                         stream.Seek(chunk.Offset, SeekOrigin.Begin);
                         await stream.WriteAsync(thing);
                     }
-                    await (new TrackerWrapper(chunk.TrackerUri, state)).MarkReachable([chunk.FileHash], nodeURI);
+                    await (new TrackerWrapper(chunk.TrackerUri, state, CancellationToken.None)).MarkReachable([chunk.FileHash], nodeURI, CancellationToken.None);
                     chunk.Status = DownloadStatus.Complete;
                 }
             }
@@ -315,8 +317,8 @@ namespace node
 
         public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state);
-            return await tracker.GetDataUsage();
+            var tracker = new TrackerWrapper(request.TrackerUri, state, context.CancellationToken);
+            return await tracker.GetDataUsage(context.CancellationToken);
         }
 
         public override async Task<RpcCommon.Empty> Shutdown(RpcCommon.Empty request, ServerCallContext context)
