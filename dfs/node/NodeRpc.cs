@@ -72,8 +72,8 @@ namespace node
                 }
             }
 
-            var tracker = new TrackerWrapper(request.TrackerUri, state);
-            await tracker.ReportDataUsage(true, used);
+            var tracker = new TrackerWrapper(request.TrackerUri, state, CancellationToken.None);
+            await tracker.ReportDataUsage(true, used, CancellationToken.None);
         }
     }
 }

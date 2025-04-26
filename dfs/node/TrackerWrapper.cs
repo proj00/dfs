@@ -26,7 +26,7 @@ namespace node
             this.trackerUri = uri;
         }
 
-        public TrackerWrapper(string trackerUri, NodeState state)
+        public TrackerWrapper(string trackerUri, NodeState state, CancellationToken token)
         {
             if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri))
             {
@@ -37,7 +37,7 @@ namespace node
             this.trackerUri = uri;
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
             using var response = client.GetObjectTree(new Hash { Data = hash });
 
@@ -69,7 +69,7 @@ namespace node
             return peers;
         }
 
-        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI)
+        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token)
         {
             return await client.MarkReachableAsync(new MarkRequest
             {
@@ -78,7 +78,7 @@ namespace node
             });
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI)
+        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token)
         {
             return await client.MarkUnreachableAsync(new MarkRequest
             {
@@ -87,39 +87,30 @@ namespace node
             });
         }
 
-        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects)
+        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token)
         {
-            using var call = client.Publish();
+            using var call = client.Publish(null, null, token);
             foreach (var obj in objects)
             {
-                await call.RequestStream.WriteAsync(obj);
+                await call.RequestStream.WriteAsync(obj, token);
             }
             await call.RequestStream.CompleteAsync();
 
             return await call;
         }
 
-        public async Task<ByteString> GetContainerRootHash(System.Guid containerGuid)
+        public async Task<ByteString> GetContainerRootHash(System.Guid containerGuid, CancellationToken token)
         {
-            var response = await client.GetContainerRootHashAsync(new RpcCommon.Guid { Guid_ = containerGuid.ToString() });
+            var response = await client.GetContainerRootHashAsync(new RpcCommon.Guid { Guid_ = containerGuid.ToString() }, null, null, token);
             return response.Data;
         }
 
-        public async Task<Empty> SetContainerRootHash(System.Guid containerGuid, ByteString rootHash)
+        public async Task<List<SearchResponse>> SearchForObjects(string query, CancellationToken token)
         {
-            return await client.SetContainerRootHashAsync(new ContainerRootHash
-            {
-                Guid = containerGuid.ToString(),
-                Hash = new Hash { Data = rootHash }
-            });
-        }
-
-        public async Task<List<SearchResponse>> SearchForObjects(string query)
-        {
-            using var response = client.SearchForObjects(new SearchRequest { Query = query });
+            using var response = client.SearchForObjects(new SearchRequest { Query = query }, null, null, token);
 
             List<SearchResponse> responses = [];
-            await foreach (var r in response.ResponseStream.ReadAllAsync())
+            await foreach (var r in response.ResponseStream.ReadAllAsync(token))
             {
                 responses.Add(r);
             }
@@ -127,18 +118,23 @@ namespace node
             return responses;
         }
 
-        public async Task<DataUsage> GetDataUsage()
+        public async Task<DataUsage> GetDataUsage(CancellationToken token)
         {
-            return await client.GetDataUsageAsync(new Empty());
+            return await client.GetDataUsageAsync(new Empty(), null, null, token);
         }
 
-        public async Task<Empty> ReportDataUsage(bool isUpload, long bytes)
+        public async Task<Empty> ReportDataUsage(bool isUpload, long bytes, CancellationToken token)
         {
             return await client.ReportDataUsageAsync(new UsageReport
             {
                 IsUpload = isUpload,
                 Bytes = bytes
-            });
+            }, cancellationToken: token);
+        }
+
+        public async Task<TransactionStartResponse> StartTransaction(TransactionRequest transactionRequest, CancellationToken token)
+        {
+            return await client.StartTransactionAsync(transactionRequest, cancellationToken: token);
         }
     }
 }

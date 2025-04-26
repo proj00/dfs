@@ -1,14 +1,15 @@
-﻿using Fs;
-using Grpc.Core;
-using System.Collections.Concurrent;
-using Tracker;
-using Google.Protobuf;
-using common;
-using RpcCommon;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.Logging;
+﻿using System.Collections.Concurrent;
 using System.Text;
-
+using System.Text.RegularExpressions;
+using common;
+using Fs;
+using Google.Protobuf;
+using Grpc.Core;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using RpcCommon;
+using Tracker;
 
 namespace tracker
 {
@@ -18,6 +19,9 @@ namespace tracker
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
         private readonly PersistentCache<string, DataUsage> dataUsage;
         private readonly ILogger logger;
+        private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
+            new();
+        const int trackerResponseLimit = 30000;
 
         public TrackerRpc(ILogger logger, string dbPath)
         {
@@ -38,17 +42,28 @@ namespace tracker
             dataUsage.Dispose();
         }
 
-        public override async Task<Hash> GetContainerRootHash(RpcCommon.Guid request, ServerCallContext context)
+        public override async Task<Hash> GetContainerRootHash(
+            RpcCommon.Guid request,
+            ServerCallContext context
+        )
         {
-            var rootHash = await _filesystemManager.Container.TryGetValue(System.Guid.Parse(request.Guid_));
+            var rootHash = await _filesystemManager.Container.TryGetValue(
+                System.Guid.Parse(request.Guid_)
+            );
             if (rootHash != null)
             {
                 return new Hash { Data = rootHash };
             }
-            throw new RpcException(new Status(StatusCode.NotFound, "Container root hash not found."));
+            throw new RpcException(
+                new Status(StatusCode.NotFound, "Container root hash not found.")
+            );
         }
 
-        public override async Task GetObjectTree(Hash request, IServerStreamWriter<ObjectWithHash> responseStream, ServerCallContext context)
+        public override async Task GetObjectTree(
+            Hash request,
+            IServerStreamWriter<ObjectWithHash> responseStream,
+            ServerCallContext context
+        )
         {
             try
             {
@@ -71,7 +86,11 @@ namespace tracker
             }
         }
 
-        public override async Task GetPeerList(PeerRequest request, IServerStreamWriter<PeerResponse> responseStream, ServerCallContext context)
+        public override async Task GetPeerList(
+            PeerRequest request,
+            IServerStreamWriter<PeerResponse> responseStream,
+            ServerCallContext context
+        )
         {
             try
             {
@@ -91,7 +110,10 @@ namespace tracker
             }
         }
 
-        public override async Task<Empty> MarkReachable(MarkRequest request, ServerCallContext context)
+        public override async Task<Empty> MarkReachable(
+            MarkRequest request,
+            ServerCallContext context
+        )
         {
             return await Task.Run(() =>
             {
@@ -114,12 +136,17 @@ namespace tracker
                 catch (Exception ex)
                 {
                     logger.LogError($"Error in MarkReachable method: {ex.Message}");
-                    throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
+                    throw new RpcException(
+                        new Status(StatusCode.Unknown, "Unexpected error occurred.")
+                    );
                 }
             });
         }
 
-        public override async Task<Empty> MarkUnreachable(MarkRequest request, ServerCallContext context)
+        public override async Task<Empty> MarkUnreachable(
+            MarkRequest request,
+            ServerCallContext context
+        )
         {
             return await Task.Run(() =>
             {
@@ -135,39 +162,37 @@ namespace tracker
                 catch (Exception ex)
                 {
                     logger.LogError($"Error in MarkUnreachable method: {ex.Message}");
-                    throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
+                    throw new RpcException(
+                        new Status(StatusCode.Unknown, "Unexpected error occurred.")
+                    );
                 }
             });
         }
 
-        public override async Task<Empty> SetContainerRootHash(ContainerRootHash request, ServerCallContext context)
-        {
-            await _filesystemManager.Container.SetAsync(System.Guid.Parse(request.Guid), request.Hash.Data);
-            return new Empty();
-        }
-
-        public override async Task SearchForObjects(SearchRequest request, IServerStreamWriter<SearchResponse> responseStream, ServerCallContext context)
+        public override async Task SearchForObjects(
+            SearchRequest request,
+            IServerStreamWriter<SearchResponse> responseStream,
+            ServerCallContext context
+        )
         {
             using var re = new IronRe2.Regex(request.Query);
 
             // collect all container GUIDs
             var allContainers = new List<System.Guid>();
-            await _filesystemManager.Container.ForEach((guid, bs) =>
-            {
-                allContainers.Add(guid);
-                return true;
-            });
+            await _filesystemManager.Container.ForEach(
+                (guid, bs) =>
+                {
+                    allContainers.Add(guid);
+                    return true;
+                }
+            );
 
             foreach (var container in allContainers)
             {
-                var matches = (await _filesystemManager
-                                  .GetContainerTree(container))
-                                  .Where(o => re.IsMatch(o.Object.Name))
-                                  .Select(o => new SearchResponse
-                                  {
-                                      Guid = container.ToString(),
-                                      Object = o,
-                                  }).ToList();
+                var matches = (await _filesystemManager.GetContainerTree(container))
+                    .Where(o => re.IsMatch(o.Object.Name))
+                    .Select(o => new SearchResponse { Guid = container.ToString(), Object = o })
+                    .ToList();
                 if (matches.Count == 0)
                     continue;
 
@@ -195,73 +220,131 @@ namespace tracker
         public async Task<(string key, DataUsage usage)[]> GetTotalDataUsage()
         {
             List<(string key, DataUsage usage)> list = [];
-            await dataUsage.ForEach((key, value) =>
-            {
-                list.Add((key, value));
-                return true;
-            });
+            await dataUsage.ForEach(
+                (key, value) =>
+                {
+                    list.Add((key, value));
+                    return true;
+                }
+            );
             return list.ToArray();
         }
 
-        public override async Task<Empty> ReportDataUsage(UsageReport request, ServerCallContext context)
+        public override async Task<Empty> ReportDataUsage(
+            UsageReport request,
+            ServerCallContext context
+        )
         {
             var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
             string ip = match.Success ? match.Groups[1].Value : "";
-            DataUsage change = new() { Upload = request.IsUpload ? request.Bytes : 0, Download = request.IsUpload ? 0 : request.Bytes };
-
-            await dataUsage.MutateAsync(ip, (usage) =>
+            DataUsage change = new()
             {
-                if (usage == null)
-                {
-                    return change;
-                }
+                Upload = request.IsUpload ? request.Bytes : 0,
+                Download = request.IsUpload ? 0 : request.Bytes,
+            };
 
-                usage.Upload += change.Upload;
-                usage.Download += change.Download;
-                return usage;
-            });
+            await dataUsage.MutateAsync(
+                ip,
+                (usage) =>
+                {
+                    if (usage == null)
+                    {
+                        return change;
+                    }
+
+                    usage.Upload += change.Upload;
+                    usage.Download += change.Download;
+                    return usage;
+                }
+            );
 
             return new Empty();
         }
 
-        public override Task<TransactionStartResponse> StartTransaction(Empty request, ServerCallContext context)
+        public override async Task<Empty> Publish(
+            IAsyncStreamReader<PublishedObject> requestStream,
+            ServerCallContext context
+        )
         {
-            return base.StartTransaction(request, context);
-        }
+            var Now = DateTime.Now.Ticks;
+            List<PublishedObject> objects = [];
+            bool found = false;
 
-        public override Task<TransactionStateResponse> CheckTransactionState(RpcCommon.Guid request, ServerCallContext context)
-        {
-            return base.CheckTransactionState(request, context);
-        }
+            ByteString rootHash = ByteString.Empty;
+            ValueTuple<System.Guid, long> transactionInfo = default;
 
-        public override async Task<Empty> Publish(IAsyncStreamReader<PublishedObject> requestStream, ServerCallContext context)
-        {
-            try
+            await foreach (var obj in requestStream.ReadAllAsync())
             {
-                List<ObjectWithHash> objects = [];
-                await foreach (var obj in requestStream.ReadAllAsync())
+                if (!found)
                 {
-                    objects.Add(obj.Object);
+                    if (!transactions.TryGetValue(System.Guid.Parse(obj.TransactionGuid), out transactionInfo))
+                    {
+                        throw new RpcException(new Status(StatusCode.Cancelled, "invalid transaction id"));
+                    }
+                    if (TimeSpan.FromTicks(Now - transactionInfo.Item2).TotalMilliseconds > trackerResponseLimit)
+                    {
+                        transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
+                            (
+                            System.Guid.Parse(obj.TransactionGuid),
+                            transactionInfo)
+                            );
+
+                        throw new RpcException(new Status(StatusCode.DeadlineExceeded, "TTL has expired"));
+                    }
                 }
-                foreach (var o in objects)
-                    await _filesystemManager.ObjectByHash.SetAsync(o.Hash, o);
-                return new Empty();
+                found = true;
+                objects.Add(obj);
+                if (obj.IsRoot)
+                    rootHash = obj.Object.Hash;
             }
-            catch (InvalidProtocolBufferException ex)
+
+            await _filesystemManager.CreateObjectContainer(
+                objects.Select(o => o.Object).ToArray(),
+                rootHash,
+                transactionInfo.Item1
+            );
+            return new Empty();
+        }
+
+        public override async Task<TransactionStartResponse> StartTransaction(
+            TransactionRequest request,
+            ServerCallContext context
+        )
+        {
+            return await Task.Run(() =>
             {
-                logger.LogError($"Error in Publish method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid UTF-8 data received."));
-            }
-            catch (RpcException ex)
-            {
-                logger.LogError($"Error in Publish method: {ex.Message}");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Unexpected error in Publish method: {ex.Message}");
-                throw new RpcException(new Status(StatusCode.Unknown, "Unexpected error occurred."));
-            }
+                var containerGuid = System.Guid.Parse(request.ContainerGuid);
+
+                try
+                {
+                    var info = transactions.First(t => t.Value.Item1 == containerGuid);
+                    if (info.Value.Item2 != 0
+                    && TimeSpan.FromTicks(DateTime.Now.Ticks - info.Value.Item2).TotalMilliseconds < trackerResponseLimit)
+                    {
+                        return new TransactionStartResponse()
+                        {
+                            ActualContainerGuid = "",
+                            State = TransactionState.Locked,
+                            TransactionGuid = "",
+                            TtlMs = 0,
+                        };
+                    }
+
+                    transactions.TryRemove(info);
+                }
+                catch { }
+
+                var currentGuid = System.Guid.NewGuid();
+                var time = DateTime.Now.Ticks;
+                transactions[currentGuid] = (containerGuid, time);
+                return new TransactionStartResponse()
+                {
+                    ActualContainerGuid = request.ContainerGuid,
+                    State = TransactionState.Ok,
+                    TransactionGuid = currentGuid.ToString(),
+                    TtlMs = trackerResponseLimit,
+                };
+            });
         }
     }
 }

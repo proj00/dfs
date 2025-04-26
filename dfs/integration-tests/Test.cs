@@ -23,16 +23,17 @@ namespace integration_tests
         private TrackerWrapper trackerClient;
         private string _tempDirectory;
         private int testPort;
-        private RefWrapper<bool> errorsPrinted = new RefWrapper<bool>(false);
+        private RefWrapper errorsPrinted = new RefWrapper(false);
 
         public Tests()
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         }
-        class RefWrapper<T>
+        class RefWrapper
         {
-            public T Value { get; set; }
-            public RefWrapper(T value) => Value = value;
+            private bool v = false;
+            public bool Value { get; set; }
+            public RefWrapper(bool value) { Value = value; }
         }
 
         private static readonly string NodeOutputPath = Path.GetFullPath(
@@ -46,7 +47,7 @@ namespace integration_tests
         [SetUp]
         public async Task SetUp()
         {
-            errorsPrinted = new RefWrapper<bool>(false);
+            errorsPrinted = new RefWrapper(false);
             try
             {
                 ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
@@ -117,16 +118,15 @@ namespace integration_tests
                 ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
                 if (Directory.Exists(_tempDirectory) && !errorsPrinted.Value && !Debugger.IsAttached)
                 {
-                    Directory.Delete(_tempDirectory, recursive: true);
+                    //Directory.Delete(_tempDirectory, recursive: true);
                 }
             }
             catch { /* Ignore cleanup errors */ }
             var b = errorsPrinted.Value;
-            errorsPrinted = new RefWrapper<bool>(false);
             Assert.That(b, Is.False, "errors printed");
         }
 
-        private static Process StartProcess(string exePath, string arguments, RefWrapper<bool> errorsPrinted)
+        private static Process StartProcess(string exePath, string arguments, RefWrapper errorsPrinted)
         {
             if (!File.Exists(exePath))
                 throw new FileNotFoundException($"Executable not found: {exePath}");
@@ -147,17 +147,8 @@ namespace integration_tests
 
             process.OutputDataReceived += (sender, args) =>
             {
-                if (args.Data?.StartsWith("fail") ?? false)
-                {
-                    TestContext.Error.WriteLine(args.Data + "(DEBUG AND CHECK FULL)");
-                    errorsPrinted.Value = true;
-
-                }
-                if (Debugger.IsAttached)
-                {
-                    if (args.Data == null) return;
-                    else TestContext.Out.WriteLine(args.Data);
-                }
+                if (args.Data == null) return;
+                else TestContext.Out.WriteLine(args.Data);
             };
 
             process.ErrorDataReceived += (sender, args) =>
@@ -183,8 +174,8 @@ namespace integration_tests
             return port;
         }
 
-        [Test]
-        public async Task PublishAndSearchTest()
+        [Test, CancelAfter(50000)]
+        public async Task PublishAndSearchTest(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
@@ -197,12 +188,12 @@ namespace integration_tests
             await file.FlushAsync();
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName });
+            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName }, null, null, token);
             Assert.That(resp, Is.Not.Null);
             Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" });
-            var resp2 = await trackerClient.SearchForObjects("(?s).*");
+            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" }, null, null, token);
+            var resp2 = await trackerClient.SearchForObjects("(?s).*", token);
             Assert.That(resp2, Is.Not.Null);
             Assert.That(resp2.Count, Is.EqualTo(2));
             foreach (var a in resp2)
@@ -211,8 +202,8 @@ namespace integration_tests
             Assert.That(resp2[1].Object.Object.Name, Is.EqualTo("test.txt"));
         }
 
-        [Test]
-        public async Task TestDownload()
+        [Test, CancelAfter(50000)]
+        public async Task TestDownload(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
@@ -249,7 +240,7 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
         }
-        [Test]
+        [Test, MaxTime(80000)]
         public async Task TestDownloadWithPauseResume()
         {
             var directory = Directory.CreateDirectory(

@@ -73,7 +73,7 @@ namespace common
             _syncRoot.Dispose();
         }
 
-        public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid? guid = null)
+        public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid guid)
         {
             ArgumentNullException.ThrowIfNull(objects);
             using (await _syncRoot.LockAsync())
@@ -113,16 +113,15 @@ namespace common
                     }
                 }
 
-                var g = guid ?? Guid.NewGuid();
-                ByteString? oldRoot = await Container.TryGetValue(g);
+                ByteString? oldRoot = await Container.TryGetValue(guid);
                 if (oldRoot != null)
                 {
                     await NewerVersion.SetAsync(oldRoot, rootObject);
                 }
 
-                await Container.SetAsync(g, rootObject);
+                await Container.SetAsync(guid, rootObject);
 
-                return g;
+                return guid;
             }
         }
 

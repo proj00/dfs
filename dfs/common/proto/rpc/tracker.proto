@@ -12,13 +12,14 @@ service Tracker
 	rpc MarkUnreachable(MarkRequest) returns (rpc_common.Empty);
 	rpc GetPeerList(PeerRequest) returns (stream PeerResponse);
 
+	// container transactions (sort of a implicit mutex for each container):
+	// 1. request to modify/create container with StartTransaction
+	// 2. if container isn't locked, receive the containerguid/transactionguid/ttl struct
+	// 3. publish ASAP to fit within TTL
+	// 5. check for exceptions from tracker to recover/persist
 	rpc GetContainerRootHash(rpc_common.Guid) returns (rpc_common.Hash);
-
-	// container transactions
-	rpc SetContainerRootHash(ContainerRootHash) returns (rpc_common.Empty);
 	rpc Publish(stream PublishedObject) returns (rpc_common.Empty);
-	rpc StartTransaction(rpc_common.Empty) returns (TransactionStartResponse);
-	rpc CheckTransactionState(rpc_common.Guid) returns (TransactionStateResponse);
+	rpc StartTransaction(TransactionRequest) returns (TransactionStartResponse);
 
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 	rpc GetDataUsage(rpc_common.Empty) returns (rpc_common.DataUsage);
@@ -36,6 +37,7 @@ message PublishedObject
 {
 	string transactionGuid = 1;
 	fs.ObjectWithHash object = 2;
+	bool isRoot = 3;
 }
 
 message PeerRequest
@@ -66,10 +68,17 @@ message UsageReport
 	int64 bytes = 2;
 }
 
+message TransactionRequest
+{
+	string containerGuid = 1;
+}
+
 message TransactionStartResponse
 {
-	string guid = 1;
-	int64 ttl_ms = 2;
+	string actualContainerGuid = 1;
+	string transactionGuid = 2;
+	int64 ttl_ms = 3;
+	TransactionState state = 4;
 }
 
 enum TransactionState
@@ -78,9 +87,5 @@ enum TransactionState
 	Ok = 1;
 	Failed = 2;
 	Expired = 3;
-}
-
-message TransactionStateResponse
-{
-	TransactionState state = 1;
+	Locked = 4;
 }
