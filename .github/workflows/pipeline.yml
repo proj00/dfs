@@ -71,6 +71,7 @@ jobs:
 
   quality-gate-check:
     runs-on: windows-latest
+    permissions: read-all
     needs: [build]
     steps:
       - name: Check Quality Gate
