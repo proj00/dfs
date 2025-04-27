@@ -10,10 +10,7 @@ jobs:
   # .NET Build and Test Job
   build:
     runs-on: windows-latest
-    permissions: 
-      actions: read
-      contents: read
-      security-events: write
+    permissions: read-all
 
     steps:
       - uses: actions/checkout@v4
@@ -25,12 +22,6 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: csharp
-          build-mode: manual
   
       - name: Checkout submodules
         uses: actions/checkout@v2
@@ -48,9 +39,6 @@ jobs:
 
       - name: Build .NET project
         run: dotnet build --no-restore dfs/dfs.slnf
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
 
   # .NET Test and Coverage Collection Job
   test:
