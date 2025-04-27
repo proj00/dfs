@@ -106,29 +106,52 @@ jobs:
           files: ./dfs/electron/coverage/lcov-report/lcov-report.json
           name: jest-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
-          
-  sonarcloud-analysis:
-      runs-on: windows-latest
-      needs: [test, ui-tests]
-      steps:
-        - uses: actions/checkout@v4
-  
-        - name: Set up SonarCloud
-          uses: SonarSource/sonarcloud-github-action@v1
-          with:
-            organization: proj00  # Replace with your SonarCloud organization
-            projectKey: proj00_dfs     # Replace with your SonarCloud project key
-          env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Ensure you have this secret in your repo settings
-  
-        - name: Upload .NET Coverage Report to SonarCloud
-          run: |
-            dotnet sonarscanner begin /k:"proj00_dfs" /d:sonar.login=$SONAR_TOKEN
-            dotnet build dfs/dfs.slnf
-            dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
-  
-        - name: Upload Jest Coverage Report to SonarCloud
-          run: |
-            sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=proj00_dfs \
-            -Dsonar.sources=./dfs/electron \
-            -Dsonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json
+
+  # SonarCloud Setup Job
+  sonarcloud-setup:
+    runs-on: windows-latest
+    steps:
+      - name: Set up SonarCloud
+        run: |
+          echo "Setting up SonarCloud"
+          curl -sSLo sonarscanner.zip https://github.com/SonarSource/sonar-scanner-cli/releases/download/4.7.0.2747/sonar-scanner-cli-4.7.0.2747-windows.zip
+          mkdir sonar-scanner
+          tar -xf sonarscanner.zip -C sonar-scanner --strip-components=1
+          echo "sonar-scanner setup complete"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # SonarCloud .NET Report Job
+  sonarcloud-dotnet-report:
+    runs-on: windows-latest
+    needs: [sonarcloud-setup, test]  # Ensure setup and tests are done before this
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install .NET SonarScanner
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+      - name: Upload .NET Coverage Report to SonarCloud
+        run: |
+          dotnet sonarscanner begin /k:"your-project-key" /d:sonar.login=$SONAR_TOKEN
+          dotnet build dfs/dfs.slnf
+          dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
+
+  # SonarCloud Jest (TypeScript) Report Job
+  sonarcloud-jest-report:
+    runs-on: windows-latest
+    needs: [sonarcloud-setup, ui-tests]  # Ensure setup and tests are done before this
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SonarScanner (for Jest)
+        run: |
+          npm install -g sonar-scanner
+
+      - name: Upload Jest Coverage Report to SonarCloud
+        run: |
+          sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=your-project-key \
+          -Dsonar.sources=./dfs/electron \
+          -Dsonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json
