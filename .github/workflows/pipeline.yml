@@ -22,7 +22,7 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
+  
       - name: Checkout submodules
         uses: actions/checkout@v2
         with:
@@ -106,3 +106,29 @@ jobs:
           files: ./dfs/electron/coverage/lcov-report/lcov-report.json
           name: jest-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
+          
+  sonarcloud-analysis:
+      runs-on: windows-latest
+      needs: [test, ui-tests]
+      steps:
+        - uses: actions/checkout@v4
+  
+        - name: Set up SonarCloud
+          uses: SonarSource/sonarcloud-github-action@v1
+          with:
+            organization: proj00  # Replace with your SonarCloud organization
+            projectKey: proj00_dfs     # Replace with your SonarCloud project key
+          env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Ensure you have this secret in your repo settings
+  
+        - name: Upload .NET Coverage Report to SonarCloud
+          run: |
+            dotnet sonarscanner begin /k:"proj00_dfs" /d:sonar.login=$SONAR_TOKEN
+            dotnet build dfs/dfs.slnf
+            dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
+  
+        - name: Upload Jest Coverage Report to SonarCloud
+          run: |
+            sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=proj00_dfs \
+            -Dsonar.sources=./dfs/electron \
+            -Dsonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json
