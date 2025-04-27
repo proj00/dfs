@@ -43,6 +43,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup Git Context
+        run: |
+          git config --global --add safe.directory ${{ github.workspace }}
+          cd ${{ github.workspace }}
+          git rev-parse --git-dir
+          
       - name: Analyze with SonarCloud
 
         # You can pin the exact commit or the version.
@@ -56,11 +62,11 @@ jobs:
             -Dproject.settings=./sonar-project.properties
             -Dsonar.projectKey=proj00_dfs
             -Dsonar.organization=proj00
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.sources=.
             -Dsonar.scm.disabled=false
             -Dsonar.scm.provider=git
-            -Dsonar.working.directory=.scannerwork
             -Dsonar.scm.forceReloadAll=true
+            -Dsonar.sources=${{ github.workspace }}
+            -Dsonar.projectBaseDir=${{ github.workspace }}
+            -Dsonar.working.directory=${{ github.workspace }}/.scannerwork
           # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: .
