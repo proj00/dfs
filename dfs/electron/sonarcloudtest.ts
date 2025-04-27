@@ -1,0 +1,1 @@
+const a = eval("bad()");
