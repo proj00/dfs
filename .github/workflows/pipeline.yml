@@ -120,8 +120,10 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
 
       - name: Upload .NET Coverage Report to SonarCloud
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:"your-project-key" /d:sonar.login=$SONAR_TOKEN
+          dotnet sonarscanner begin /k:"proj00-dfs" /d:sonar.login=$SONAR_TOKEN
           dotnet build dfs/dfs.slnf
           dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
 
@@ -137,7 +139,9 @@ jobs:
           npm install -g sonar-scanner
 
       - name: Upload Jest Coverage Report to SonarCloud
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=your-project-key \
+          sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=proj00-dfs \
           -Dsonar.sources=./dfs/electron \
           -Dsonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json
