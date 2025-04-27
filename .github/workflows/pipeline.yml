@@ -22,7 +22,7 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-  
+
       - name: Checkout submodules
         uses: actions/checkout@v2
         with:
@@ -37,8 +37,57 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore dfs/dfs.slnf
 
+      - name: Init SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token=${{ secrets.SONAR_TOKEN }}
+
       - name: Build .NET project
         run: dotnet build --no-restore dfs/dfs.slnf
+
+      - name: Finish SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
+
+  sonarscannercheck:
+    runs-on: windows-latest
+    permissions: read-all
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch issues
+        run: |
+          $response = curl "https://sonarcloud.io/api/issues/search?projectKeys=proj00_dfs&resolved=false" | ConvertFrom-Json
+          if ($response.total -gt 0){
+              Write-Host "Found " $response.total "issues, check sonarcloud report online and address them"
+              exit 1
+          }
+          else {
+              Write-Host "No issues :)"
+          }
+
+  quality-gate-check:
+    runs-on: windows-latest
+    permissions: read-all
+    needs: [build]
+    steps:
+      - name: Check Quality Gate
+        run: |
+          $quality_gate_url = "https://sonarcloud.io/api/qualitygates/project_status?projectKey=proj00_dfs"
+
+          $response = curl "$quality_gate_url"
+
+          $status = ($response | ConvertFrom-Json).projectStatus.status
+
+          if ($status -ne "OK") {
+              Write-Host "Quality Gate failed! Your changes did not pass checks (check sonarcloud online)"
+              exit 1
+          } else {
+              Write-Host "Quality Gate passed!"
+          }
 
   # .NET Test and Coverage Collection Job
   test:
@@ -106,29 +155,3 @@ jobs:
           files: ./dfs/electron/coverage/lcov-report/lcov-report.json
           name: jest-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
-          
-  sonarcloud-analysis:
-      runs-on: windows-latest
-      needs: [test, ui-tests]
-      steps:
-        - uses: actions/checkout@v4
-  
-        - name: Set up SonarCloud
-          uses: SonarSource/sonarcloud-github-action@v1
-          with:
-            organization: proj00  # Replace with your SonarCloud organization
-            projectKey: proj00_dfs     # Replace with your SonarCloud project key
-          env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Ensure you have this secret in your repo settings
-  
-        - name: Upload .NET Coverage Report to SonarCloud
-          run: |
-            dotnet sonarscanner begin /k:"proj00_dfs" /d:sonar.login=$SONAR_TOKEN
-            dotnet build dfs/dfs.slnf
-            dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
-  
-        - name: Upload Jest Coverage Report to SonarCloud
-          run: |
-            sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=proj00_dfs \
-            -Dsonar.sources=./dfs/electron \
-            -Dsonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json

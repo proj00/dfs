@@ -1,3 +1,6 @@
+[*.cs]
+# sw ka tu
+dotnet_diagnostic.severity = error
 
 [*.{cs,vb}]
 #### Naming styles ####

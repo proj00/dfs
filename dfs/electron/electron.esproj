@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.1738743">
   <PropertyGroup>
+	  <SuppressWarnings>NETSDK1060</SuppressWarnings>
     <JavaScriptTestRoot>test\</JavaScriptTestRoot>
     <JavaScriptTestFramework>Jest</JavaScriptTestFramework>
     <!-- Allows the build (or compile) script located on package.json to run on Build -->
@@ -7,6 +8,7 @@
     <!-- Folder where production build objects will be placed -->
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist</BuildOutputFolder>
     <StartupCommand>npm run start</StartupCommand>
+
   </PropertyGroup>
   <ItemGroup>
     <None Include=".vscode\launch.json" />
