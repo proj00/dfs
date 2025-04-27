@@ -39,8 +39,7 @@ jobs:
 
       - name: Init SonarScanner
         run: |
-          dotnet nuget add source https://www.nuget.org/api/v2/package/dotnet-sonarscanner/10.1.2 --name "dotnet-sonarscanner"
-          dotnet tool install --global dotnet-solarscanner
+          dotnet tool install --global dotnet-sonarscanner
           dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
       - name: Build .NET project
@@ -64,6 +63,25 @@ jobs:
           }
           else {
               Write-Host "No issues :)"
+          }
+
+  quality-gate-check:
+    runs-on: windows-latest
+    needs: [build]
+    steps:
+      - name: Check Quality Gate
+        run: |
+          $quality_gate_url = "https://sonarcloud.io/api/qualitygates/project_status?projectKey=proj00_dfs"
+
+          $response = curl "$quality_gate_url"
+
+          $status = ($response | ConvertFrom-Json).projectStatus.status
+
+          if ($status -ne "OK") {
+              Write-Host "Quality Gate failed! Your changes did not pass checks (check sonarcloud online)"
+              exit 1
+          } else {
+              Write-Host "Quality Gate passed!"
           }
 
   # .NET Test and Coverage Collection Job
