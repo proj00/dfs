@@ -39,6 +39,7 @@ jobs:
 
       - name: Init SonarScanner
         run: |
+          dotnet nuget add source https://www.nuget.org/api/v2/package/dotnet-sonarscanner/10.1.2 --name "dotnet-sonarscanner"
           dotnet tool install --global dotnet-solarscanner
           dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
@@ -48,6 +49,12 @@ jobs:
       - name: Finish SonarScanner
         run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
+  sonarscannercheck:
+    runs-on: windows-latest
+    permissions: read-all
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
       - name: Fetch issues
         run: |
           $response = curl "https://sonarcloud.io/api/issues/search?projectKeys=proj00_dfs&resolved=false" | ConvertFrom-Json
