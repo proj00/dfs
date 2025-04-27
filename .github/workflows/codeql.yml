@@ -1,0 +1,4 @@
+name: "CodeQL"
+
+on:
+  workflow_dispatch: {}
