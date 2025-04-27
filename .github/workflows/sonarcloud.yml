@@ -43,17 +43,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check files
-        run: |
-          echo "Current directory: $(pwd)"
-            ls -la
-            if [ -f "sonar-project.properties" ]; then
-              echo "Config file exists!"
-              cat sonar-project.properties
-            else
-              echo "No config file found!"
-            fi
-        
       - name: Analyze with SonarCloud
 
         # You can pin the exact commit or the version.
@@ -67,7 +56,11 @@ jobs:
             -Dproject.settings=./sonar-project.properties
             -Dsonar.projectKey=proj00_dfs
             -Dsonar.organization=proj00
-            -Dsonar.analysis.scope=full
-            -Dsonar.forceAnalysis=true
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.sources=.
+            -Dsonar.scm.disabled=false
+            -Dsonar.scm.provider=git
+            -Dsonar.working.directory=.scannerwork
+            -Dsonar.scm.forceReloadAll=true
           # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
           projectBaseDir: .
