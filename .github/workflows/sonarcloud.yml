@@ -67,5 +67,4 @@ jobs:
             -Dsonar.scm.forceReloadAll=true
             -Dsonar.sources=.
             -Dsonar.analysis.scope=full
-            -Dsonar.projectBaseDir=${{ github.workspace }}
-            -Dsonar.working.directory=${{ github.workspace }}/.scannerwork
+            -Dsonar.projectBaseDir=.
