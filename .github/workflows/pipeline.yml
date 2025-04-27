@@ -42,7 +42,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet tool install --global dotnet-sonarscanner
-          dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token=$SONAR_TOKEN
+          dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Build .NET project
         run: dotnet build --no-restore dfs/dfs.slnf
@@ -50,7 +50,7 @@ jobs:
       - name: Finish SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet-sonarscanner end /d:sonar.token=$SONAR_TOKEN
+        run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
 
   sonarscannercheck:
     runs-on: windows-latest
