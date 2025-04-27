@@ -107,24 +107,10 @@ jobs:
           name: jest-coverage
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  # SonarCloud Setup Job
-  sonarcloud-setup:
-    runs-on: windows-latest
-    steps:
-      - name: Set up SonarCloud
-        run: |
-          echo "Setting up SonarCloud"
-          curl -sSLo sonarscanner.zip https://github.com/SonarSource/sonar-scanner-cli/releases/download/4.7.0.2747/sonar-scanner-cli-4.7.0.2747-windows.zip
-          mkdir sonar-scanner
-          tar -xf sonarscanner.zip -C sonar-scanner --strip-components=1
-          echo "sonar-scanner setup complete"
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
   # SonarCloud .NET Report Job
   sonarcloud-dotnet-report:
     runs-on: windows-latest
-    needs: [sonarcloud-setup, test]  # Ensure setup and tests are done before this
+    needs: [test]  # Ensure setup and tests are done before this
     steps:
       - uses: actions/checkout@v4
 
@@ -142,7 +128,7 @@ jobs:
   # SonarCloud Jest (TypeScript) Report Job
   sonarcloud-jest-report:
     runs-on: windows-latest
-    needs: [sonarcloud-setup, ui-tests]  # Ensure setup and tests are done before this
+    needs: [ui-tests]  # Ensure setup and tests are done before this
     steps:
       - uses: actions/checkout@v4
 
