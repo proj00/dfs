@@ -123,7 +123,7 @@ jobs:
   
         - name: Upload .NET Coverage Report to SonarCloud
           run: |
-            dotnet sonarscanner begin /k:"your-project-key" /d:sonar.login=$SONAR_TOKEN
+            dotnet sonarscanner begin /k:"proj00_dfs" /d:sonar.login=$SONAR_TOKEN
             dotnet build dfs/dfs.slnf
             dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
   
