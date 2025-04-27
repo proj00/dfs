@@ -36,37 +36,37 @@ on:
   workflow_dispatch:
 
 permissions:
-  pull-requests: read # allows SonarCloud to decorate PRs with analysis results
+  contents: read
+  security-events: write
+  pull-requests: write
 
 jobs:
   Analysis:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Setup Git Context
-        run: |
-          git config --global --add safe.directory ${{ github.workspace }}
-          cd ${{ github.workspace }}
-          git rev-parse --git-dir
-          
-      - name: Analyze with SonarCloud
-
-        # You can pin the exact commit or the version.
-        # uses: SonarSource/sonarcloud-github-action@v2.2.0
-        uses: SonarSource/sonarcloud-github-action@4006f663ecaf1f8093e8e4abb9227f6041f52216
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Generate a token on Sonarcloud.io, add it to the secrets of this repo with the name SONAR_TOKEN (Settings > Secrets > Actions > add new repository secret)
+      - uses: actions/checkout@v4
         with:
-          # Additional arguments for the SonarScanner CLI
+          fetch-depth: 0  # Still required for full history
+
+      - name: Set up Git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git rev-parse --git-dir
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scanner-version: latest  # Automatically updates SonarScanner
           args: >
-            -Dproject.settings=./sonar-project.properties
             -Dsonar.projectKey=proj00_dfs
             -Dsonar.organization=proj00
             -Dsonar.scm.disabled=false
             -Dsonar.scm.provider=git
             -Dsonar.scm.forceReloadAll=true
-            -Dsonar.sources=${{ github.workspace }}
+            -Dsonar.sources=.
             -Dsonar.projectBaseDir=${{ github.workspace }}
             -Dsonar.working.directory=${{ github.workspace }}/.scannerwork
-          # When you need the analysis to take place in a directory other than the one from which it was launched, default is .
-          projectBaseDir: .
+            -Dsonar.verbose=true
