@@ -43,6 +43,7 @@ jobs:
   # .NET Test and Coverage Collection Job
   test:
     runs-on: windows-latest
+    permissions: read-all
     needs: build
     steps:
       - uses: actions/checkout@v4
@@ -69,6 +70,7 @@ jobs:
   # UI Test Job (Jest)
   ui-tests:
     runs-on: windows-latest
+    permissions: read-all
     needs: build
     steps:
       - uses: actions/checkout@v4
