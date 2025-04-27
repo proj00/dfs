@@ -10,7 +10,10 @@ jobs:
   # .NET Build and Test Job
   build:
     runs-on: windows-latest
-    permissions: read-all
+    permissions: 
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
       - uses: actions/checkout@v4
