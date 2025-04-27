@@ -43,6 +43,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check files
+        run: |
+          echo "Current directory: $(pwd)"
+            ls -la
+            if [ -f "sonar-project.properties" ]; then
+              echo "Config file exists!"
+              cat sonar-project.properties
+            else
+              echo "No config file found!"
+            fi
+        
       - name: Analyze with SonarCloud
 
         # You can pin the exact commit or the version.
