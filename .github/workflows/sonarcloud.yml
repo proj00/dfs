@@ -53,8 +53,8 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git rev-parse --git-dir
 
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5.1.0
+      - name: scan
+        uses: sonarsource/sonarcloud-github-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
