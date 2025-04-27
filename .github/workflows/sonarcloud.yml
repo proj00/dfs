@@ -54,7 +54,7 @@ jobs:
           git rev-parse --git-dir
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@5.1.0
+        uses: SonarSource/sonarqube-scan-action@v1.10
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
