@@ -18,7 +18,7 @@ repos:
       - id: dotnet-format
         name: dotnet-format
         language: system
-        entry: dotnet format dfs/dfs.slnf --diagnostics "" -v normal --include
+        entry: dotnet format dfs/dfs.sln --diagnostics "" -v normal --include
         files: ^dfs/.*
         types_or: ["c#", "vb"]
   - repo: https://github.com/psf/black

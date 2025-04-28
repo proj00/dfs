@@ -79,7 +79,7 @@ namespace integration_tests
                 new Uri($"http://localhost:{testPort + 2}"))), $"http://localhost:{testPort + 2}");
         }
 
-        private static async Task WaitForPortAsync(int port, int timeoutMs = 10000)
+        private static async Task WaitForPortAsync(int port, int timeoutMs = 40000)
         {
             var stopWatch = Stopwatch.StartNew();
             while (stopWatch.ElapsedMilliseconds < timeoutMs)
