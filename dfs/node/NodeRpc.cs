@@ -15,7 +15,7 @@ namespace node
 {
     public class NodeRpc : NodeBase
     {
-        public NodeState state { get; }
+        private readonly NodeState state;
         public NodeRpc(NodeState state)
         {
             this.state = state;
@@ -23,19 +23,19 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (await state.IsInBlockListAsync(context.Peer))
+            if (await state.IsInBlockListAsync(context.Peer).ConfigureAwait(false))
             {
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }
 
-            RpcCommon.HashList? parent = await state.Manager.ChunkParents.TryGetValue(request.Hash);
+            RpcCommon.HashList? parent = await state.Manager.ChunkParents.TryGetValue(request.Hash).ConfigureAwait(false);
             if (parent == null)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "chunk id invalid or not found"));
             }
 
             var parentHash = parent.Data[0];
-            var parentObj = (await state.Manager.ObjectByHash.GetAsync(parentHash)).Object;
+            var parentObj = (await state.Manager.ObjectByHash.GetAsync(parentHash).ConfigureAwait(false)).Object;
             if (parentObj == null)
             {
                 throw new RpcException(new Status(StatusCode.Internal, "internal failure"));
@@ -46,12 +46,12 @@ namespace node
             var offset = chunkIndex * size + request.Offset;
             var remainingSize = size - request.Offset;
 
-            using var stream = new FileStream(await state.PathByHash.GetAsync(parentHash), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = new FileStream(await state.PathByHash.GetAsync(parentHash).ConfigureAwait(false), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
             var buffer = new byte[remainingSize];
             stream.Seek(offset, SeekOrigin.Begin);
 
-            var total = await stream.ReadAsync(buffer, 0, (int)remainingSize);
+            var total = await stream.ReadAsync(buffer.AsMemory(0, (int)remainingSize), context.CancellationToken).ConfigureAwait(false);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
             var used = 0;
 
@@ -63,7 +63,7 @@ namespace node
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
                     Response = res
-                });
+                }, context.CancellationToken).ConfigureAwait(false);
 
                 state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
                 if (context.CancellationToken.IsCancellationRequested)
@@ -71,9 +71,8 @@ namespace node
                     break;
                 }
             }
-
             var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, CancellationToken.None);
-            await tracker.ReportDataUsage(true, used, CancellationToken.None);
+            await tracker.ReportDataUsage(true, used, CancellationToken.None).ConfigureAwait(false);
         }
     }
 }

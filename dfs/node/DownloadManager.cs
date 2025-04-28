@@ -16,7 +16,7 @@ namespace node
 
     public class DownloadManager : IDisposable
     {
-        private class StateChange
+        private sealed class StateChange
         {
             public ByteString Hash { get; set; } = ByteString.Empty;
             public DownloadStatus NewStatus { get; set; } = DownloadStatus.Pending;

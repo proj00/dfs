@@ -294,23 +294,6 @@ function generateInterface(
   const service = findService(root, targetServiceName);
   if (service) {
     const importsMap = new Map<string, Set<string>>();
-    function registerImport(typeName: string, fromModule: string) {
-      if (fromModule === "fs") {
-        fromModule = `@/types/fs/filesystem`;
-      } else if (fromModule === "rpc_common") {
-        fromModule = `@/types/rpc_common`;
-      } else if (fromModule === "Ui") {
-        fromModule = `@/types/rpc/uiservice`;
-      } else {
-        throw new Error("invalid");
-      }
-
-      if (!importsMap.has(fromModule)) {
-        importsMap.set(fromModule, new Set());
-      }
-      importsMap.get(fromModule)!.add(typeName);
-    }
-
     const methods: OptionalKind<MethodSignatureStructure>[] | undefined =
       Object.values(service.methods).map((method) => {
         const reqPackage = extractPackage(method.resolvedRequestType!.fullName);
@@ -321,8 +304,8 @@ function generateInterface(
         method.requestType = extractType(method.requestType);
         method.responseType = extractType(method.responseType);
 
-        registerImport(method.requestType, reqPackage);
-        registerImport(method.responseType, resPackage);
+        registerImport(method.requestType, reqPackage, importsMap);
+        registerImport(method.responseType, resPackage, importsMap);
 
         return getMethodDescription(method);
       });
