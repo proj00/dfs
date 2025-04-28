@@ -160,12 +160,13 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build --verbosity d ./build-output/node-unit-tests/unit-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
+          $CoverageOutput = "$(pwd)/a/unitcoverage.xml"
+          dotnet test --no-build --verbosity d ./build-output/node-unit-tests/unit-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=$CoverageOutput
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: ./build-output/node-unit-tests/unitcoverage.xml
+          path: a/unitcoverage.xml
           name: dotnet-unit-coverage
           
   cs-integration:
@@ -191,12 +192,13 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity d ./build-output/integration-tests/integration-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
+          $CoverageOutput = "$(pwd)/a/integrationcoverage.xml"
+          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity d ./build-output/integration-tests/integration-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=$CoverageOutput
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: ./build-output/integration-tests/integrationcoverage.xml
+          path: a/integrationcoverage.xml
           name: dotnet-integration-coverage
           
   # UI Test Job (Jest)
