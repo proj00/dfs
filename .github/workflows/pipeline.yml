@@ -11,7 +11,7 @@ jobs:
   cs-build:
     runs-on: windows-latest
     permissions: read-all
-
+    needs: [ui]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,38 +37,6 @@ jobs:
       - name: Restore .NET dependencies
         run: dotnet restore dfs/dfs.sln
 
-      - name: Init SonarScanner
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet tool install --global dotnet-sonarscanner
-          dotnet-sonarscanner begin `
-          /key:proj00_dfs /o:proj00 `
-          /d:sonar.token=${{ secrets.SONAR_TOKEN }}
-
-      - name: Build .NET project
-        run: dotnet build --no-restore dfs/dfs.sln
-
-      - name: Test .NET project
-        run: dotnet test --no-build dfs/dfs.sln --verbosity d --collect "Code Coverage"
-
-      - name: Finish SonarScanner
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
-
-      - name: Upload Build Output
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: dfs/
-  sonar:
-    runs-on: windows-latest
-    permissions: read-all
-    needs: [cs-build, ui]
-    steps:
-      - uses: actions/checkout@v4
-
       - name: Download Jest coverage report
         uses: actions/download-artifact@v4
         with:
@@ -83,7 +51,13 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info
+          /d:typescript.lcov.reportPaths=coverage/jest/lcov.info
+
+      - name: Build .NET project
+        run: dotnet build --no-restore dfs/dfs.sln
+
+      - name: Test .NET project
+        run: dotnet test --no-build dfs/dfs.sln --verbosity d --collect "Code Coverage"
 
       - name: Finish SonarScanner
         env:
@@ -93,7 +67,7 @@ jobs:
   issue-check:
     runs-on: windows-latest
     permissions: read-all
-    needs: [sonar]
+    needs: [cs-build]
     steps:
       - uses: actions/checkout@v4
       - name: Fetch issues
@@ -110,7 +84,7 @@ jobs:
   quality-gate-check:
     runs-on: windows-latest
     permissions: read-all
-    needs: [sonar]
+    needs: [cs-build]
     steps:
       - name: Check Quality Gate
         run: |
