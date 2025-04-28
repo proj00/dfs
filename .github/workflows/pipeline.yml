@@ -160,7 +160,7 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build --verbosity normal ./build-output/node-unit-tests/unit-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
+          dotnet test --no-build --verbosity d ./build-output/node-unit-tests/unit-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
@@ -191,7 +191,7 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity normal ./build-output/integration-tests/integration-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
+          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity d ./build-output/integration-tests/integration-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
