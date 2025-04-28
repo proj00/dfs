@@ -162,6 +162,8 @@ jobs:
         run: |
           $CoverageOutput = "$(pwd)/a/unitcoverage.xml"
           dotnet test --no-build --verbosity d ./build-output/node-unit-tests/unit-tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=$CoverageOutput
+      - name: List all files for debugging
+        run: dir /s /b
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
