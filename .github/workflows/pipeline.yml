@@ -45,6 +45,20 @@ jobs:
     permissions: read-all
     needs: [test, ui-tests]
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Download .NET coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-coverage
+          path: ./coverage/dotnet
+
+      - name: Download Jest coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: jest-coverage
+          path: ./coverage/jest
+
       - name: Init SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -53,8 +67,8 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.cs.opencover.reportsPaths=./dfs/integration-tests/coverage.opencover.xml `
-          /d:sonar.javascript.lcov.reportPaths=./dfs/electron/coverage/lcov-report/lcov-report.json
+          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/coverage.opencover.xml`
+          /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info
 
       - name: Gather info
         run: |
@@ -65,7 +79,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
 
-  sonarscannercheck:
+  issue-check:
     runs-on: windows-latest
     permissions: read-all
     needs: [sonar]
@@ -122,12 +136,11 @@ jobs:
         run: |
           dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 
-      - name: Upload .NET Coverage Report to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload .NET Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          files: dfs/integration-tests/coverage.opencover.xml
+          path: dfs/integration-tests/coverage.opencover.xml
           name: dotnet-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   # UI Test Job (Jest)
   ui-tests:
@@ -162,9 +175,8 @@ jobs:
         working-directory: ./dfs/electron
         run: npx jest --coverage
 
-      - name: Upload Jest Coverage Report to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload Jest Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          files: ./dfs/electron/coverage/lcov-report/lcov-report.json
+          path: ./dfs/electron/coverage/lcov-report/lcov.info
           name: jest-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
