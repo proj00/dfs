@@ -50,6 +50,7 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
+          /d:sonar.exclusions="dfs/*-tests/*" `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
           /d:typescript.lcov.reportPaths=coverage/jest/lcov.info
 
