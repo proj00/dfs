@@ -97,10 +97,10 @@ namespace node
                         }
 
                         var hash = message.Hash;
-                        if (fileTokens.TryRemove(hash, out var tokenSource))
+                        if (fileTokens.TryRemove(hash, out var fileToken))
                         {
-                            await tokenSource.CancelAsync();
-                            tokenSource.Dispose();
+                            await fileToken.CancelAsync();
+                            fileToken.Dispose();
                         }
 
                         break;
