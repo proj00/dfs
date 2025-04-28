@@ -67,7 +67,7 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/coverage.opencover.xml`
+          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/coverage.opencover.xml `
           /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info
 
       - name: Gather info
