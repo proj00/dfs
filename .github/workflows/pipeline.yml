@@ -166,7 +166,7 @@ jobs:
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: a/unitcoverage.xml
+          path: dfs/a/unitcoverage.xml
           name: dotnet-unit-coverage
           
   cs-integration:
@@ -198,7 +198,7 @@ jobs:
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: a/integrationcoverage.xml
+          path: dfs/a/integrationcoverage.xml
           name: dotnet-integration-coverage
           
   # UI Test Job (Jest)
