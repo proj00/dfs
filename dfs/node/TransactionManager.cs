@@ -33,8 +33,8 @@ namespace node
             changedEvent.Reset();
             Action<Guid, TransactionState> registerGuid = (g, s) => { newGuid = g; state = s; changedEvent.Set(); };
 
-            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash)).ConfigureAwait(false);
-            await changedEvent.WaitAsync().ConfigureAwait(false);
+            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash));
+            await changedEvent.WaitAsync();
             if (state != TransactionState.Ok)
             {
                 throw new Exception($"Failed to publish objects, received state: {state.ToString()}");
@@ -50,15 +50,15 @@ namespace node
                 ContainerGuid = containerGuid.ToString()
             };
 
-            var start = await client.StartTransaction(request, CancellationToken.None).ConfigureAwait(false);
+            var start = await client.StartTransaction(request, CancellationToken.None);
             for (var i = 0; i < 5; i++)
             {
                 if (start.State == TransactionState.Ok)
                 {
                     break;
                 }
-                await Task.Delay(1000).ConfigureAwait(true);
-                start = await client.StartTransaction(request, CancellationToken.None).ConfigureAwait(false);
+                await Task.Delay(1000);
+                start = await client.StartTransaction(request, CancellationToken.None);
             }
 
             var actualGuid = Guid.Parse(start.ActualContainerGuid);
@@ -78,7 +78,7 @@ namespace node
                         Object = o,
                         IsRoot = o.Hash == rootHash
                     })
-                    .ToList(), CancellationToken.None).ConfigureAwait(false);
+                    .ToList(), CancellationToken.None);
             }
             catch
             {
@@ -116,7 +116,7 @@ namespace node
 
         public async ValueTask DisposeAsync()
         {
-            await ((System.IAsyncDisposable)processor).DisposeAsync().ConfigureAwait(true);
+            await ((System.IAsyncDisposable)processor).DisposeAsync();
             GC.SuppressFinalize(this);
         }
     }
