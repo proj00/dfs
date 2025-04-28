@@ -69,18 +69,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download .NET unit coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: dotnet-unit-coverage
-          path: ./coverage/dotnet
-
-      - name: Download .NET integration coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: dotnet-integration-coverage
-          path: ./coverage/dotnet
-
       - name: Download Jest coverage report
         uses: actions/download-artifact@v4
         with:
@@ -95,7 +83,6 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/ `
           /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info
 
       - name: Finish SonarScanner
@@ -171,3 +158,9 @@ jobs:
       - name: Run Jest tests with coverage
         working-directory: ./dfs/electron
         run: npx jest --coverage
+
+      - name: Upload Jest Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage
+          path: dfs/electron/coverage/lcov.info
