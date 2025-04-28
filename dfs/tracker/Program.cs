@@ -11,7 +11,7 @@ namespace tracker
     {
         static async Task Main(string[] args)
         {
-            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs");
+            (string _, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs");
             ILogger logger = loggerFactory.CreateLogger("Main");
             using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()));
             int port = args.Length >= 2 ? int.Parse(args[1]) : 50330;

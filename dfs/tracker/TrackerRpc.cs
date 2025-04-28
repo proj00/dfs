@@ -21,6 +21,7 @@ namespace tracker
         private readonly ILogger logger;
         private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
             new();
+        private bool disposedValue;
         const int trackerResponseLimit = 30000;
 
         public TrackerRpc(ILogger logger, string dbPath)
@@ -34,12 +35,6 @@ namespace tracker
                 valueDeserializer: DataUsage.Parser.ParseFrom
             );
             this.logger = logger;
-        }
-
-        public void Dispose()
-        {
-            _filesystemManager.Dispose();
-            dataUsage.Dispose();
         }
 
         public override async Task<Hash> GetContainerRootHash(
@@ -346,6 +341,32 @@ namespace tracker
                     TtlMs = trackerResponseLimit,
                 };
             });
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _filesystemManager.Dispose();
+                    dataUsage.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        ~TrackerRpc()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
