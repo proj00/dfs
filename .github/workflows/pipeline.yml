@@ -148,7 +148,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: .
+          path: ./build-output
           
       - name: Cache NuGet packages
         uses: actions/cache@v3
@@ -160,7 +160,7 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build --verbosity normal $(Get-ChildItem -Recurse -Filter "*unit-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
+          dotnet test --no-build --verbosity normal $(Get-ChildItem -Recurse -Filter "*unit-tests.dll" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
@@ -179,7 +179,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: .
+          path: ./build-output
           
       - name: Cache NuGet packages
         uses: actions/cache@v3
@@ -191,7 +191,7 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity normal $(Get-ChildItem -Recurse -Filter "*integration-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
+          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity normal $(Get-ChildItem -Recurse -Filter "*integration-tests.dll" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
