@@ -8,12 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "node", "node\node.csproj", 
 		{E15E491A-E872-91D8-DF7A-CA59C792F064} = {E15E491A-E872-91D8-DF7A-CA59C792F064}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "node-unit-tests", "node-unit-tests\node-unit-tests.csproj", "{413EF885-5A68-4412-ABA5-74F43B37E9E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "unit-tests", "node-unit-tests\unit-tests.csproj", "{413EF885-5A68-4412-ABA5-74F43B37E9E4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2176CF42-580C-4472-8832-FC7EE9286E08} = {2176CF42-580C-4472-8832-FC7EE9286E08}
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracker-unit-tests", "tracker-unit-tests\tracker-unit-tests.csproj", "{3BB36704-44D3-487E-9342-9E0A99BEDEC1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "integration-tests", "integration-tests\integration-tests.csproj", "{B477E7A6-E27C-4186-96A0-884ECB298501}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -32,6 +30,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
 Global
@@ -48,10 +47,6 @@ Global
 		{413EF885-5A68-4412-ABA5-74F43B37E9E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{413EF885-5A68-4412-ABA5-74F43B37E9E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{413EF885-5A68-4412-ABA5-74F43B37E9E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3BB36704-44D3-487E-9342-9E0A99BEDEC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3BB36704-44D3-487E-9342-9E0A99BEDEC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3BB36704-44D3-487E-9342-9E0A99BEDEC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3BB36704-44D3-487E-9342-9E0A99BEDEC1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B477E7A6-E27C-4186-96A0-884ECB298501}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B477E7A6-E27C-4186-96A0-884ECB298501}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B477E7A6-E27C-4186-96A0-884ECB298501}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -8,10 +8,10 @@ on:
 
 jobs:
   # .NET Build and Test Job
-  build:
+  cs-build:
     runs-on: windows-latest
     permissions: read-all
-
+    needs: [ui]
     steps:
       - uses: actions/checkout@v4
 
@@ -35,27 +35,39 @@ jobs:
           key: ${{ runner.os }}-dotnet-sdk-${{ matrix.dotnet-version }}
 
       - name: Restore .NET dependencies
-        run: dotnet restore dfs/dfs.slnf
+        run: dotnet restore dfs/dfs.sln
+
+      - name: Download Jest coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: jest-coverage
+          path: ./coverage/jest
 
       - name: Init SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet tool install --global dotnet-sonarscanner
-          dotnet-sonarscanner begin /key:proj00_dfs /o:proj00 /d:sonar.token=${{ secrets.SONAR_TOKEN }}
+          dotnet-sonarscanner begin `
+          /key:proj00_dfs /o:proj00 `
+          /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
+          /d:typescript.lcov.reportPaths=coverage/jest/lcov.info
 
       - name: Build .NET project
-        run: dotnet build --no-restore dfs/dfs.slnf
+        run: dotnet build --no-restore dfs/dfs.sln
+
+      - name: Test .NET project
+        run: dotnet test --no-build dfs/dfs.sln --verbosity d --collect "Code Coverage"
 
       - name: Finish SonarScanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
 
-  sonarscannercheck:
+  issue-check:
     runs-on: windows-latest
     permissions: read-all
-    needs: build
+    needs: [cs-build]
     steps:
       - uses: actions/checkout@v4
       - name: Fetch issues
@@ -72,7 +84,7 @@ jobs:
   quality-gate-check:
     runs-on: windows-latest
     permissions: read-all
-    needs: [build]
+    needs: [cs-build]
     steps:
       - name: Check Quality Gate
         run: |
@@ -89,38 +101,10 @@ jobs:
               Write-Host "Quality Gate passed!"
           }
 
-  # .NET Test and Coverage Collection Job
-  test:
-    runs-on: windows-latest
-    permissions: read-all
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Run .NET tests and collect code coverage
-        run: |
-          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-
-      - name: Upload .NET Coverage Report to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: dfs/integration-tests/coverage.opencover.xml
-          name: dotnet-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
-
   # UI Test Job (Jest)
-  ui-tests:
+  ui:
     runs-on: windows-latest
     permissions: read-all
-    needs: build
     steps:
       - uses: actions/checkout@v4
 
@@ -149,9 +133,8 @@ jobs:
         working-directory: ./dfs/electron
         run: npx jest --coverage
 
-      - name: Upload Jest Coverage Report to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload Jest Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          files: ./dfs/electron/coverage/lcov-report/lcov-report.json
           name: jest-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
+          path: dfs/electron/coverage/lcov.info
