@@ -13,6 +13,7 @@ dfs/node/db
 .scannerwork
 .sonarqube
 *.local
+*coverage.xml
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
