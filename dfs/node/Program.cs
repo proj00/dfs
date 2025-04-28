@@ -44,7 +44,7 @@ namespace node
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
             var publicUrl = new Uri(publicServer.Urls.First());
 
-            UiService service = new(state, $"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}");
+            UiService service = new(state, new Uri($"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}"));
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
             using CancellationTokenSource token = new();
             var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);
