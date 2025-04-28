@@ -53,7 +53,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
-
+        
+      - name: Upload Build Output
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dfs/**/bin
   sonar:
     runs-on: windows-latest
     permissions: read-all
@@ -139,6 +144,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download Build Output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
+          
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
@@ -149,12 +160,12 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test --verbosity normal $(Get-ChildItem -Recurse -Filter "*unit-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
+          dotnet test --no-build --verbosity normal $(Get-ChildItem -Recurse -Filter "*unit-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: unitcoverage.xml
+          path: ./dfs/node-unit-tests/unitcoverage.xml
           name: dotnet-unit-coverage
           
   cs-integration:
@@ -164,6 +175,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download Build Output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
+          
       - name: Cache NuGet packages
         uses: actions/cache@v3
         with:
@@ -174,12 +191,12 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test /p:ParallelizeTestCollections=false --verbosity normal $(Get-ChildItem -Recurse -Filter "*integration-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
+          dotnet test --no-build /p:ParallelizeTestCollections=false --verbosity normal $(Get-ChildItem -Recurse -Filter "*integration-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: integrationcoverage.xml
+          path: ./dfs/integration-tests/integrationcoverage.xml
           name: dotnet-integration-coverage
           
   # UI Test Job (Jest)
