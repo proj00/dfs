@@ -253,6 +253,7 @@ namespace node
         public void Dispose()
         {
             tokenSource.Cancel();
+            tokenSource.Dispose();
         }
     }
 }

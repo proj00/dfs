@@ -25,7 +25,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracker", "tracker\tracker.
 		{E15E491A-E872-91D8-DF7A-CA59C792F064} = {E15E491A-E872-91D8-DF7A-CA59C792F064}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "common-test", "common-test\common-test.csproj", "{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "common-tests", "common-tests\common-tests.csproj", "{F0B3B25F-84AA-49DD-B222-0A68F1CABA0C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
