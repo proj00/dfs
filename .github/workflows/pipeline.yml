@@ -65,7 +65,7 @@ jobs:
   sonar:
     runs-on: windows-latest
     permissions: read-all
-    needs: [cs-unit, cs-integration, ui]
+    needs: [cs-build, ui]
     steps:
       - uses: actions/checkout@v4
 
