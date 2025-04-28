@@ -332,6 +332,7 @@ namespace tracker
 
                     transactions.TryRemove(info);
                 }
+                // this is fine transactions.First will throw if there is no match, and i don't care at all
                 catch { }
 
                 var currentGuid = System.Guid.NewGuid();

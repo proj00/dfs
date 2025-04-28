@@ -11,7 +11,7 @@ namespace common
 {
     public sealed class ChannelCache : IDisposable
     {
-        private MemoryCache cache;
+        private readonly MemoryCache cache;
         private readonly TimeSpan timeToLive;
 
         public ChannelCache(TimeSpan timeToLive)

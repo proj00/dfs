@@ -16,16 +16,17 @@ namespace node
 
     public class DownloadManager : IDisposable
     {
-        public class StateChange
+        private class StateChange
         {
             public ByteString Hash { get; set; } = ByteString.Empty;
             public DownloadStatus NewStatus { get; set; } = DownloadStatus.Pending;
             public FileChunk[] Chunk { get; set; } = [];
         }
 
-        private PersistentCache<ByteString, Ui.Progress> FileProgress;
+        private readonly PersistentCache<ByteString, Ui.Progress> FileProgress;
         private readonly Channel<StateChange> channel;
         private UpdateCallback? updateCallback = null;
+        private bool disposedValue;
         private readonly CancellationTokenSource tokenSource = new();
         private readonly ConcurrentDictionary<ByteString, CancellationTokenSource> fileTokens;
         private readonly TaskProcessor downloadProcessor;
@@ -33,7 +34,7 @@ namespace node
         public DownloadManager(string dbPath, int taskCapacity = 100000)
         {
             downloadProcessor = new TaskProcessor(20, taskCapacity);
-            fileTokens = new(new HashUtils.ByteStringComparer());
+            fileTokens = new(new ByteStringComparer());
             channel = Channel.CreateBounded<StateChange>(new BoundedChannelOptions(taskCapacity)
             {
                 SingleReader = true,
@@ -48,14 +49,14 @@ namespace node
                 valueDeserializer: Ui.Progress.Parser.ParseFrom
             );
 
-            _ = Task.Run(() => ProcessCommandsAsync(tokenSource.Token,
+            _ = Task.Run(() => ProcessCommandsAsync(
             new(
                 System.IO.Path.Combine(dbPath, "IncompleteChunks"),
                 keySerializer: bs => bs.ToByteArray(),
                 keyDeserializer: ByteString.CopyFrom,
                 valueSerializer: o => o.ToByteArray(),
                 valueDeserializer: FileChunk.Parser.ParseFrom
-            )));
+            ), tokenSource.Token));
         }
 
         private async Task HandleCommandAsync(StateChange message, PersistentCache<ByteString, FileChunk> chunkTasks)
@@ -69,20 +70,20 @@ namespace node
                             break;
                         }
 
-                        await chunkTasks.Remove(message.Chunk[0].Hash);
+                        await chunkTasks.Remove(message.Chunk[0].Hash).ConfigureAwait(false);
                         break;
                     }
                 case DownloadStatus.Pending:
                     {
                         fileTokens[message.Hash] = new CancellationTokenSource();
-                        var chunks = await GetChildChunksAsync(chunkTasks, message.Hash);
+                        var chunks = await GetChildChunksAsync(chunkTasks, message.Hash).ConfigureAwait(false);
                         if (chunks.Count == 0)
                             chunks.AddRange(message.Chunk ?? []);
                         foreach (var chunk in chunks)
                         {
                             chunk.Status = DownloadStatus.Pending;
-                            await chunkTasks.SetAsync(chunk.Hash, chunk);
-                            await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                            await chunkTasks.SetAsync(chunk.Hash, chunk).ConfigureAwait(false);
+                            await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token)).ConfigureAwait(false);
                         }
 
                         break;
@@ -91,14 +92,14 @@ namespace node
                     {
                         if (message.Chunk != null)
                         {
-                            await chunkTasks.SetAsync(message.Chunk[0].Hash, message.Chunk[0]);
+                            await chunkTasks.SetAsync(message.Chunk[0].Hash, message.Chunk[0]).ConfigureAwait(false);
                             break;
                         }
 
                         var hash = message.Hash;
                         if (fileTokens.TryRemove(hash, out var tokenSource))
                         {
-                            await tokenSource.CancelAsync();
+                            await tokenSource.CancelAsync().ConfigureAwait(false);
                             tokenSource.Dispose();
                         }
 
@@ -109,8 +110,7 @@ namespace node
             }
         }
 
-        private async Task ProcessCommandsAsync(CancellationToken token,
-            PersistentCache<ByteString, FileChunk> chunkTasks)
+        private async Task ProcessCommandsAsync(PersistentCache<ByteString, FileChunk> chunkTasks, CancellationToken token)
         {
             try
             {
@@ -126,16 +126,16 @@ namespace node
                 {
                     if (v.Status == DownloadStatus.Complete)
                     {
-                        throw new Exception("????");
+                        throw new InvalidOperationException("????");
                     }
                     v.Status = DownloadStatus.Paused;
                     chunks.Add(v);
                     return true;
-                });
+                }).ConfigureAwait(false);
 
                 foreach (var chunk in chunks)
                 {
-                    await chunkTasks.SetAsync(chunk.Hash, chunk);
+                    await chunkTasks.SetAsync(chunk.Hash, chunk).ConfigureAwait(false);
                 }
             }
         }
@@ -145,8 +145,7 @@ namespace node
             await chunkTasks.PrefixScan(hash, (k, v) =>
             {
                 chunks.Add(v);
-                return;
-            });
+            }).ConfigureAwait(false);
             return chunks;
         }
 
@@ -157,9 +156,8 @@ namespace node
                 return;
             }
 
-            long change = chunk.CurrentCount;
             chunk.Status = DownloadStatus.Active;
-            chunk = await updateCallback(chunk, token);
+            chunk = await updateCallback(chunk, token).ConfigureAwait(false);
 
             await channel.Writer.WriteAsync(
                 new()
@@ -169,7 +167,7 @@ namespace node
                     Chunk = [chunk]
                 },
                 CancellationToken.None
-            );
+            ).ConfigureAwait(false);
         }
 
         public void AddChunkUpdateCallback(UpdateCallback callback)
@@ -188,23 +186,26 @@ namespace node
                 Debug.Assert(newProgress != 0, $"{newProgress}");
                 v.Current += newProgress;
                 return v;
-            });
+            }).ConfigureAwait(false);
         }
 
         public async Task<Ui.Progress> GetFileProgressAsync(ByteString hash)
         {
-            var p = await FileProgress.TryGetValue(hash);
+            var p = await FileProgress.TryGetValue(hash).ConfigureAwait(false);
             if (p != null)
             {
                 return p;
             }
-            throw new NullReferenceException();
+            ArgumentNullException.ThrowIfNull(p);
+
+            // :-)
+            throw new InvalidOperationException("this should never happen");
         }
 
         public async Task AddNewFileAsync(IncompleteFile file, FileChunk[] chunks)
         {
-            await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
-            await channel.Writer.WriteAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
+            await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size }).ConfigureAwait(false);
+            await channel.Writer.WriteAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks }).ConfigureAwait(false);
         }
 
         public async Task<ByteString[]> GetIncompleteFilesAsync()
@@ -218,18 +219,18 @@ namespace node
                     hashes.Add(k);
                 }
                 return true;
-            });
+            }).ConfigureAwait(false);
 
             return [.. hashes];
         }
 
         public async Task PauseDownloadAsync(ObjectWithHash file)
         {
-            await channel.Writer.WriteAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused });
+            await channel.Writer.WriteAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused }).ConfigureAwait(false);
         }
         public async Task ResumeDownloadAsync(ObjectWithHash file)
         {
-            await channel.Writer.WriteAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending });
+            await channel.Writer.WriteAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending }).ConfigureAwait(false);
         }
         public async Task CompleteDownloadAsync(ByteString hash)
         {
@@ -239,13 +240,31 @@ namespace node
                     Hash = hash,
                     NewStatus = DownloadStatus.Complete
                 }
-            );
+            ).ConfigureAwait(false);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    tokenSource.Cancel();
+                    tokenSource.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        ~DownloadManager()
+        {
+            Dispose(disposing: false);
         }
 
         public void Dispose()
         {
-            tokenSource.Cancel();
-            tokenSource.Dispose();
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

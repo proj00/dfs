@@ -17,7 +17,9 @@ namespace node
 {
     class TransactionManager : System.IAsyncDisposable, IDisposable
     {
-        private TaskProcessor processor;
+        private readonly TaskProcessor processor;
+        private bool disposedValue;
+
         public TransactionManager()
         {
             processor = new TaskProcessor(1000);
@@ -31,8 +33,8 @@ namespace node
             changedEvent.Reset();
             Action<Guid, TransactionState> registerGuid = (g, s) => { newGuid = g; state = s; changedEvent.Set(); };
 
-            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash));
-            await changedEvent.WaitAsync();
+            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash)).ConfigureAwait(false);
+            await changedEvent.WaitAsync().ConfigureAwait(false);
             if (state != TransactionState.Ok)
             {
                 throw new Exception($"Failed to publish objects, received state: {state.ToString()}");
@@ -48,15 +50,15 @@ namespace node
                 ContainerGuid = containerGuid.ToString()
             };
 
-            var start = await client.StartTransaction(request, CancellationToken.None);
+            var start = await client.StartTransaction(request, CancellationToken.None).ConfigureAwait(false);
             for (var i = 0; i < 5; i++)
             {
                 if (start.State == TransactionState.Ok)
                 {
                     break;
                 }
-                await Task.Delay(1000);
-                start = await client.StartTransaction(request, CancellationToken.None);
+                await Task.Delay(1000).ConfigureAwait(true);
+                start = await client.StartTransaction(request, CancellationToken.None).ConfigureAwait(false);
             }
 
             var actualGuid = Guid.Parse(start.ActualContainerGuid);
@@ -69,14 +71,14 @@ namespace node
 
             try
             {
-                var resp = await client.Publish(
+                _ = await client.Publish(
                     objects.Select(o => new PublishedObject
                     {
                         TransactionGuid = start.TransactionGuid,
                         Object = o,
                         IsRoot = o.Hash == rootHash
                     })
-                    .ToList(), CancellationToken.None);
+                    .ToList(), CancellationToken.None).ConfigureAwait(false);
             }
             catch
             {
@@ -87,14 +89,35 @@ namespace node
             registerGuid(actualGuid, TransactionState.Ok);
         }
 
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
-            ((IDisposable)processor).Dispose();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    processor.Dispose();
+                }
+                disposedValue = true;
+            }
         }
 
-        public ValueTask DisposeAsync()
+        ~TransactionManager()
         {
-            return ((System.IAsyncDisposable)processor).DisposeAsync();
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await ((System.IAsyncDisposable)processor).DisposeAsync().ConfigureAwait(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -64,8 +64,8 @@ export function Drive() {
 
   // Get current folder name
   const currentFolderName = currentFolder
-    ? folders.find((folder) => folder.id === currentFolder)?.name ||
-      "Unknown Folder"
+    ? (folders.find((folder) => folder.id === currentFolder)?.name ??
+      "Unknown Folder")
     : "My Drive";
 
   // Navigate to a folder
@@ -77,7 +77,7 @@ export function Drive() {
   const navigateToParent = () => {
     if (!currentFolder) return;
     const parentFolder =
-      folders.find((folder) => folder.id === currentFolder)?.parentId.at(0) ||
+      folders.find((folder) => folder.id === currentFolder)?.parentId.at(0) ??
       null;
     setCurrentFolder(parentFolder);
   };

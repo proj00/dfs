@@ -14,11 +14,23 @@ import type { File } from "../../lib/types";
 import log from "electron-log/renderer";
 
 interface FileActionMenuProps {
-  file: File;
-  onOpenClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
-  onRenameClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
-  onMoveClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
-  onDeleteClick?: (file: File, e: React.MouseEvent) => Promise<void> | void;
+  readonly file: File;
+  readonly onOpenClick?: (
+    file: File,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onRenameClick?: (
+    file: File,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onMoveClick?: (
+    file: File,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onDeleteClick?: (
+    file: File,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
 }
 
 export function FileActionMenu({

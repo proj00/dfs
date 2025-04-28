@@ -16,15 +16,15 @@ namespace common_test
 
         public MockTrackerWrapper()
         {
-            this.objects = new(new HashUtils.ByteStringComparer());
-            this.peers = new(new HashUtils.ByteStringComparer());
+            this.objects = new(new ByteStringComparer());
+            this.peers = new(new ByteStringComparer());
             this.peerId = "";
             Container = [];
         }
 
         public Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
-            Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
+            Dictionary<ByteString, ObjectWithHash> obj = new(new ByteStringComparer());
             void Traverse(ObjectWithHash o)
             {
                 obj[o.Hash] = o;
@@ -53,14 +53,14 @@ namespace common_test
             return Task.FromResult(new List<string>());
         }
 
-        public Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public Task<Empty> MarkReachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
-                peers[h] = [nodeURI];
+                peers[h] = [nodeURI.ToString()];
             return Task.FromResult(new Empty());
         }
 
-        public Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public Task<Empty> MarkUnreachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
                 peers[h] = [];
@@ -97,7 +97,7 @@ namespace common_test
             throw new NotImplementedException();
         }
 
-        public string GetUri()
+        public Uri GetUri()
         {
             throw new NotImplementedException();
         }

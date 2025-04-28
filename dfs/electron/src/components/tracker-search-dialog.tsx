@@ -21,9 +21,12 @@ import { File } from "@/lib/types";
 import log from "electron-log/renderer";
 
 interface TrackerSearchDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onDownloadContainer?: (containerGuid: string, trackerUri: string) => void;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly onDownloadContainer?: (
+    containerGuid: string,
+    trackerUri: string,
+  ) => void;
 }
 
 export function TrackerSearchDialog({
@@ -199,7 +202,7 @@ export function TrackerSearchDialog({
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-medium">
-                        {result.name || "Unnamed Container"}
+                        {result.name ?? "Unnamed Container"}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate">
                         {result.containerGuid}

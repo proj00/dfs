@@ -23,12 +23,15 @@ import { UploadDialog } from "./upload-dialog";
 import { TrackerSearchDialog } from "./tracker-search-dialog";
 
 interface HeaderProps {
-  view: "grid" | "list";
-  setView: (view: "grid" | "list") => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  onRefresh?: () => void;
-  onDownloadContainer?: (containerGuid: string, trackerUri: string) => void;
+  readonly view: "grid" | "list";
+  readonly setView: (view: "grid" | "list") => void;
+  readonly searchQuery: string;
+  readonly setSearchQuery: (query: string) => void;
+  readonly onRefresh?: () => void;
+  readonly onDownloadContainer?: (
+    containerGuid: string,
+    trackerUri: string,
+  ) => void;
 }
 
 export function Header({

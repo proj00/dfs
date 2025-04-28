@@ -17,13 +17,13 @@ namespace common
     public class PersistentCache<TKey, TValue> : IDisposable
         where TValue : class
     {
-        RocksDb db;
-        private AsyncLock dbLock = new();
+        private readonly RocksDb db;
+        private readonly AsyncLock dbLock = new();
 
-        private Func<TKey, byte[]> keySerializer;
-        private Func<byte[], TKey> keyDeserializer;
-        private Func<TValue, byte[]> valueSerializer;
-        private Func<byte[], TValue> valueDeserializer;
+        private readonly Func<TKey, byte[]> keySerializer;
+        private readonly Func<byte[], TKey> keyDeserializer;
+        private readonly Func<TValue, byte[]> valueSerializer;
+        private readonly Func<byte[], TValue> valueDeserializer;
         private bool disposedValue;
 
         public PersistentCache(string dbPath, Func<TKey, byte[]> keySerializer, Func<byte[], TKey> keyDeserializer, Func<TValue, byte[]> valueSerializer, Func<byte[], TValue> valueDeserializer, DbOptions? options = null)
@@ -42,7 +42,7 @@ namespace common
 
         public async Task<TValue> GetAsync(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 var v = db.Get(keySerializer(key));
                 if (v == null)
@@ -58,7 +58,7 @@ namespace common
             {
                 throw new InvalidOperationException();
             }
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 db.Put(keySerializer(key), valueSerializer(value));
             }
@@ -68,7 +68,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(mutate);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 var result = db.Get(keySerializer(key));
                 if (result == null)
@@ -76,7 +76,7 @@ namespace common
                     return;
                 }
                 var value = valueDeserializer(result);
-                var newValue = await mutate(value);
+                var newValue = await mutate(value).ConfigureAwait(false);
                 if (newValue == null)
                 {
                     throw new InvalidOperationException();
@@ -88,7 +88,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(mutate);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 var result = db.Get(keySerializer(key));
                 TValue? newValue = null;
@@ -115,7 +115,7 @@ namespace common
 
         public async Task<long> CountEstimate()
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 return db.GetProperty("rocksdb-estimate-num-keys") == null
                     ? 0
@@ -125,7 +125,7 @@ namespace common
 
         public async Task<bool> ContainsKey(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 return db.HasKey(keySerializer(key));
             }
@@ -133,13 +133,13 @@ namespace common
 
         public async Task Remove(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
                 db.Remove(keySerializer(key));
         }
 
         public async Task<TValue?> TryGetValue(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 var result = db.Get(keySerializer(key));
                 if (result == null)
@@ -157,7 +157,7 @@ namespace common
             ArgumentNullException.ThrowIfNull(action);
             ArgumentNullException.ThrowIfNull(prefix);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 int length = 0;
                 using (var tempIt = db.NewIterator())
@@ -191,7 +191,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(action);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync().ConfigureAwait(false))
             {
                 using var it = db.NewIterator();
                 for (it.SeekToFirst(); it.Valid(); it.Next())

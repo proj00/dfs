@@ -15,12 +15,12 @@ import {
 } from "@/lib/file-handlers";
 
 interface FileListProps {
-  files: File[];
-  folders: Folder[];
-  currentFolder: string | null;
-  currentFolderName: string;
-  navigateToFolder: (folderId: string | null) => void;
-  navigateToParent: () => void;
+  readonly files: File[];
+  readonly folders: Folder[];
+  readonly currentFolder: string | null;
+  readonly currentFolderName: string;
+  readonly navigateToFolder: (folderId: string | null) => void;
+  readonly navigateToParent: () => void;
 }
 
 export function FileList({
@@ -134,7 +134,7 @@ export function FileList({
                   <div className="h-10 w-10 bg-muted rounded overflow-hidden">
                     <img
                       src={
-                        file.thumbnail || "/placeholder.svg?height=40&width=40"
+                        file.thumbnail ?? "/placeholder.svg?height=40&width=40"
                       }
                       alt={file.name}
                       className="h-full w-full object-cover"

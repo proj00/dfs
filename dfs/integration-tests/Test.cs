@@ -45,7 +45,7 @@ namespace integration_tests
             @"..\..\..\..\tracker\bin\Debug\net9.0-windows\tracker.exe"));
 
         [SetUp]
-        public async Task SetUp()
+        public async Task SetUpAsync()
         {
             errorsPrinted = new RefWrapper(false);
             try
@@ -54,11 +54,11 @@ namespace integration_tests
             }
             catch (Exception e)
             {
-                TestContext.Out.WriteLine(e.ToString());
+                await TestContext.Out.WriteLineAsync(e.ToString());
             }
             _tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(_tempDirectory);
-            TestContext.Out.WriteLine(_tempDirectory);
+            await TestContext.Out.WriteLineAsync(_tempDirectory);
 
             // Start processes with unique ports for each test
             testPort = FindFreePort();
@@ -76,7 +76,7 @@ namespace integration_tests
             n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort + 1}")));
             trackerClient = new TrackerWrapper(new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort + 2}"))), $"http://localhost:{testPort + 2}");
+                new Uri($"http://localhost:{testPort + 2}"))), new Uri($"http://localhost:{testPort + 2}"));
         }
 
         private static async Task WaitForPortAsync(int port, int timeoutMs = 40000)
@@ -99,7 +99,7 @@ namespace integration_tests
         }
 
         [TearDown]
-        public async Task TearDown()
+        public async Task TearDownAsync()
         {
             testPort = -1;
             try
@@ -175,7 +175,7 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(50000)]
-        public async Task PublishAndSearchTest(CancellationToken token)
+        public async Task PublishAndSearchTestAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
@@ -203,7 +203,7 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(50000)]
-        public async Task TestDownload(CancellationToken token)
+        public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
@@ -224,7 +224,7 @@ namespace integration_tests
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() });
 
             var progress = new Ui.Progress();
             int delay = 50000;
@@ -241,7 +241,7 @@ namespace integration_tests
             } while (progress.Current != progress.Total);
         }
         [Test, MaxTime(80000)]
-        public async Task TestDownloadWithPauseResume()
+        public async Task TestDownloadWithPauseResumeAsync()
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
@@ -262,7 +262,7 @@ namespace integration_tests
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri() });
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() });
 
             var progress = new Ui.Progress();
             int delay = 50000;

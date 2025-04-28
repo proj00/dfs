@@ -12,29 +12,21 @@ namespace node
     public class TrackerWrapper : ITrackerWrapper
     {
         public TrackerClient client { get; }
-        public string GetUri() => trackerUri.ToString();
+        public Uri GetUri() => trackerUri;
         private readonly Uri trackerUri;
 
-        public TrackerWrapper(TrackerClient client, string trackerUri)
+        public TrackerWrapper(TrackerClient client, Uri trackerUri)
         {
             this.client = client;
-            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri))
-            {
-                throw new Exception($"invalid uri: {trackerUri}");
-            }
-            ArgumentNullException.ThrowIfNull(uri);
-            this.trackerUri = uri;
+            ArgumentNullException.ThrowIfNull(trackerUri);
+            this.trackerUri = trackerUri;
         }
 
-        public TrackerWrapper(string trackerUri, NodeState state, CancellationToken token)
+        public TrackerWrapper(Uri trackerUri, NodeState state, CancellationToken token)
         {
-            if (!Uri.TryCreate(trackerUri, new UriCreationOptions(), out Uri? uri))
-            {
-                throw new Exception($"invalid uri: {trackerUri}");
-            }
-            ArgumentNullException.ThrowIfNull(uri);
-            client = state.GetTrackerClient(uri);
-            this.trackerUri = uri;
+            ArgumentNullException.ThrowIfNull(trackerUri);
+            client = state.GetTrackerClient(trackerUri);
+            this.trackerUri = trackerUri;
         }
 
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
@@ -69,21 +61,21 @@ namespace node
             return peers;
         }
 
-        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public async Task<Empty> MarkReachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             return await client.MarkReachableAsync(new MarkRequest
             {
                 Hash = { hash },
-                Peer = nodeURI
+                Peer = nodeURI.ToString()
             });
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public async Task<Empty> MarkUnreachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             return await client.MarkUnreachableAsync(new MarkRequest
             {
                 Hash = { hash },
-                Peer = nodeURI
+                Peer = nodeURI.ToString()
             });
         }
 

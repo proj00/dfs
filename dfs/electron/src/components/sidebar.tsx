@@ -35,11 +35,11 @@ import {
 import { DownloadManager } from "./download-manager";
 
 interface SidebarProps {
-  currentFolder: string | null;
-  navigateToFolder: (folderId: string | null) => void;
-  folders: Folder[];
-  onContainerDownloaded?: () => void;
-  onContainerPublished?: () => void;
+  readonly currentFolder: string | null;
+  readonly navigateToFolder: (folderId: string | null) => void;
+  readonly folders: Folder[];
+  readonly onContainerDownloaded?: () => void;
+  readonly onContainerPublished?: () => void;
 }
 
 export function Sidebar({
@@ -233,7 +233,7 @@ export function Sidebar({
       const downloadIds = await backendService.downloadContainer(
         downloadContainerGuid,
         downloadTrackerUri,
-        downloadDestination || undefined,
+        downloadDestination ?? undefined,
       );
 
       // Add to active downloads list
@@ -584,7 +584,7 @@ export function Sidebar({
               <div className="text-right text-sm font-medium">Destination</div>
               <div className="col-span-3 flex gap-2">
                 <Input
-                  value={downloadDestination || "Default location"}
+                  value={downloadDestination ?? "Default location"}
                   readOnly
                   className="flex-1"
                   disabled={isDownloading}
