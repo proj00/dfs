@@ -34,7 +34,7 @@ namespace common
             var buffer = new byte[chunkSize];
             long chunkCount = obj.File.Size / chunkSize;
             chunkCount += obj.File.Size % chunkSize == 0 ? 0 : 1;
-            Debug.Assert(chunkCount > 0, path);
+            Debug.Assert(chunkCount > 0);
             for (int i = 0; i < chunkCount; i++)
             {
                 int actualRead = stream.Read(buffer, 0, chunkSize);

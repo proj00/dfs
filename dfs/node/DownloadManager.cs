@@ -26,7 +26,6 @@ namespace node
         private PersistentCache<ByteString, Ui.Progress> FileProgress;
         private readonly Channel<StateChange> channel;
         private UpdateCallback? updateCallback = null;
-        private readonly Task readLoop;
         private readonly CancellationTokenSource tokenSource = new();
         private readonly ConcurrentDictionary<ByteString, CancellationTokenSource> fileTokens;
         private readonly TaskProcessor downloadProcessor;
@@ -49,7 +48,7 @@ namespace node
                 valueDeserializer: Ui.Progress.Parser.ParseFrom
             );
 
-            readLoop = Task.Run(() => ProcessCommandsAsync(tokenSource.Token,
+            _ = Task.Run(() => ProcessCommandsAsync(tokenSource.Token,
             new(
                 System.IO.Path.Combine(dbPath, "IncompleteChunks"),
                 keySerializer: bs => bs.ToByteArray(),
@@ -59,6 +58,57 @@ namespace node
             )));
         }
 
+        private async Task HandleCommandAsync(StateChange message, PersistentCache<ByteString, FileChunk> chunkTasks)
+        {
+            switch (message.NewStatus)
+            {
+                case DownloadStatus.Complete:
+                    {
+                        if (message.Chunk == null || message.Chunk.Length == 0)
+                        {
+                            break;
+                        }
+
+                        await chunkTasks.Remove(message.Chunk[0].Hash);
+                        break;
+                    }
+                case DownloadStatus.Pending:
+                    {
+                        fileTokens[message.Hash] = new CancellationTokenSource();
+                        var chunks = await GetChildChunksAsync(chunkTasks, message.Hash);
+                        if (chunks.Count == 0)
+                            chunks.AddRange(message.Chunk ?? []);
+                        foreach (var chunk in chunks)
+                        {
+                            chunk.Status = DownloadStatus.Pending;
+                            await chunkTasks.SetAsync(chunk.Hash, chunk);
+                            await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                        }
+
+                        break;
+                    }
+                case DownloadStatus.Paused:
+                    {
+                        if (message.Chunk != null)
+                        {
+                            await chunkTasks.SetAsync(message.Chunk[0].Hash, message.Chunk[0]);
+                            break;
+                        }
+
+                        var hash = message.Hash;
+                        if (fileTokens.TryRemove(hash, out var tokenSource))
+                        {
+                            await tokenSource.CancelAsync();
+                            tokenSource.Dispose();
+                        }
+
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
         private async Task ProcessCommandsAsync(CancellationToken token,
             PersistentCache<ByteString, FileChunk> chunkTasks)
         {
@@ -66,64 +116,7 @@ namespace node
             {
                 await foreach (var message in channel.Reader.ReadAllAsync(token))
                 {
-                    switch (message.NewStatus)
-                    {
-                        case DownloadStatus.Complete:
-                            {
-                                if (message.Chunk == null || message.Chunk.Length == 0)
-                                {
-                                    break;
-                                }
-
-                                await chunkTasks.Remove(message.Chunk[0].Hash);
-                                break;
-                            }
-                        case DownloadStatus.Pending:
-                            {
-                                fileTokens[message.Hash] = new CancellationTokenSource();
-                                var chunks = await GetChildChunksAsync(chunkTasks, message.Hash);
-                                if (chunks.Count == 0)
-                                    chunks.AddRange(message.Chunk ?? []);
-                                foreach (var chunk in chunks)
-                                {
-                                    chunk.Status = DownloadStatus.Pending;
-                                    await chunkTasks.SetAsync(chunk.Hash, chunk);
-                                    await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
-                                }
-                                //try
-                                //{
-                                //    foreach (var chunk in chunks)
-                                //    {
-                                //        await UpdateAsync(chunk, fileTokens[message.Hash].Token);
-                                //    }
-                                //}
-                                //catch (Exception e)
-                                //{
-                                //    Console.WriteLine(e.StackTrace);
-                                //}
-
-                                break;
-                            }
-                        case DownloadStatus.Paused:
-                            {
-                                if (message.Chunk != null)
-                                {
-                                    await chunkTasks.SetAsync(message.Chunk[0].Hash, message.Chunk[0]);
-                                    break;
-                                }
-
-                                var hash = message.Hash;
-                                if (fileTokens.TryRemove(hash, out var tokenSource))
-                                {
-                                    await tokenSource.CancelAsync();
-                                    tokenSource.Dispose();
-                                }
-
-                                break;
-                            }
-                        default:
-                            break;
-                    }
+                    await HandleCommandAsync(message, chunkTasks).ConfigureAwait(true);
                 }
             }
             catch (OperationCanceledException)
@@ -145,17 +138,16 @@ namespace node
                     await chunkTasks.SetAsync(chunk.Hash, chunk);
                 }
             }
-
-            static async Task<List<FileChunk>> GetChildChunksAsync(PersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
+        }
+        static async Task<List<FileChunk>> GetChildChunksAsync(PersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
+        {
+            List<FileChunk> chunks = [];
+            await chunkTasks.PrefixScan(hash, (k, v) =>
             {
-                List<FileChunk> chunks = [];
-                await chunkTasks.PrefixScan(hash, (k, v) =>
-                {
-                    chunks.Add(v);
-                    return;
-                });
-                return chunks;
-            }
+                chunks.Add(v);
+                return;
+            });
+            return chunks;
         }
 
         public async Task UpdateAsync(FileChunk chunk, CancellationToken token)

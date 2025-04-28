@@ -116,13 +116,10 @@ namespace node
             {
                 await Whitelist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network))
+                    if (IPNetwork.TryParse(uri, out var network) && network.Contains(IPAddress.Parse((new Uri(url)).Host)))
                     {
-                        if (network.Contains(IPAddress.Parse((new Uri(url)).Host)))
-                        {
-                            passWhitelist = true;
-                            return false;
-                        }
+                        passWhitelist = true;
+                        return false;
                     }
                     return true;
                 });
