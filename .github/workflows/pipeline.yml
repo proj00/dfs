@@ -178,5 +178,5 @@ jobs:
       - name: Upload Jest Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: ./dfs/electron/coverage/lcov-report/lcov.info
+          path: ./dfs/electron/coverage/lcov.info
           name: jest-coverage
