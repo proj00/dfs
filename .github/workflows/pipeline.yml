@@ -8,7 +8,7 @@ on:
 
 jobs:
   # .NET Build and Test Job
-  build:
+  cs-build:
     runs-on: windows-latest
     permissions: read-all
 
@@ -33,26 +33,46 @@ jobs:
         with:
           path: ~/.dotnet
           key: ${{ runner.os }}-dotnet-sdk-${{ matrix.dotnet-version }}
-
+          
       - name: Restore .NET dependencies
-        run: dotnet restore dfs/dfs.slnf
+        run: dotnet restore dfs/dfs.sln
+        
+      - name: Init SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet-sonarscanner begin `
+          /key:proj00_dfs /o:proj00 `
+          /d:sonar.token=${{ secrets.SONAR_TOKEN }} 
 
       - name: Build .NET project
-        run: dotnet build --no-restore dfs/dfs.slnf
+        run: dotnet build --no-restore dfs/dfs.sln
+        
+      - name: Finish SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token=${{ secrets.SONAR_TOKEN }}
 
   sonar:
     runs-on: windows-latest
     permissions: read-all
-    needs: [test, ui-tests]
+    needs: [cs-unit, cs-integration, ui]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download .NET coverage report
+      - name: Download .NET unit coverage report
         uses: actions/download-artifact@v4
         with:
-          name: dotnet-coverage
+          name: dotnet-unit-coverage
           path: ./coverage/dotnet
 
+      - name: Download .NET integration coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-integration-coverage
+          path: ./coverage/dotnet
+          
       - name: Download Jest coverage report
         uses: actions/download-artifact@v4
         with:
@@ -67,12 +87,8 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/coverage.opencover.xml`
+          /d:sonar.cs.opencover.reportsPaths=coverage/dotnet/ `
           /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info
-
-      - name: Gather info
-        run: |
-          dotnet build --no-restore dfs/dfs.slnf
 
       - name: Finish SonarScanner
         env:
@@ -115,12 +131,11 @@ jobs:
           } else {
               Write-Host "Quality Gate passed!"
           }
-
-  # .NET Test and Coverage Collection Job
-  test:
+          
+  cs-unit:
     runs-on: windows-latest
     permissions: read-all
-    needs: build
+    needs: cs-build
     steps:
       - uses: actions/checkout@v4
 
@@ -134,19 +149,43 @@ jobs:
 
       - name: Run .NET tests and collect code coverage
         run: |
-          dotnet test /p:ParallelizeTestCollections=false --verbosity normal dfs/dfs.slnf /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+          dotnet test --verbosity normal $(Get-ChildItem -Recurse -Filter "*unit-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="unitcoverage.xml"
 
       - name: Upload .NET Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: dfs/integration-tests/coverage.opencover.xml
-          name: dotnet-coverage
-
-  # UI Test Job (Jest)
-  ui-tests:
+          path: unitcoverage.xml
+          name: dotnet-unit-coverage
+          
+  cs-integration:
     runs-on: windows-latest
     permissions: read-all
-    needs: build
+    needs: cs-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run .NET tests and collect code coverage
+        run: |
+          dotnet test /p:ParallelizeTestCollections=false --verbosity normal $(Get-ChildItem -Recurse -Filter "*integration-tests.csproj" | Select-Object -ExpandProperty FullName) /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput="integrationcoverage.xml"
+
+      - name: Upload .NET Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          path: integrationcoverage.xml
+          name: dotnet-integration-coverage
+          
+  # UI Test Job (Jest)
+  ui:
+    runs-on: windows-latest
+    permissions: read-all
     steps:
       - uses: actions/checkout@v4
 
@@ -178,5 +217,5 @@ jobs:
       - name: Upload Jest Coverage Report
         uses: actions/upload-artifact@v4
         with:
-          path: ./dfs/electron/coverage/lcov-report/lcov.info
+          path: ./dfs/electron/coverage/lcov.info
           name: jest-coverage
