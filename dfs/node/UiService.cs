@@ -13,6 +13,7 @@ using Ui;
 using Microsoft.Extensions.Logging;
 using Node;
 using System.Threading.Channels;
+using System.Security.Cryptography;
 
 namespace node
 {
@@ -25,6 +26,7 @@ namespace node
         private Uri nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
+        private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
         public UiService(NodeState state, Uri nodeURI)
@@ -258,7 +260,9 @@ namespace node
             }
 
             // for now, pick a random peer (chunk tasks are persistent and we can just add simple retries later)
-            var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
+            byte[] ok = new byte[4];
+            rng.GetBytes(ok);
+            var index = BitConverter.ToInt32(ok) % peers.Count;
             var peerClient = state.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {

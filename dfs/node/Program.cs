@@ -23,6 +23,7 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
+            AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
             (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs");
 
             ILogger logger = loggerFactory.CreateLogger("Main");
