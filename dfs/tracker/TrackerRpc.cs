@@ -200,7 +200,7 @@ namespace tracker
 
         public override async Task<DataUsage> GetDataUsage(Empty request, ServerCallContext context)
         {
-            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             string ip = match.Success ? match.Groups[1].Value : "";
             try
             {
@@ -230,7 +230,7 @@ namespace tracker
             ServerCallContext context
         )
         {
-            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             string ip = match.Success ? match.Groups[1].Value : "";
             DataUsage change = new()
             {
