@@ -23,7 +23,7 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (await state.IsInBlockListAsync(context.Peer))
+            if (await state.IsInBlockListAsync(new Uri(context.Peer)))
             {
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }

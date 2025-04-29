@@ -20,11 +20,11 @@ namespace node
         private PersistentCache<string, string> Blacklist { get; }
         public DownloadManager Downloads { get; }
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
-        private CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
         {
             this.loggerFactory = loggerFactory;
@@ -103,20 +103,14 @@ namespace node
             }
         }
 
-        public async Task<bool> IsInBlockListAsync(string url)
+        public async Task<bool> IsInBlockListAsync(Uri url)
         {
-            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-            {
-                Console.WriteLine($"warning: invalid URL {url}");
-                return false;
-            }
-
             bool passWhitelist = await Whitelist.CountEstimate() == 0;
             if (!passWhitelist)
             {
                 await Whitelist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network) && network.Contains(IPAddress.Parse((new Uri(url)).Host)))
+                    if (IPNetwork.TryParse(uri, out var network) && network.Contains(IPAddress.Parse(url.Host)))
                     {
                         passWhitelist = true;
                         return false;
@@ -135,13 +129,10 @@ namespace node
             {
                 await Blacklist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network))
+                    if (IPNetwork.TryParse(uri, out var network) && !network.Contains(IPAddress.Parse(url.Host)))
                     {
-                        if (!network.Contains(IPAddress.Parse((new Uri(url)).Host)))
-                        {
-                            passBlacklist = false;
-                            return false;
-                        }
+                        passBlacklist = false;
+                        return false;
                     }
                     return true;
                 });
