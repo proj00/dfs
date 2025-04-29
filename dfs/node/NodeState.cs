@@ -25,6 +25,8 @@ namespace node
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private bool disposedValue;
+
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
         {
             this.loggerFactory = loggerFactory;
@@ -156,17 +158,38 @@ namespace node
             return response;
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    cts.Cancel();
+                    cts.Dispose();
+                    NodeChannel.Dispose();
+                    TrackerChannel.Dispose();
+                    Manager.Dispose();
+                    PathByHash.Dispose();
+                    Whitelist.Dispose();
+                    Blacklist.Dispose();
+                    LogPath = string.Empty;
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~NodeState()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
         public void Dispose()
         {
-            cts.Cancel();
-            cts.Dispose();
-            NodeChannel.Dispose();
-            TrackerChannel.Dispose();
-            Manager.Dispose();
-            PathByHash.Dispose();
-            Whitelist.Dispose();
-            Blacklist.Dispose();
-            LogPath = string.Empty;
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

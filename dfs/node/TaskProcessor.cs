@@ -13,6 +13,7 @@ namespace node
         private readonly SemaphoreSlim semaphore;
         private readonly CancellationTokenSource cts = new();
         private readonly Task cmdLoop;
+        private bool disposedValue;
 
         public TaskProcessor(int maxConcurrency, int boundedCapacity = 100000)
         {
@@ -63,17 +64,6 @@ namespace node
             }
         }
 
-        public void Dispose()
-        {
-            cts.Cancel();
-            channel.Writer.Complete();
-#pragma warning disable VSTHRD002
-            cmdLoop.Wait();
-#pragma warning restore VSTHRD002
-            semaphore.Dispose();
-            cts.Dispose();
-        }
-
         public async ValueTask DisposeAsync()
         {
             await cts.CancelAsync();
@@ -81,6 +71,38 @@ namespace node
             await cmdLoop.WaitAsync(CancellationToken.None);
             semaphore.Dispose();
             cts.Dispose();
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    cts.Cancel();
+                    channel.Writer.Complete();
+#pragma warning disable VSTHRD002
+                    cmdLoop.Wait();
+#pragma warning restore VSTHRD002
+                    semaphore.Dispose();
+                    cts.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~TaskProcessor()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

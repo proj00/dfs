@@ -31,10 +31,10 @@ namespace node
 
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
-            using var response = client.GetObjectTree(new Hash { Data = hash });
+            using var response = client.GetObjectTree(new Hash { Data = hash }, cancellationToken: token);
 
             List<ObjectWithHash> objects = [];
-            await foreach (var obj in response.ResponseStream.ReadAllAsync())
+            await foreach (var obj in response.ResponseStream.ReadAllAsync(token))
             {
                 objects.Add(obj);
             }
@@ -43,7 +43,7 @@ namespace node
 
         public async Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token)
         {
-            using var response = client.GetPeerList(request);
+            using var response = client.GetPeerList(request, cancellationToken: token);
 
             List<string> peers = [];
             try
@@ -67,7 +67,7 @@ namespace node
             {
                 Hash = { hash },
                 Peer = nodeURI.ToString()
-            });
+            }, cancellationToken: token);
         }
 
         public async Task<Empty> MarkUnreachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
@@ -76,12 +76,12 @@ namespace node
             {
                 Hash = { hash },
                 Peer = nodeURI.ToString()
-            });
+            }, cancellationToken: token);
         }
 
         public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token)
         {
-            using var call = client.Publish(null, null, token);
+            using var call = client.Publish(cancellationToken: token);
             foreach (var obj in objects)
             {
                 await call.RequestStream.WriteAsync(obj, token);
@@ -93,13 +93,13 @@ namespace node
 
         public async Task<ByteString> GetContainerRootHash(System.Guid containerGuid, CancellationToken token)
         {
-            var response = await client.GetContainerRootHashAsync(new RpcCommon.Guid { Guid_ = containerGuid.ToString() }, null, null, token);
+            var response = await client.GetContainerRootHashAsync(new RpcCommon.Guid { Guid_ = containerGuid.ToString() }, cancellationToken: token);
             return response.Data;
         }
 
         public async Task<List<SearchResponse>> SearchForObjects(string query, CancellationToken token)
         {
-            using var response = client.SearchForObjects(new SearchRequest { Query = query }, null, null, token);
+            using var response = client.SearchForObjects(new SearchRequest { Query = query }, cancellationToken: token);
 
             List<SearchResponse> responses = [];
             await foreach (var r in response.ResponseStream.ReadAllAsync(token))
@@ -112,7 +112,7 @@ namespace node
 
         public async Task<DataUsage> GetDataUsage(CancellationToken token)
         {
-            return await client.GetDataUsageAsync(new Empty(), null, null, token);
+            return await client.GetDataUsageAsync(new Empty(), cancellationToken: token);
         }
 
         public async Task<Empty> ReportDataUsage(bool isUpload, long bytes, CancellationToken token)

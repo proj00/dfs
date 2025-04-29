@@ -23,7 +23,7 @@ namespace node
     {
         private readonly NodeState state;
         private readonly TransactionManager transactionManager = new();
-        private Uri nodeURI;
+        private readonly Uri nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -128,7 +128,7 @@ namespace node
 
             if (rootHash == ByteString.Empty)
             {
-                throw new Exception("Invalid path");
+                throw new ArgumentException("Invalid path");
             }
 
             return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash, Guid.NewGuid())).ToString() };
