@@ -18,9 +18,9 @@ import {
 import log from "electron-log/renderer";
 
 interface DownloadManagerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  activeDownloadIds: string[];
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly activeDownloadIds: string[];
 }
 
 export function DownloadManager({
@@ -65,9 +65,9 @@ export function DownloadManager({
         const progress = downloadInfo.progress as DownloadProgress;
         const containerGuid = downloadInfo.containerGuid;
         const now = new Date();
-        const startTime = downloadInfo.startTime || now;
+        const startTime = downloadInfo.startTime ?? now;
         const elapsedTime = now.getTime() - startTime.getTime();
-        const speed = downloadInfo.speed || 0;
+        const speed = downloadInfo.speed ?? 0;
 
         // Add to file downloads
         downloadItems.push({

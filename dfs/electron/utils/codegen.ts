@@ -73,6 +73,27 @@ generateInterface(project, "INodeService", (method) => {
   } satisfies MethodSignatureStructure;
 });
 
+function registerImport(
+  typeName: string,
+  fromModule: string,
+  importsMap: Map<string, Set<string>>,
+) {
+  if (fromModule === "fs") {
+    fromModule = `@/types/fs/filesystem`;
+  } else if (fromModule === "rpc_common") {
+    fromModule = `@/types/rpc_common`;
+  } else if (fromModule === "Ui") {
+    fromModule = `@/types/rpc/uiservice`;
+  } else {
+    throw new Error("invalid");
+  }
+
+  if (!importsMap.has(fromModule)) {
+    importsMap.set(fromModule, new Set());
+  }
+  importsMap.get(fromModule)!.add(typeName);
+}
+
 function generateWrapper(
   project: Project,
   outputName: string,
@@ -91,22 +112,6 @@ function generateWrapper(
   const service = findService(root, targetServiceName);
   if (service) {
     const importsMap = new Map<string, Set<string>>();
-    function registerImport(typeName: string, fromModule: string) {
-      if (fromModule === "fs") {
-        fromModule = `@/types/fs/filesystem`;
-      } else if (fromModule === "rpc_common") {
-        fromModule = `@/types/rpc_common`;
-      } else if (fromModule === "Ui") {
-        fromModule = `@/types/rpc/uiservice`;
-      } else {
-        throw new Error("invalid");
-      }
-
-      if (!importsMap.has(fromModule)) {
-        importsMap.set(fromModule, new Set());
-      }
-      importsMap.get(fromModule)!.add(typeName);
-    }
 
     const methods: OptionalKind<MethodDeclarationStructure>[] | undefined =
       Object.values(service.methods).map((method) => {
@@ -118,8 +123,8 @@ function generateWrapper(
         method.requestType = extractType(method.requestType);
         method.responseType = extractType(method.responseType);
 
-        registerImport(method.requestType, reqPackage);
-        registerImport(method.responseType, resPackage);
+        registerImport(method.requestType, reqPackage, importsMap);
+        registerImport(method.responseType, resPackage, importsMap);
 
         return getMethodDescription(method);
       });
@@ -136,11 +141,6 @@ function generateWrapper(
     Object.values(service.methods)
       .filter((method) => method.name !== "Shutdown")
       .map((method) => {
-        const reqPackage = extractPackage(method.resolvedRequestType!.fullName);
-        const resPackage = extractPackage(
-          method.resolvedResponseType!.fullName,
-        );
-
         method.requestType = extractType(method.requestType);
         method.responseType = extractType(method.responseType);
 
@@ -218,22 +218,6 @@ function generateObject(project: Project, outputName: string) {
   const service = findService(root, targetServiceName);
   if (service) {
     const importsMap = new Map<string, Set<string>>();
-    function registerImport(typeName: string, fromModule: string) {
-      if (fromModule === "fs") {
-        fromModule = `@/types/fs/filesystem`;
-      } else if (fromModule === "rpc_common") {
-        fromModule = `@/types/rpc_common`;
-      } else if (fromModule === "Ui") {
-        fromModule = `@/types/rpc/uiservice`;
-      } else {
-        throw new Error("invalid");
-      }
-
-      if (!importsMap.has(fromModule)) {
-        importsMap.set(fromModule, new Set());
-      }
-      importsMap.get(fromModule)!.add(typeName);
-    }
 
     let assignments: string[] = [];
     Object.values(service.methods).map((method) => {
@@ -242,8 +226,8 @@ function generateObject(project: Project, outputName: string) {
 
       method.requestType = extractType(method.requestType);
       method.responseType = extractType(method.responseType);
-      registerImport(method.requestType, reqPackage);
-      registerImport(method.responseType, resPackage);
+      registerImport(method.requestType, reqPackage, importsMap);
+      registerImport(method.responseType, resPackage, importsMap);
       const m = pascalToCamel(method.name);
       assignments.push(
         `${m}: async (req: ${method.requestType}) => {return await ipcRenderer.invoke("${m}", req);},\n`,
@@ -310,23 +294,6 @@ function generateInterface(
   const service = findService(root, targetServiceName);
   if (service) {
     const importsMap = new Map<string, Set<string>>();
-    function registerImport(typeName: string, fromModule: string) {
-      if (fromModule === "fs") {
-        fromModule = `@/types/fs/filesystem`;
-      } else if (fromModule === "rpc_common") {
-        fromModule = `@/types/rpc_common`;
-      } else if (fromModule === "Ui") {
-        fromModule = `@/types/rpc/uiservice`;
-      } else {
-        throw new Error("invalid");
-      }
-
-      if (!importsMap.has(fromModule)) {
-        importsMap.set(fromModule, new Set());
-      }
-      importsMap.get(fromModule)!.add(typeName);
-    }
-
     const methods: OptionalKind<MethodSignatureStructure>[] | undefined =
       Object.values(service.methods).map((method) => {
         const reqPackage = extractPackage(method.resolvedRequestType!.fullName);
@@ -337,8 +304,8 @@ function generateInterface(
         method.requestType = extractType(method.requestType);
         method.responseType = extractType(method.responseType);
 
-        registerImport(method.requestType, reqPackage);
-        registerImport(method.responseType, resPackage);
+        registerImport(method.requestType, reqPackage, importsMap);
+        registerImport(method.responseType, resPackage, importsMap);
 
         return getMethodDescription(method);
       });
@@ -394,7 +361,7 @@ function extractType(fullyQualified: string) {
 function extractPackage(fullyQualified: string) {
   fullyQualified = fullyQualified.replace(/^\./, "");
   const parts = fullyQualified.split(".");
-  const type = parts.pop()!;
+  parts.pop()!;
   const pkg = parts.join(".");
   return pkg;
 }

@@ -49,8 +49,9 @@ namespace common_test
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
+                    // Ignore any exceptions because why not
                 }
             }
         }

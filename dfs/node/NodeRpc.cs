@@ -15,7 +15,7 @@ namespace node
 {
     public class NodeRpc : NodeBase
     {
-        public NodeState state { get; }
+        private readonly NodeState state;
         public NodeRpc(NodeState state)
         {
             this.state = state;
@@ -23,7 +23,7 @@ namespace node
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
-            if (await state.IsInBlockListAsync(context.Peer))
+            if (await state.IsInBlockListAsync(new Uri(context.Peer)))
             {
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "request blocked"));
             }
@@ -51,7 +51,7 @@ namespace node
             var buffer = new byte[remainingSize];
             stream.Seek(offset, SeekOrigin.Begin);
 
-            var total = await stream.ReadAsync(buffer, 0, (int)remainingSize);
+            var total = await stream.ReadAsync(buffer.AsMemory(0, (int)remainingSize), context.CancellationToken);
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
             var used = 0;
 
@@ -63,7 +63,7 @@ namespace node
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
                     Response = res
-                });
+                }, context.CancellationToken);
 
                 state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
                 if (context.CancellationToken.IsCancellationRequested)
@@ -71,8 +71,7 @@ namespace node
                     break;
                 }
             }
-
-            var tracker = new TrackerWrapper(request.TrackerUri, state, CancellationToken.None);
+            var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, CancellationToken.None);
             await tracker.ReportDataUsage(true, used, CancellationToken.None);
         }
     }

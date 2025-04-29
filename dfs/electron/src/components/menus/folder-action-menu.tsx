@@ -14,11 +14,23 @@ import type { Folder } from "../../lib/types";
 import log from "electron-log/renderer";
 
 interface FolderActionMenuProps {
-  folder: Folder;
-  onRenameClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
-  onMoveClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
-  onDeleteClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
-  onShareClick?: (folder: Folder, e: React.MouseEvent) => Promise<void> | void;
+  readonly folder: Folder;
+  readonly onRenameClick?: (
+    folder: Folder,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onMoveClick?: (
+    folder: Folder,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onDeleteClick?: (
+    folder: Folder,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
+  readonly onShareClick?: (
+    folder: Folder,
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
 }
 
 export function FolderActionMenu({

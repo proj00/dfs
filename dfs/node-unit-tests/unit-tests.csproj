@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\common-test\common-test.csproj" />
+    <ProjectReference Include="..\common-tests\common-tests.csproj" />
     <ProjectReference Include="..\common\common.csproj" />
     <ProjectReference Include="..\node\node.csproj" />
     <ProjectReference Include="..\tracker\tracker.csproj" />

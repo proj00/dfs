@@ -23,6 +23,7 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
+            AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
             (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs");
 
             ILogger logger = loggerFactory.CreateLogger("Main");
@@ -44,7 +45,7 @@ namespace node
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
             var publicUrl = new Uri(publicServer.Urls.First());
 
-            UiService service = new(state, $"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}");
+            UiService service = new(state, new Uri($"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}"));
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
             using CancellationTokenSource token = new();
             var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);

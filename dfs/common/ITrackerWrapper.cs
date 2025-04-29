@@ -11,8 +11,8 @@ namespace common
         Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token);
         Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token);
 
-        Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token);
-        Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token);
+        Task<Empty> MarkReachable(ByteString[] hash, Uri nodeURI, CancellationToken token);
+        Task<Empty> MarkUnreachable(ByteString[] hash, Uri nodeURI, CancellationToken token);
 
         Task<ByteString> GetContainerRootHash(System.Guid containerGuid, CancellationToken token);
         Task<TransactionStartResponse> StartTransaction(TransactionRequest transactionRequest, CancellationToken token);
@@ -21,6 +21,6 @@ namespace common
         Task<DataUsage> GetDataUsage(CancellationToken token);
         Task<Empty> ReportDataUsage(bool isUpload, Int64 bytes, CancellationToken token);
 
-        string GetUri();
+        Uri GetUri();
     }
 }

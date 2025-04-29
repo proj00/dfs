@@ -21,6 +21,7 @@ namespace tracker
         private readonly ILogger logger;
         private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
             new();
+        private bool disposedValue;
         const int trackerResponseLimit = 30000;
 
         public TrackerRpc(ILogger logger, string dbPath)
@@ -34,12 +35,6 @@ namespace tracker
                 valueDeserializer: DataUsage.Parser.ParseFrom
             );
             this.logger = logger;
-        }
-
-        public void Dispose()
-        {
-            _filesystemManager.Dispose();
-            dataUsage.Dispose();
         }
 
         public override async Task<Hash> GetContainerRootHash(
@@ -205,7 +200,7 @@ namespace tracker
 
         public override async Task<DataUsage> GetDataUsage(Empty request, ServerCallContext context)
         {
-            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             string ip = match.Success ? match.Groups[1].Value : "";
             try
             {
@@ -235,7 +230,7 @@ namespace tracker
             ServerCallContext context
         )
         {
-            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$");
+            var match = Regex.Match(context.Peer, @"^(?:ipv4|ipv6):([\[\]a-fA-F0-9\.:]+):\d+$", RegexOptions.None, TimeSpan.FromMilliseconds(100));
             string ip = match.Success ? match.Groups[1].Value : "";
             DataUsage change = new()
             {
@@ -332,6 +327,7 @@ namespace tracker
 
                     transactions.TryRemove(info);
                 }
+                // this is fine transactions.First will throw if there is no match, and i don't care at all
                 catch { }
 
                 var currentGuid = System.Guid.NewGuid();
@@ -345,6 +341,32 @@ namespace tracker
                     TtlMs = trackerResponseLimit,
                 };
             });
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _filesystemManager.Dispose();
+                    dataUsage.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        ~TrackerRpc()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

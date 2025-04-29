@@ -17,7 +17,9 @@ namespace node
 {
     class TransactionManager : System.IAsyncDisposable, IDisposable
     {
-        private TaskProcessor processor;
+        private readonly TaskProcessor processor;
+        private bool disposedValue;
+
         public TransactionManager()
         {
             processor = new TaskProcessor(1000);
@@ -35,7 +37,7 @@ namespace node
             await changedEvent.WaitAsync();
             if (state != TransactionState.Ok)
             {
-                throw new Exception($"Failed to publish objects, received state: {state.ToString()}");
+                throw new InternalBufferOverflowException($"Failed to publish objects, received state: {state.ToString()}");
             }
             return newGuid;
         }
@@ -69,7 +71,7 @@ namespace node
 
             try
             {
-                var resp = await client.Publish(
+                _ = await client.Publish(
                     objects.Select(o => new PublishedObject
                     {
                         TransactionGuid = start.TransactionGuid,
@@ -87,14 +89,35 @@ namespace node
             registerGuid(actualGuid, TransactionState.Ok);
         }
 
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
-            ((IDisposable)processor).Dispose();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    processor.Dispose();
+                }
+                disposedValue = true;
+            }
         }
 
-        public ValueTask DisposeAsync()
+        ~TransactionManager()
         {
-            return ((System.IAsyncDisposable)processor).DisposeAsync();
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await ((System.IAsyncDisposable)processor).DisposeAsync();
+            GC.SuppressFinalize(this);
         }
     }
 }

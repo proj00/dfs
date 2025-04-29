@@ -13,8 +13,8 @@ import { GetNodeService } from "@/IpcService/GetNodeService";
 import log from "electron-log/renderer";
 
 interface UploadDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
 }
 
 export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {

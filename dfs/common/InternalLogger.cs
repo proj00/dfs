@@ -38,7 +38,6 @@ namespace common
     sealed class InternalLogger : ILogger
     {
         private readonly string _filePath;
-        //private readonly Lock fileLock = new();
         public InternalLogger(string filePath) => _filePath = filePath;
 
         IDisposable ILogger.BeginScope<TState>(TState state) => null!;
@@ -48,10 +47,8 @@ namespace common
             TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             Console.WriteLine($"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            //lock (fileLock)
-            //{
-            //    File.AppendAllText(_filePath, $"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            //}
+            // i removed the log to file thing because it broke stuff
+            // please readd if you see this (log4net or something)
         }
     }
 }

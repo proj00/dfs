@@ -13,6 +13,7 @@ using Ui;
 using Microsoft.Extensions.Logging;
 using Node;
 using System.Threading.Channels;
+using System.Security.Cryptography;
 
 namespace node
 {
@@ -20,16 +21,17 @@ namespace node
     [ComVisible(true)]
     public class UiService : Ui.Ui.UiBase
     {
-        private NodeState state;
-        private TransactionManager transactionManager = new();
-        private string nodeURI;
+        private readonly NodeState state;
+        private readonly TransactionManager transactionManager = new();
+        private readonly Uri nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
+        private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state, string nodeURI)
+        public UiService(NodeState state, Uri nodeURI)
         {
-            fileLocks = new(new HashUtils.ByteStringComparer());
+            fileLocks = new(new ByteStringComparer());
             ShutdownEvent = new AsyncManualResetEvent(true);
             ShutdownEvent.Reset();
             this.state = state;
@@ -78,7 +80,7 @@ namespace node
 
         public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state, CancellationToken.None);
+            var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, CancellationToken.None);
             var list = new Ui.SearchResponseList();
             list.Results.AddRange(await tracker.SearchForObjects(request.Query, context.CancellationToken));
             return list;
@@ -126,7 +128,7 @@ namespace node
 
             if (rootHash == ByteString.Empty)
             {
-                throw new Exception("Invalid path");
+                throw new ArgumentException("Invalid path");
             }
 
             return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash, Guid.NewGuid())).ToString() };
@@ -134,7 +136,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), new TrackerWrapper(request.TrackerUri, state, context.CancellationToken));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), new TrackerWrapper(new Uri(request.TrackerUri), state, context.CancellationToken));
             return new RpcCommon.Empty();
         }
 
@@ -175,7 +177,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state, context.CancellationToken);
+            var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, context.CancellationToken);
             var guid = Guid.Parse(request.ContainerGuid);
             var hash = await tracker.GetContainerRootHash(guid, CancellationToken.None);
             await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
@@ -183,12 +185,12 @@ namespace node
             {
                 throw new ArgumentException($"Invalid destination directory: path {request.DestinationDir} doesn't exist");
             }
-            await DownloadObjectByHashAsync(hash, guid, tracker, request.DestinationDir, request.MaxConcurrentChunks);
+            await DownloadObjectByHashAsync(hash, guid, tracker, request.DestinationDir);
 
             return new RpcCommon.Empty();
         }
 
-        private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir, int maxConcurrentChunks)
+        private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
         {
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
             guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
@@ -204,7 +206,7 @@ namespace node
             }
         }
 
-        private (FileChunk[] chunks, IncompleteFile file) GetIncompleteFile(ObjectWithHash obj, string trackerUri, string destinationDir)
+        private static (FileChunk[] chunks, IncompleteFile file) GetIncompleteFile(ObjectWithHash obj, Uri trackerUri, string destinationDir)
         {
             var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
             System.IO.Directory.CreateDirectory(dir);
@@ -220,7 +222,7 @@ namespace node
                     Offset = obj.Object.File.Hashes.ChunkSize * i,
                     FileHash = obj.Hash,
                     Size = Math.Min(obj.Object.File.Hashes.ChunkSize, obj.Object.File.Size - obj.Object.File.Hashes.ChunkSize * i),
-                    TrackerUri = trackerUri,
+                    TrackerUri = trackerUri.ToString(),
                     DestinationDir = dir,
                     CurrentCount = 0,
                     Status = DownloadStatus.Pending,
@@ -242,7 +244,7 @@ namespace node
                 throw new ArgumentException("Already downloaded");
             }
 
-            var tracker = new TrackerWrapper(chunk.TrackerUri, state, CancellationToken.None);
+            var tracker = new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None);
             Debug.Assert(chunk.Hash.Length == 128);
             var hash = ByteString.CopyFrom(chunk.Hash.Span.Slice(chunk.Hash.Length / 2));
 
@@ -258,18 +260,20 @@ namespace node
             }
 
             // for now, pick a random peer (chunk tasks are persistent and we can just add simple retries later)
-            var index = new Random((int)(DateTime.Now.Ticks % int.MaxValue)).Next() % peers.Count;
+            byte[] ok = new byte[4];
+            rng.GetBytes(ok);
+            var index = BitConverter.ToInt32(ok) % peers.Count;
             var peerClient = state.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {
                 Hash = hash,
-                TrackerUri = tracker.GetUri(),
+                TrackerUri = tracker.GetUri().ToString(),
                 Offset = chunk.CurrentCount
             }, null, null, token);
 
             try
             {
-                await foreach (var message in peerCall.ResponseStream.ReadAllAsync())
+                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
                 {
                     chunk.Contents.Add(message.Response);
                     chunk.CurrentCount += message.Response.Length;
@@ -301,9 +305,9 @@ namespace node
                     {
                         using var stream = new FileStream(chunk.DestinationDir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
                         stream.Seek(chunk.Offset, SeekOrigin.Begin);
-                        await stream.WriteAsync(thing);
+                        await stream.WriteAsync(thing, CancellationToken.None);
                     }
-                    await (new TrackerWrapper(chunk.TrackerUri, state, CancellationToken.None)).MarkReachable([chunk.FileHash], nodeURI, CancellationToken.None);
+                    await (new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None)).MarkReachable([chunk.FileHash], nodeURI, CancellationToken.None);
                     chunk.Status = DownloadStatus.Complete;
                 }
             }
@@ -317,7 +321,7 @@ namespace node
 
         public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
         {
-            var tracker = new TrackerWrapper(request.TrackerUri, state, context.CancellationToken);
+            var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, context.CancellationToken);
             return await tracker.GetDataUsage(context.CancellationToken);
         }
 

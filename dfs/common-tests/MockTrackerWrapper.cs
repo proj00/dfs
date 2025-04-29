@@ -16,15 +16,15 @@ namespace common_test
 
         public MockTrackerWrapper()
         {
-            this.objects = new(new HashUtils.ByteStringComparer());
-            this.peers = new(new HashUtils.ByteStringComparer());
+            this.objects = new(new ByteStringComparer());
+            this.peers = new(new ByteStringComparer());
             this.peerId = "";
             Container = [];
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
+        public Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
-            Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
+            Dictionary<ByteString, ObjectWithHash> obj = new(new ByteStringComparer());
             void Traverse(ObjectWithHash o)
             {
                 obj[o.Hash] = o;
@@ -40,50 +40,49 @@ namespace common_test
             }
 
             Traverse(new ObjectWithHash { Hash = hash, Object = objects[hash] });
-            return obj.Values.ToList();
+            return Task.FromResult(obj.Values.ToList());
         }
 
-        public async Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token)
+        public Task<List<string>> GetPeerList(PeerRequest request, CancellationToken token)
         {
-            if (peers.ContainsKey(request.ChunkHash))
+            if (peers.TryGetValue(request.ChunkHash, out string[]? p))
             {
-                var p = peers[request.ChunkHash];
-                return p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Length));
+                return Task.FromResult(p.ToList().GetRange(0, int.Min(request.MaxPeerCount, p.Length)));
             }
 
-            return [];
+            return Task.FromResult(new List<string>());
         }
 
-        public async Task<Empty> MarkReachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public Task<Empty> MarkReachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
-                peers[h] = [nodeURI];
-            return new();
+                peers[h] = [nodeURI.ToString()];
+            return Task.FromResult(new Empty());
         }
 
-        public async Task<Empty> MarkUnreachable(ByteString[] hash, string nodeURI, CancellationToken token)
+        public Task<Empty> MarkUnreachable(ByteString[] hash, Uri nodeURI, CancellationToken token)
         {
             foreach (var h in hash)
                 peers[h] = [];
-            return new();
+            return Task.FromResult(new Empty());
         }
 
-        public async Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token)
+        public Task<Empty> Publish(IReadOnlyList<PublishedObject> objects, CancellationToken token)
         {
             foreach (var obj in objects)
             {
                 this.objects[obj.Object.Hash] = obj.Object.Object;
             }
 
-            return new();
+            return Task.FromResult(new Empty());
         }
 
-        public async Task<ByteString> GetContainerRootHash(Guid containerGuid, CancellationToken token)
+        public Task<ByteString> GetContainerRootHash(Guid containerGuid, CancellationToken token)
         {
-            return Container[containerGuid];
+            return Task.FromResult(Container[containerGuid]);
         }
 
-        public async Task<List<SearchResponse>> SearchForObjects(string query, CancellationToken token)
+        public Task<List<SearchResponse>> SearchForObjects(string query, CancellationToken token)
         {
             throw new NotImplementedException();
         }
@@ -98,7 +97,7 @@ namespace common_test
             throw new NotImplementedException();
         }
 
-        public string GetUri()
+        public Uri GetUri()
         {
             throw new NotImplementedException();
         }

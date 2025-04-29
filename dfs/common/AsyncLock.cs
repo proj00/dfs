@@ -23,7 +23,7 @@ namespace common
         {
             if (!noLock)
             {
-                await semaphore.WaitAsync();
+                await semaphore.WaitAsync().ConfigureAwait(false);
             }
             return new Releaser(semaphore, noLock);
         }

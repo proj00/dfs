@@ -1,6 +1,7 @@
 [*.cs]
 # sw ka tu
 dotnet_diagnostic.severity = error
+dotnet_diagnostic.CA2007.severity = silent
 
 [*.{cs,vb}]
 #### Naming styles ####

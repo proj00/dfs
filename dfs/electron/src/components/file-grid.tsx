@@ -14,12 +14,12 @@ import {
 } from "@/lib/file-handlers";
 
 interface FileGridProps {
-  files: File[];
-  folders: Folder[];
-  currentFolder: string | null;
-  currentFolderName: string;
-  navigateToFolder: (folderId: string | null) => void;
-  navigateToParent: () => void;
+  readonly files: File[];
+  readonly folders: Folder[];
+  readonly currentFolder: string | null;
+  readonly currentFolderName: string;
+  readonly navigateToFolder: (folderId: string | null) => void;
+  readonly navigateToParent: () => void;
 }
 
 export function FileGrid({
@@ -118,7 +118,7 @@ export function FileGrid({
                     <div className="h-16 w-16 bg-muted rounded overflow-hidden">
                       <img
                         src={
-                          file.thumbnail ||
+                          file.thumbnail ??
                           "/placeholder.svg?height=64&width=64"
                         }
                         alt={file.name}

@@ -73,36 +73,36 @@ namespace common
             _syncRoot.Dispose();
         }
 
-        public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid guid)
+        public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
         {
             ArgumentNullException.ThrowIfNull(objects);
-            using (await _syncRoot.LockAsync())
+            using (await _syncRoot.LockAsync().ConfigureAwait(false))
             {
                 foreach (var obj in objects)
                 {
-                    if (await ObjectByHash.ContainsKey(obj.Hash))
+                    if (await ObjectByHash.ContainsKey(obj.Hash).ConfigureAwait(false))
                     {
                         continue;
                     }
 
-                    await ObjectByHash.SetAsync(obj.Hash, obj);
+                    await ObjectByHash.SetAsync(obj.Hash, obj).ConfigureAwait(false);
                     switch (obj.Object.TypeCase)
                     {
                         case FileSystemObject.TypeOneofCase.File:
-                            await SetFileChunkParents(obj);
+                            await SetFileChunkParents(obj).ConfigureAwait(false);
                             break;
                         case FileSystemObject.TypeOneofCase.Directory:
                             foreach (var child in obj.Object.Directory.Entries)
                             {
-                                var value = await Parent.TryGetValue(child);
+                                var value = await Parent.TryGetValue(child).ConfigureAwait(false);
                                 if (value != null)
                                 {
                                     value.Data.Add(obj.Hash);
-                                    await Parent.SetAsync(child, value);
+                                    await Parent.SetAsync(child, value).ConfigureAwait(false);
                                 }
                                 else
                                 {
-                                    await Parent.SetAsync(child, new RpcCommon.HashList() { Data = { obj.Hash } });
+                                    await Parent.SetAsync(child, new RpcCommon.HashList() { Data = { obj.Hash } }).ConfigureAwait(false);
                                 }
                             }
                             break;
@@ -113,26 +113,26 @@ namespace common
                     }
                 }
 
-                ByteString? oldRoot = await Container.TryGetValue(guid);
+                ByteString? oldRoot = await Container.TryGetValue(container).ConfigureAwait(false);
                 if (oldRoot != null)
                 {
-                    await NewerVersion.SetAsync(oldRoot, rootObject);
+                    await NewerVersion.SetAsync(oldRoot, rootObject).ConfigureAwait(false);
                 }
 
-                await Container.SetAsync(guid, rootObject);
+                await Container.SetAsync(container, rootObject).ConfigureAwait(false);
 
-                return guid;
+                return container;
             }
         }
 
         public async Task<List<ObjectWithHash>> GetContainerTree(Guid containerGuid)
         {
-            using (await _syncRoot.LockAsync())
+            using (await _syncRoot.LockAsync().ConfigureAwait(false))
             {
-                ByteString? root = await Container.TryGetValue(containerGuid);
+                ByteString? root = await Container.TryGetValue(containerGuid).ConfigureAwait(false);
                 if (root != null)
                 {
-                    return await GetObjectTree(root, true);
+                    return await GetObjectTree(root, true).ConfigureAwait(false);
                 }
                 else
                 {
@@ -143,12 +143,12 @@ namespace common
 
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString root, bool noLock = false)
         {
-            using (await _syncRoot.LockAsync(noLock))
+            using (await _syncRoot.LockAsync(noLock).ConfigureAwait(false))
             {
-                Dictionary<ByteString, ObjectWithHash> obj = new(new HashUtils.ByteStringComparer());
+                Dictionary<ByteString, ObjectWithHash> obj = new(new ByteStringComparer());
                 async Task Traverse(ByteString hash)
                 {
-                    var o = await ObjectByHash.GetAsync(hash);
+                    var o = await ObjectByHash.GetAsync(hash).ConfigureAwait(false);
                     obj[hash] = o;
                     if (o.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
                     {
@@ -157,11 +157,11 @@ namespace common
 
                     foreach (var next in o.Object.Directory.Entries)
                     {
-                        await Traverse(next);
+                        await Traverse(next).ConfigureAwait(false);
                     }
                 }
 
-                await Traverse(root);
+                await Traverse(root).ConfigureAwait(false);
                 return [.. obj.Values];
             }
         }
@@ -179,15 +179,15 @@ namespace common
             {
                 // if there is a large amount of duplicate files this will be slow, but imports (ie writes) are rare
                 // in comparison to reads, so this is... fine?
-                RpcCommon.HashList? parents = await ChunkParents.TryGetValue(chunkHash);
+                RpcCommon.HashList? parents = await ChunkParents.TryGetValue(chunkHash).ConfigureAwait(false);
                 if (parents != null)
                 {
                     parents.Data.Add(parentHash);
-                    await ChunkParents.SetAsync(chunkHash, parents);
+                    await ChunkParents.SetAsync(chunkHash, parents).ConfigureAwait(false);
                     continue;
                 }
 
-                await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } });
+                await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } }).ConfigureAwait(false);
             }
         }
     }

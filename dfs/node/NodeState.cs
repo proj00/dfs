@@ -20,11 +20,13 @@ namespace node
         private PersistentCache<string, string> Blacklist { get; }
         public DownloadManager Downloads { get; }
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
-        private CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+        private bool disposedValue;
+
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
         {
             this.loggerFactory = loggerFactory;
@@ -103,26 +105,17 @@ namespace node
             }
         }
 
-        public async Task<bool> IsInBlockListAsync(string url)
+        public async Task<bool> IsInBlockListAsync(Uri url)
         {
-            if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
-            {
-                Console.WriteLine($"warning: invalid URL {url}");
-                return false;
-            }
-
             bool passWhitelist = await Whitelist.CountEstimate() == 0;
             if (!passWhitelist)
             {
                 await Whitelist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network))
+                    if (IPNetwork.TryParse(uri, out var network) && network.Contains(IPAddress.Parse(url.Host)))
                     {
-                        if (network.Contains(IPAddress.Parse((new Uri(url)).Host)))
-                        {
-                            passWhitelist = true;
-                            return false;
-                        }
+                        passWhitelist = true;
+                        return false;
                     }
                     return true;
                 });
@@ -138,13 +131,10 @@ namespace node
             {
                 await Blacklist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network))
+                    if (IPNetwork.TryParse(uri, out var network) && !network.Contains(IPAddress.Parse(url.Host)))
                     {
-                        if (!network.Contains(IPAddress.Parse((new Uri(url)).Host)))
-                        {
-                            passBlacklist = false;
-                            return false;
-                        }
+                        passBlacklist = false;
+                        return false;
                     }
                     return true;
                 });
@@ -168,17 +158,38 @@ namespace node
             return response;
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    cts.Cancel();
+                    cts.Dispose();
+                    NodeChannel.Dispose();
+                    TrackerChannel.Dispose();
+                    Manager.Dispose();
+                    PathByHash.Dispose();
+                    Whitelist.Dispose();
+                    Blacklist.Dispose();
+                    LogPath = string.Empty;
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~NodeState()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
         public void Dispose()
         {
-            cts.Cancel();
-            cts.Dispose();
-            NodeChannel.Dispose();
-            TrackerChannel.Dispose();
-            Manager.Dispose();
-            PathByHash.Dispose();
-            Whitelist.Dispose();
-            Blacklist.Dispose();
-            LogPath = string.Empty;
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
