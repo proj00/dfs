@@ -385,7 +385,9 @@ namespace node
 
         public override Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)
         {
-            return base.ApplyFsOperation(request, context);
+            state.Logger.LogInformation($"ApplyFsOperation: {request.Operation} {request.Source} {request.Destination}");
+            return Task.Run(() => new RpcCommon.Empty());
+            //return base.ApplyFsOperation(request, context);
         }
     }
 }
