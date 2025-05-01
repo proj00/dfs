@@ -109,7 +109,7 @@ namespace common
             };
 
             obj.Directory = new Fs.Directory();
-            foreach (var hash in hashes.Order().Distinct())
+            foreach (var hash in hashes.Order(new ByteStringComparer()).Distinct())
             {
                 obj.Directory.Entries.Add(hash);
             }

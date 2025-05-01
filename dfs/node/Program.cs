@@ -51,7 +51,7 @@ namespace node
             var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);
 
             await service.ShutdownEvent.WaitAsync();
-            await token.CancelAsync();
+            _ = token.CancelAsync();
             await publicServer.StopAsync();
             await privateServer.StopAsync();
         }
@@ -134,7 +134,9 @@ namespace node
             builder.Services.AddSingleton(loggerFactory);
             builder.Services.AddLogging();
             builder.Services.AddSingleton(service);
-
+#if DEBUG
+            builder.Services.AddGrpcReflection();
+#endif
             builder.WebHost.UseNamedPipes(options =>
             {
                 options.CreateNamedPipeServerStream = (context) =>
@@ -201,10 +203,11 @@ namespace node
             });
 
             var app = builder.Build();
-
             app.UseRouting();
             app.UseCors(policyName);
-
+#if DEBUG
+            app.MapGrpcReflectionService();
+#endif
             app.MapGrpcService<UiService>().RequireCors(policyName);
 
             await app.StartAsync(cancellationToken);
