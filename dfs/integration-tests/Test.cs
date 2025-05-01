@@ -187,7 +187,7 @@ namespace integration_tests
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName }, null, null, token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, null, null, token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
@@ -220,7 +220,7 @@ namespace integration_tests
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
@@ -262,7 +262,7 @@ namespace integration_tests
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectFromDiskAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
