@@ -10,7 +10,8 @@ service Ui
 	// fs operations
 	rpc GetObjectPath(rpc_common.Hash) returns (Path);
 	rpc RevealObjectInExplorer(rpc_common.Hash) returns (rpc_common.Empty);
-	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (rpc_common.Guid);
+	rpc ImportObjectFromDisk(ObjectFromDiskOptions) returns (fs.ObjectList);
+	rpc ImportObjectToContainer(ObjectFromDiskOptions) returns (rpc_common.Guid);
 
 	// tracker interaction
 	rpc PublishToTracker(PublishingOptions) returns (rpc_common.Empty);
@@ -118,14 +119,18 @@ message BlockListResponse
 
 message FsOperation
 {
-	rpc_common.Hash source = 1;
-	rpc_common.Hash destination = 2;
-	string containerGuid = 3;
+	string containerGuid = 1;
+	OperationType type = 2;
+	rpc_common.Hash target = 3;
+	rpc_common.Hash parent = 4;
 
-	// used for copy/move
-	optional string newName = 4;
-
-	OperationType operation = 5;
+	oneof info
+	{
+		string newName = 5; // for rename
+	    rpc_common.Hash newParent = 6; // for move
+		fs.ObjectList objects = 7; // for create
+		rpc_common.Empty empty = 8; // for others
+	}
 }
 
 enum OperationType
@@ -134,6 +139,7 @@ enum OperationType
 	Move = 1;
 	Create = 2;
 	Delete = 3;
+	Rename = 4;
 }
 
 message LogRequest
