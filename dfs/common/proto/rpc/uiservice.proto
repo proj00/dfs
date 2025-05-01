@@ -120,11 +120,12 @@ message FsOperation
 {
 	rpc_common.Hash source = 1;
 	rpc_common.Hash destination = 2;
+	string containerGuid = 3;
 
 	// used for copy/move
-	optional string newName = 3;
+	optional string newName = 4;
 
-	OperationType operation = 4;
+	OperationType operation = 5;
 }
 
 enum OperationType
