@@ -91,7 +91,14 @@ namespace node
             return new RpcCommon.Hash { Data = await state.Manager.Container.GetAsync(Guid.Parse(request.Guid_)) };
         }
 
-        public override async Task<RpcCommon.Guid> ImportObjectFromDisk(Ui.ObjectFromDiskOptions request, ServerCallContext context)
+        public override async Task<RpcCommon.Guid> ImportObjectToContainer(Ui.ObjectFromDiskOptions request, ServerCallContext context)
+        {
+            (ObjectWithHash[] objects, ByteString rootHash) = await ImportObjectAsync(request);
+
+            return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash, Guid.NewGuid())).ToString() };
+        }
+
+        private async Task<(ObjectWithHash[] objects, ByteString rootHash)> ImportObjectAsync(ObjectFromDiskOptions request)
         {
             (string path, int chunkSize) = (request.Path, request.ChunkSize);
             if (chunkSize <= 0 || chunkSize > Constants.maxChunkSize)
@@ -131,7 +138,14 @@ namespace node
                 throw new ArgumentException("Invalid path");
             }
 
-            return new RpcCommon.Guid { Guid_ = (await state.Manager.CreateObjectContainer(objects, rootHash, Guid.NewGuid())).ToString() };
+            return (objects, rootHash);
+        }
+
+        public override async Task<ObjectList> ImportObjectFromDisk(Ui.ObjectFromDiskOptions request, ServerCallContext context)
+        {
+            (ObjectWithHash[] objects, _) = await ImportObjectAsync(request);
+
+            return new() { Data = { objects } };
         }
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
@@ -385,7 +399,7 @@ namespace node
 
         public override Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)
         {
-            state.Logger.LogInformation($"ApplyFsOperation: {request.Operation} {request.Source} {request.Destination}");
+            state.Logger.LogInformation($"ApplyFsOperation: {JsonFormatter.Default.Format(request)}");
             return Task.Run(() => new RpcCommon.Empty());
             //return base.ApplyFsOperation(request, context);
         }

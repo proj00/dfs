@@ -3,6 +3,7 @@ using Google.Protobuf;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -108,7 +109,7 @@ namespace common
             };
 
             obj.Directory = new Fs.Directory();
-            foreach (var hash in hashes.Distinct())
+            foreach (var hash in hashes.Order().Distinct())
             {
                 obj.Directory.Entries.Add(hash);
             }
@@ -116,10 +117,10 @@ namespace common
             return obj;
         }
 
-        public static IReadOnlyList<ObjectWithHash> RemoveObjectFromTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ByteString objHash)
+        public static IReadOnlyList<ObjectDiff> RemoveObjectFromTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ByteString objHash)
         {
             ArgumentNullException.ThrowIfNull(tree);
-            List<ObjectWithHash> diff = [];
+            List<ObjectDiff> diff = [];
             Dictionary<ByteString, ObjectWithHash> lookup = new(new ByteStringComparer());
             foreach (var obj in tree)
             {
@@ -130,10 +131,10 @@ namespace common
             return diff;
         }
 
-        public static IReadOnlyList<ObjectWithHash> AddObjectToTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ObjectWithHash target, ByteString parent)
+        public static IReadOnlyList<ObjectDiff> AddObjectToTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ObjectWithHash target, ByteString parent)
         {
             ArgumentNullException.ThrowIfNull(tree);
-            List<ObjectWithHash> diff = [];
+            List<ObjectDiff> diff = [];
             Dictionary<ByteString, ObjectWithHash> lookup = new(new ByteStringComparer());
             foreach (var obj in tree)
             {
@@ -144,7 +145,7 @@ namespace common
             return diff;
         }
 
-        private static ObjectWithHash? Traverse(ByteString hash, ObjectWithHash target, List<ObjectWithHash> diff, Dictionary<ByteString, ObjectWithHash> lookup, bool remove, ByteString? parent = null)
+        private static ObjectWithHash? Traverse(ByteString hash, ObjectWithHash target, List<ObjectDiff> diff, Dictionary<ByteString, ObjectWithHash> lookup, bool remove, ByteString? parent = null)
         {
             ArgumentNullException.ThrowIfNull(target);
             if (!remove && parent == null)
@@ -181,7 +182,7 @@ namespace common
             var h = new ObjectWithHash() { Hash = HashUtils.GetHash(obj), Object = obj };
             if (!lookup.ContainsKey(h.Hash))
             {
-                diff.Add(h);
+                diff.Add(new(current.Hash, target));
             }
             return h;
         }
