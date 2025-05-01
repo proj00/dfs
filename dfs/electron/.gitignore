@@ -11,7 +11,7 @@ assets
 db
 dist
 src/types
-
+undefinedelectron-log-preload.js
 # Editor directories and files
 .vscode/*
 !.vscode/launch.json
