@@ -3,6 +3,7 @@ using Google.Protobuf;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Tracker;
@@ -127,7 +128,12 @@ namespace common
 
         public async Task<List<ObjectWithHash>> GetContainerTree(Guid containerGuid)
         {
-            using (await _syncRoot.LockAsync().ConfigureAwait(false))
+            return await GetContainerTree(containerGuid, false);
+        }
+
+        private async Task<List<ObjectWithHash>> GetContainerTree(Guid containerGuid, bool noLock)
+        {
+            using (await _syncRoot.LockAsync(noLock).ConfigureAwait(false))
             {
                 ByteString? root = await Container.TryGetValue(containerGuid).ConfigureAwait(false);
                 if (root != null)
@@ -141,7 +147,12 @@ namespace common
             }
         }
 
-        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString root, bool noLock = false)
+        public async Task<List<ObjectWithHash>> GetObjectTree(ByteString root)
+        {
+            return await GetObjectTree(root, false);
+        }
+
+        private async Task<List<ObjectWithHash>> GetObjectTree(ByteString root, bool noLock)
         {
             using (await _syncRoot.LockAsync(noLock).ConfigureAwait(false))
             {

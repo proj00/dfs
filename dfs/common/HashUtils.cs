@@ -29,8 +29,14 @@ namespace common
 
         public static ByteString GetHash(Fs.FileSystemObject obj)
         {
+            ArgumentNullException.ThrowIfNull(obj);
             var digest = new Sha3Digest(512);
-            digest.BlockUpdate(obj.ToByteArray());
+            var buffer = new byte[2 * obj.CalculateSize()];
+            using var stream = new CodedOutputStream(buffer);
+            stream.Deterministic = true;
+            obj.WriteTo(stream);
+            stream.Flush();
+            digest.BlockUpdate(buffer, 0, (int)stream.Position);
             return GetFinal(digest);
         }
 

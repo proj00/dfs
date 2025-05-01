@@ -207,6 +207,9 @@ namespace node
                 {
                     tokenSource.Cancel();
                     tokenSource.Dispose();
+                    chunkTasks.Dispose();
+                    downloadProcessor.Dispose();
+                    stateProcessor.Dispose();
                 }
                 disposedValue = true;
             }
