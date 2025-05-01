@@ -11,6 +11,7 @@ import {
   Upload,
   Activity,
   FileText,
+  Scroll,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -256,6 +257,21 @@ export function Sidebar({
     }
   };
 
+  // Handle opening logs
+  const handleOpenLogs = async () => {
+    console.log("Opening logs via UI API...")
+
+    try {
+      // Mock UI API call
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      console.log("Logs opened successfully")
+
+      // Show a notification to the user (in a real app, you'd use a toast notification)
+      alert("Logs opened successfully")
+    } catch (error) {
+      console.error("Failed to open logs:", error)
+    }
+  }
   return (
     <div className="w-64 border-r bg-background p-4 hidden md:block">
       <div className="space-y-1">
@@ -310,6 +326,10 @@ export function Sidebar({
               {activeDownloadIds.length}
             </span>
           )}
+        </Button>
+        <Button variant="outline" className="w-full justify-start" onClick={handleOpenLogs}>
+          <Scroll className="mr-2 h-4 w-4" />
+          Open Logs
         </Button>
       </div>
 
