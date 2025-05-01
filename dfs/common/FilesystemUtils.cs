@@ -117,74 +117,68 @@ namespace common
             return obj;
         }
 
-        public static IReadOnlyList<ObjectDiff> RemoveObjectFromTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ByteString objHash)
+        public static IReadOnlyDictionary<ByteString, ObjectWithHash> RemoveObjectFromTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ByteString target, ByteString parent)
         {
             ArgumentNullException.ThrowIfNull(tree);
-            List<ObjectDiff> diff = [];
+            Dictionary<ByteString, ObjectWithHash> diff = [];
             Dictionary<ByteString, ObjectWithHash> lookup = new(new ByteStringComparer());
             foreach (var obj in tree)
             {
                 lookup[obj.Hash] = obj;
             }
 
-            _ = Traverse(treeRoot, lookup[objHash], diff, lookup, true);
+            _ = Traverse(treeRoot, target, parent, diff, lookup, true);
             return diff;
         }
 
-        public static IReadOnlyList<ObjectDiff> AddObjectToTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ObjectWithHash target, ByteString parent)
+        public static IReadOnlyDictionary<ByteString, ObjectWithHash> AddObjectToTree(IReadOnlyList<ObjectWithHash> tree, ByteString treeRoot, ByteString target, ByteString parent)
         {
             ArgumentNullException.ThrowIfNull(tree);
-            List<ObjectDiff> diff = [];
+            Dictionary<ByteString, ObjectWithHash> diff = [];
             Dictionary<ByteString, ObjectWithHash> lookup = new(new ByteStringComparer());
             foreach (var obj in tree)
             {
                 lookup[obj.Hash] = obj;
             }
 
-            _ = Traverse(treeRoot, target, diff, lookup, false, parent);
+            _ = Traverse(treeRoot, target, parent, diff, lookup, false);
             return diff;
         }
 
-        private static ObjectWithHash? Traverse(ByteString hash, ObjectWithHash target, List<ObjectDiff> diff, Dictionary<ByteString, ObjectWithHash> lookup, bool remove, ByteString? parent = null)
+        private static ByteString Traverse(ByteString hash, ByteString target, ByteString parent, Dictionary<ByteString, ObjectWithHash> diff, Dictionary<ByteString, ObjectWithHash> lookup, bool remove)
         {
             ArgumentNullException.ThrowIfNull(target);
-            if (!remove && parent == null)
-            {
-                ArgumentNullException.ThrowIfNull(parent);
-            }
-
-            if (target.Hash == hash && remove)
-            {
-                return null;
-            }
+            ArgumentNullException.ThrowIfNull(parent);
 
             var current = lookup[hash];
             if (current.Object.TypeCase != FileSystemObject.TypeOneofCase.Directory)
             {
-                return current;
+                return hash;
             }
 
-            List<ObjectWithHash> entries = [];
+            List<ByteString> entries = [];
             foreach (var entry in current.Object.Directory.Entries)
             {
-                var child = Traverse(entry, target, diff, lookup, remove);
-                if (child != null)
+                if (remove && entry == target && hash == parent)
                 {
-                    entries.Add(child);
+                    continue;
                 }
+
+                var child = Traverse(entry, target, parent, diff, lookup, remove);
+                entries.Add(child);
             }
-            if (!remove && current.Hash == parent)
+            if (!remove && hash == parent)
             {
                 entries.Add(target);
             }
 
-            var obj = GetDirectoryObject(current.Object.Name, entries.Select(a => a.Hash).ToList());
+            var obj = GetDirectoryObject(current.Object.Name, entries);
             var h = new ObjectWithHash() { Hash = HashUtils.GetHash(obj), Object = obj };
-            if (!lookup.ContainsKey(h.Hash))
+            if (current.Hash != h.Hash)
             {
-                diff.Add(new(current.Hash, target));
+                diff[current.Hash] = h;
             }
-            return h;
+            return h.Hash;
         }
 
         public static ByteString GetRecursiveDirectoryObject(string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)

@@ -127,10 +127,12 @@ message FsOperation
 	oneof info
 	{
 		string newName = 5; // for rename
-	    rpc_common.Hash newParent = 6; // for move
+	    rpc_common.Hash newParent = 6; // for move & copy
 		fs.ObjectList objects = 7; // for create
 		rpc_common.Empty empty = 8; // for others
 	}
+
+	optional string trackerUri = 9;
 }
 
 enum OperationType

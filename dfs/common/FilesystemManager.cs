@@ -147,14 +147,56 @@ namespace common
             }
         }
 
-        public async Task<List<ObjectWithHash>> ModifyContainer(Ui.FsOperation operation)
+        public async Task<(ByteString, List<ObjectWithHash>)> ModifyContainer(Ui.FsOperation operation)
         {
             ArgumentNullException.ThrowIfNull(operation);
             using (await _syncRoot.LockAsync())
             {
                 var root = await Container.GetAsync(Guid.Parse(operation.ContainerGuid));
                 var objects = await GetObjectTree(root);
-                return objects;
+                ObjectWithHash? extracted = null;
+
+                if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Create)
+                {
+                    extracted = await ObjectByHash.GetAsync(operation.Target.Data);
+                    if (operation.Type == Ui.OperationType.Rename)
+                    {
+                        extracted.Object.Name = operation.NewName;
+                        extracted.Hash = HashUtils.GetHash(extracted.Object);
+                    }
+
+                    var diff = FilesystemUtils.RemoveObjectFromTree(objects, root, operation.Parent.Data, operation.Target.Data);
+                    root = diff[root].Hash;
+                    objects.RemoveAll(o => diff.ContainsKey(o.Hash));
+                    objects.AddRange(diff.Values);
+                }
+
+                if (operation.Type != Ui.OperationType.Delete)
+                {
+                    ObjectList toAdd = operation.Objects;
+                    if (extracted != null)
+                    {
+                        toAdd = new() { Data = { extracted } };
+                    }
+                    if (operation.Type == Ui.OperationType.Copy)
+                    {
+                        toAdd = new() { Data = { await ObjectByHash.GetAsync(operation.Target.Data) } };
+                    }
+
+                    var newParent = operation.Type == Ui.OperationType.Move || operation.Type == Ui.OperationType.Copy
+                        ? operation.NewParent.Data
+                        : operation.Parent.Data;
+                    var diff = FilesystemUtils.AddObjectToTree(objects, root, operation.Target.Data, newParent);
+                    root = diff[root].Hash;
+                    objects.RemoveAll(o => diff.ContainsKey(o.Hash));
+
+                    if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Move)
+                    {
+                        objects.AddRange(toAdd.Data);
+                    }
+                }
+
+                return (root, objects);
             }
         }
 

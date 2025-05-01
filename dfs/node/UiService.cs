@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Node;
 using System.Threading.Channels;
 using System.Security.Cryptography;
+using System.Windows;
 
 namespace node
 {
@@ -163,11 +164,15 @@ namespace node
 
             var objects = await state.Manager.GetContainerTree(container);
             var rootHash = await state.Manager.Container.GetAsync(container);
+            await PublishContainerUpdateAsync(container, tracker, objects, rootHash);
+        }
+
+        private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash)
+        {
             Guid newGuid = await transactionManager.PublishObjectsAsync(tracker, container, objects,
-                rootHash);
+                            rootHash);
 
             await state.Manager.Container.SetAsync(newGuid, rootHash);
-            await state.Manager.Container.Remove(newGuid);
 
             var hashes = objects
                 .Select(o => o.Object)
@@ -209,11 +214,12 @@ namespace node
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
             guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
 
-            var fileTasks = objects
-                .Where(obj => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File)
+            var fileTasks = objects.ToAsyncEnumerable()
+                .WhereAwait(async (obj) => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File
+                        && !(await state.Manager.ObjectByHash.ContainsKey(obj.Hash)))
                 .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir));
 
-            foreach (var (chunks, file) in fileTasks)
+            await foreach (var (chunks, file) in fileTasks)
             {
                 await state.Downloads.AddNewFileAsync(file,
                     chunks);
@@ -397,11 +403,22 @@ namespace node
             });
         }
 
-        public override Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)
+        public override async Task<RpcCommon.Empty> ApplyFsOperation(FsOperation request, ServerCallContext context)
         {
-            state.Logger.LogInformation($"ApplyFsOperation: {JsonFormatter.Default.Format(request)}");
-            return Task.Run(() => new RpcCommon.Empty());
-            //return base.ApplyFsOperation(request, context);
+            (ByteString newRoot, List<ObjectWithHash> newObjects) = await state.Manager.ModifyContainer(request);
+            var guid = Guid.Parse(request.ContainerGuid);
+            if (request.HasTrackerUri)
+            {
+                var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, context.CancellationToken);
+                await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot);
+            }
+            else
+            {
+                state.Logger.LogWarning("state isn't synced with tracker");
+                await state.Manager.CreateObjectContainer([.. newObjects], newRoot, guid);
+            }
+
+            return new();
         }
     }
 }
