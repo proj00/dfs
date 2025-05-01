@@ -19,7 +19,9 @@ namespace node
         {
             channel = Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(boundedCapacity)
             {
-                FullMode = BoundedChannelFullMode.Wait
+                FullMode = BoundedChannelFullMode.Wait,
+                SingleReader = true,
+                SingleWriter = false,
             });
 
             semaphore = new SemaphoreSlim(maxConcurrency);
