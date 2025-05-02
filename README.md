@@ -23,4 +23,12 @@ Now you should be able to run all tests (from VS's Test > Test Explorer menu) an
 
 ## Debugging
 
-Good luck (launch node & tracker from VS and launch electron forge from VS Code)
+### Known problems
+
+1. Missing buf package 
+   - Go to `../dfs/electron`
+   - execute `npm i buf`
+2. Failing to launch project:
+   1. Timeout for waiting for pipe
+      - Launch project with settings `node: Run with Args`
+      - Go to `../dfs/electron` and execute `npm run start`
