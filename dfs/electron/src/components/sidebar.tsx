@@ -12,6 +12,7 @@ import {
   Activity,
   FileText,
   Scroll,
+  Shield,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -34,6 +35,7 @@ import {
   createPollCallback,
 } from "../lib/utils";
 import { DownloadManager } from "./download-manager";
+import { BlockedPeersDialog } from "./blocked-peers-dialog";
 
 interface SidebarProps {
   readonly currentFolder: string | null;
@@ -81,6 +83,10 @@ export function Sidebar({
   const [downloadManagerOpen, setDownloadManagerOpen] = useState(false);
   const [activeDownloadIds, setActiveDownloadIds] = useState<string[]>([]);
   const [dataUsage, setDataUsage] = useState<DataUsage | null>(null);
+
+  
+  // State for blocked peers dialog
+  const [blockedPeersDialogOpen, setBlockedPeersDialogOpen] = useState(false)
 
   // Calculate download percentage
   const downloadPercentage = calculatePercentage(
@@ -330,6 +336,11 @@ export function Sidebar({
         <Button variant="outline" className="w-full justify-start" onClick={handleOpenLogs}>
           <Scroll className="mr-2 h-4 w-4" />
           Open Logs
+        </Button>
+
+        <Button variant="outline" className="w-full justify-start" onClick={() => setBlockedPeersDialogOpen(true)}>
+          <Shield className="mr-2 h-4 w-4" />
+          Blocked Peers
         </Button>
       </div>
 
@@ -700,6 +711,8 @@ export function Sidebar({
         onOpenChange={setDownloadManagerOpen}
         activeDownloadIds={activeDownloadIds}
       />
+            {/* Blocked Peers Dialog */}
+            <BlockedPeersDialog open={blockedPeersDialogOpen} onOpenChange={setBlockedPeersDialogOpen} />
     </div>
   );
 }
