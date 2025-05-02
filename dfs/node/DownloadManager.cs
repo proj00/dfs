@@ -9,6 +9,7 @@ using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks.Dataflow;
+using Ui;
 
 namespace node
 {
@@ -23,35 +24,49 @@ namespace node
             public FileChunk[] Chunk { get; set; } = [];
         }
 
-        private readonly PersistentCache<ByteString, Ui.Progress> FileProgress;
+        private readonly IPersistentCache<ByteString, Ui.Progress> FileProgress;
         private UpdateCallback? updateCallback = null;
         private bool disposedValue;
         private readonly CancellationTokenSource tokenSource = new();
         private readonly ConcurrentDictionary<ByteString, CancellationTokenSource> fileTokens;
         private readonly TaskProcessor downloadProcessor;
         private readonly TaskProcessor stateProcessor;
-        private readonly PersistentCache<ByteString, FileChunk> chunkTasks;
+        private readonly IPersistentCache<ByteString, FileChunk> chunkTasks;
 
-        public DownloadManager(string dbPath, int taskCapacity = 100000)
+        public DownloadManager(string dbPath, int taskCapacity, IPersistentCache<ByteString, Progress> fileProgress, IPersistentCache<ByteString, FileChunk> chunkTasks)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(dbPath, nameof(dbPath));
+            ArgumentOutOfRangeException.ThrowIfLessThan(taskCapacity, 0, nameof(taskCapacity));
+
             downloadProcessor = new TaskProcessor(20, taskCapacity);
             stateProcessor = new TaskProcessor(1, taskCapacity);
             fileTokens = new(new ByteStringComparer());
 
-            FileProgress = new(
+            ArgumentNullException.ThrowIfNull(fileProgress);
+            ArgumentNullException.ThrowIfNull(chunkTasks);
+            FileProgress = fileProgress;
+            this.chunkTasks = chunkTasks;
+        }
+
+        public DownloadManager(string dbPath, int taskCapacity = 100000)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(dbPath, nameof(dbPath));
+            ArgumentOutOfRangeException.ThrowIfLessThan(taskCapacity, 0, nameof(taskCapacity));
+
+            downloadProcessor = new TaskProcessor(20, taskCapacity);
+            stateProcessor = new TaskProcessor(1, taskCapacity);
+            fileTokens = new(new ByteStringComparer());
+
+            FileProgress = new PersistentCache<ByteString, Ui.Progress>(
                 System.IO.Path.Combine(dbPath, "FileProgress"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: (a) => a.ToByteArray(),
-                valueDeserializer: Ui.Progress.Parser.ParseFrom
+                new ByteStringSerializer(),
+                new Serializer<Ui.Progress>()
             );
 
-            chunkTasks = new(
+            chunkTasks = new PersistentCache<ByteString, FileChunk>(
                 System.IO.Path.Combine(dbPath, "IncompleteChunks"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: ByteString.CopyFrom,
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: FileChunk.Parser.ParseFrom
+                new ByteStringSerializer(),
+                new Serializer<FileChunk>()
             );
         }
 
@@ -106,7 +121,7 @@ namespace node
             }
         }
 
-        static async Task<List<FileChunk>> GetChildChunksAsync(PersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
+        static async Task<List<FileChunk>> GetChildChunksAsync(IPersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
         {
             List<FileChunk> chunks = [];
             await chunkTasks.PrefixScan(hash, (k, v) =>

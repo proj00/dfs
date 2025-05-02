@@ -2,6 +2,7 @@
 using Grpc.Net.Client.Balancer;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using NativeImport;
+using Org.BouncyCastle.Crypto.Paddings;
 using RocksDbSharp;
 using RpcCommon;
 using System;
@@ -9,24 +10,94 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace common
 {
-    public class PersistentCache<TKey, TValue> : IDisposable
-        where TValue : class
+    public interface ISerializer<T>
+    {
+        byte[] Serialize(T value);
+        T Deserialize(byte[] bytes);
+    }
+
+    public class Serializer<T> : ISerializer<T> where T : IMessage<T>
+    {
+        private readonly MessageParser<T> parser;
+        public Serializer()
+        {
+            var parserField = typeof(T).GetProperty(
+                name: "Parser",
+                bindingAttr: BindingFlags.Public | BindingFlags.Static
+            );
+
+            ArgumentNullException.ThrowIfNull(parserField);
+            var checkedField = (MessageParser<T>?)parserField.GetValue(null);
+            ArgumentNullException.ThrowIfNull(checkedField);
+            parser = checkedField;
+        }
+        public T Deserialize(byte[] bytes)
+        {
+            return parser.ParseFrom(bytes);
+        }
+
+        public byte[] Serialize(T value)
+        {
+            return value.ToByteArray();
+        }
+    }
+
+    public class StringSerializer : ISerializer<string>
+    {
+        public string Deserialize(byte[] bytes)
+        {
+            return Encoding.UTF8.GetString(bytes);
+        }
+
+        public byte[] Serialize(string value)
+        {
+            return Encoding.UTF8.GetBytes(value);
+        }
+    }
+
+    public class ByteStringSerializer : ISerializer<ByteString>
+    {
+        public ByteString Deserialize(byte[] bytes)
+        {
+            return ByteString.CopyFrom(bytes);
+        }
+
+        public byte[] Serialize(ByteString value)
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            return value.ToByteArray();
+        }
+    }
+
+    public class GuidSerializer : ISerializer<System.Guid>
+    {
+        public System.Guid Deserialize(byte[] bytes)
+        {
+            return new System.Guid(bytes);
+        }
+
+        public byte[] Serialize(System.Guid value)
+        {
+            return value.ToByteArray();
+        }
+    }
+
+    public class PersistentCache<TKey, TValue> : IDisposable, IPersistentCache<TKey, TValue> where TValue : class
     {
         private readonly RocksDb db;
         private readonly AsyncLock dbLock = new();
 
-        private readonly Func<TKey, byte[]> keySerializer;
-        private readonly Func<byte[], TKey> keyDeserializer;
-        private readonly Func<TValue, byte[]> valueSerializer;
-        private readonly Func<byte[], TValue> valueDeserializer;
+        private readonly ISerializer<TKey> keySerializer;
+        private readonly ISerializer<TValue> valueSerializer;
         private bool disposedValue;
 
-        public PersistentCache(string dbPath, Func<TKey, byte[]> keySerializer, Func<byte[], TKey> keyDeserializer, Func<TValue, byte[]> valueSerializer, Func<byte[], TValue> valueDeserializer, DbOptions? options = null)
+        public PersistentCache(string dbPath, ISerializer<TKey> keySerializer, ISerializer<TValue> valueSerializer, DbOptions? options = null)
         {
             var opt = options ?? new DbOptions().SetCreateIfMissing(true);
             if (!Directory.Exists(dbPath))
@@ -35,21 +106,19 @@ namespace common
             }
             db = RocksDb.Open(opt, dbPath);
             this.keySerializer = keySerializer;
-            this.keyDeserializer = keyDeserializer;
             this.valueSerializer = valueSerializer;
-            this.valueDeserializer = valueDeserializer;
         }
 
         public async Task<TValue> GetAsync(TKey key)
         {
             using (await dbLock.LockAsync())
             {
-                var v = db.Get(keySerializer(key));
+                var v = db.Get(keySerializer.Serialize(key));
                 if (v == null)
                 {
                     throw new InvalidOperationException();
                 }
-                return valueDeserializer(v);
+                return valueSerializer.Deserialize(v);
             }
         }
         public async Task SetAsync(TKey key, TValue value)
@@ -60,7 +129,7 @@ namespace common
             }
             using (await dbLock.LockAsync())
             {
-                db.Put(keySerializer(key), valueSerializer(value));
+                db.Put(keySerializer.Serialize(key), valueSerializer.Serialize(value));
             }
         }
 
@@ -70,18 +139,18 @@ namespace common
 
             using (await dbLock.LockAsync())
             {
-                var result = db.Get(keySerializer(key));
+                var result = db.Get(keySerializer.Serialize(key));
                 if (result == null)
                 {
                     return;
                 }
-                var value = valueDeserializer(result);
+                var value = valueSerializer.Deserialize(result);
                 var newValue = await mutate(value);
                 if (newValue == null)
                 {
                     throw new InvalidOperationException();
                 }
-                db.Put(keySerializer(key), valueSerializer(newValue));
+                db.Put(keySerializer.Serialize(key), valueSerializer.Serialize(newValue));
             }
         }
         public async Task MutateAsync(TKey key, Func<TValue?, TValue> mutate, bool ignoreNull = false)
@@ -90,7 +159,7 @@ namespace common
 
             using (await dbLock.LockAsync())
             {
-                var result = db.Get(keySerializer(key));
+                var result = db.Get(keySerializer.Serialize(key));
                 TValue? newValue = null;
                 if (ignoreNull)
                 {
@@ -103,13 +172,13 @@ namespace common
                         return;
                     }
 
-                    newValue = mutate(valueDeserializer(result));
+                    newValue = mutate(valueSerializer.Deserialize(result));
                 }
                 if (newValue == null)
                 {
                     throw new InvalidOperationException();
                 }
-                db.Put(keySerializer(key), valueSerializer(newValue));
+                db.Put(keySerializer.Serialize(key), valueSerializer.Serialize(newValue));
             }
         }
 
@@ -127,27 +196,27 @@ namespace common
         {
             using (await dbLock.LockAsync())
             {
-                return db.HasKey(keySerializer(key));
+                return db.HasKey(keySerializer.Serialize(key));
             }
         }
 
         public async Task Remove(TKey key)
         {
             using (await dbLock.LockAsync())
-                db.Remove(keySerializer(key));
+                db.Remove(keySerializer.Serialize(key));
         }
 
         public async Task<TValue?> TryGetValue(TKey key)
         {
             using (await dbLock.LockAsync())
             {
-                var result = db.Get(keySerializer(key));
+                var result = db.Get(keySerializer.Serialize(key));
                 if (result == null)
                 {
                     return null;
                 }
 
-                return valueDeserializer(result);
+                return valueSerializer.Deserialize(result);
             }
         }
 
@@ -179,8 +248,8 @@ namespace common
                     {
                         break;
                     }
-                    var key = keyDeserializer(it.Key());
-                    var value = valueDeserializer(it.Value());
+                    var key = keySerializer.Deserialize(it.Key());
+                    var value = valueSerializer.Deserialize(it.Value());
                     action(key, value);
                 }
             }
@@ -196,8 +265,8 @@ namespace common
                 using var it = db.NewIterator();
                 for (it.SeekToFirst(); it.Valid(); it.Next())
                 {
-                    var key = keyDeserializer(it.Key());
-                    var value = valueDeserializer(it.Value());
+                    var key = keySerializer.Deserialize(it.Key());
+                    var value = valueSerializer.Deserialize(it.Value());
                     if (!action(key, value))
                     {
                         break;

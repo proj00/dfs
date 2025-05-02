@@ -12,12 +12,12 @@ namespace node
 {
     public class NodeState : IDisposable
     {
-        public PersistentCache<ByteString, string> PathByHash { get; }
+        public IPersistentCache<ByteString, string> PathByHash { get; }
         public FilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
-        private PersistentCache<string, string> Whitelist { get; }
-        private PersistentCache<string, string> Blacklist { get; }
+        private IPersistentCache<string, string> Whitelist { get; }
+        private IPersistentCache<string, string> Blacklist { get; }
         public DownloadManager Downloads { get; }
 
         private readonly ILoggerFactory loggerFactory;
@@ -39,24 +39,18 @@ namespace node
 
             PathByHash = new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(Manager.DbPath, "PathByHash"),
-                bs => bs.ToByteArray(),
-                ByteString.CopyFrom,
-                Encoding.UTF8.GetBytes,
-                Encoding.UTF8.GetString
+                new ByteStringSerializer(),
+                new StringSerializer()
             );
-            Whitelist = new(
+            Whitelist = new PersistentCache<string, string>(
                 System.IO.Path.Combine(Manager.DbPath, "Whitelist"),
-                keySerializer: Encoding.UTF8.GetBytes,
-                keyDeserializer: Encoding.UTF8.GetString,
-                valueSerializer: Encoding.UTF8.GetBytes,
-                valueDeserializer: Encoding.UTF8.GetString
+                new StringSerializer(),
+                new StringSerializer()
             );
-            Blacklist = new(
+            Blacklist = new PersistentCache<string, string>(
                 System.IO.Path.Combine(Manager.DbPath, "Blacklist"),
-                keySerializer: Encoding.UTF8.GetBytes,
-                keyDeserializer: Encoding.UTF8.GetString,
-                valueSerializer: Encoding.UTF8.GetBytes,
-                valueDeserializer: Encoding.UTF8.GetString
+                new StringSerializer(),
+                new StringSerializer()
             );
             LogPath = logPath;
             Downloads = new DownloadManager(Manager.DbPath);
@@ -94,7 +88,7 @@ namespace node
         {
             _ = IPNetwork.Parse(request.Url);
 
-            PersistentCache<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
+            IPersistentCache<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
             if (request.ShouldRemove && await reference.ContainsKey(request.Url))
             {
                 await reference.Remove(request.Url);

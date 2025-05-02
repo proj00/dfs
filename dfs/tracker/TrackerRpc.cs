@@ -17,7 +17,7 @@ namespace tracker
     {
         private readonly FilesystemManager _filesystemManager;
         private readonly ConcurrentDictionary<string, List<string>> _peers = new();
-        private readonly PersistentCache<string, DataUsage> dataUsage;
+        private readonly IPersistentCache<string, DataUsage> dataUsage;
         private readonly ILogger logger;
         private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
             new();
@@ -27,12 +27,10 @@ namespace tracker
         public TrackerRpc(ILogger logger, string dbPath)
         {
             _filesystemManager = new FilesystemManager(dbPath);
-            dataUsage = new(
+            dataUsage = new PersistentCache<string, DataUsage>(
                 Path.Combine(_filesystemManager.DbPath, "DataUsage"),
-                keySerializer: Encoding.UTF8.GetBytes,
-                keyDeserializer: Encoding.UTF8.GetString,
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: DataUsage.Parser.ParseFrom
+                new StringSerializer(),
+                new Serializer<DataUsage>()
             );
             this.logger = logger;
         }
