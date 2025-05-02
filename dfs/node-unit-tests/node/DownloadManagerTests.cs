@@ -16,17 +16,6 @@ namespace unit_tests.node
         {
         }
 
-        private DownloadManager GetDownloadManager()
-        {
-            return new DownloadManager
-                (
-                "dir",
-                1,
-                new MockPersistentCache<ByteString, Ui.Progress>(),
-                new MockPersistentCache<ByteString, Node.FileChunk>()
-                );
-        }
-
         [Test]
         [TestCase(null)]
         [TestCase("")]
@@ -59,7 +48,13 @@ namespace unit_tests.node
         [Test]
         public void Constructor_Returns()
         {
-            Assert.DoesNotThrow(() => GetDownloadManager());
+            Assert.DoesNotThrow(() => new DownloadManager
+                (
+                "dir",
+                1,
+                new MockPersistentCache<ByteString, Ui.Progress>(),
+                new MockPersistentCache<ByteString, Node.FileChunk>()
+                ));
         }
     }
 }

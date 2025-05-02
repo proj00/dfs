@@ -131,7 +131,7 @@ namespace node
             return chunks;
         }
 
-        public async Task UpdateAsync(FileChunk chunk, CancellationToken token)
+        private async Task UpdateAsync(FileChunk chunk, CancellationToken token)
         {
             if (updateCallback == null)
             {
