@@ -51,6 +51,7 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
+          /d:sonar.coverage.exclusions="dfs/common/generated/**/*,dfs/common/generated/*" `
           /d:typescript.lcov.reportPaths=coverage/jest/lcov.info `
           /d:sonar.cs.opencover.reportsPaths="dfs/integration-tests/coverage.opencover.xml,dfs/unit-tests/coverage.opencover.xml" `
           /d:sonar.verbose=true
