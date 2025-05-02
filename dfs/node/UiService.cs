@@ -212,14 +212,14 @@ namespace node
         private async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
         {
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
-            guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
-
-            var fileTasks = objects.ToAsyncEnumerable()
+            var fileTasks = await objects.ToAsyncEnumerable()
                 .WhereAwait(async (obj) => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File
                         && !(await state.Manager.ObjectByHash.ContainsKey(obj.Hash)))
-                .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir));
+                .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir)).ToArrayAsync();
 
-            await foreach (var (chunks, file) in fileTasks)
+            guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
+
+            foreach (var (chunks, file) in fileTasks)
             {
                 await state.Downloads.AddNewFileAsync(file,
                     chunks);
