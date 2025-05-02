@@ -220,41 +220,6 @@ namespace common
             }
         }
 
-        // Only works with fixed length keys
-        public async Task PrefixScan(ByteString prefix, Action<TKey, TValue> action)
-        {
-            ArgumentNullException.ThrowIfNull(action);
-            ArgumentNullException.ThrowIfNull(prefix);
-
-            using (await dbLock.LockAsync())
-            {
-                int length = 0;
-                using (var tempIt = db.NewIterator())
-                {
-                    tempIt.SeekToFirst();
-                    if (!tempIt.Valid())
-                    {
-                        return;
-                    }
-                    length = tempIt.Key().Length;
-                }
-
-                var actualPrefix = HashUtils.ConcatHashes([prefix, ByteString.CopyFrom(new byte[length - prefix.Length])]).ToByteArray();
-
-                using var it = db.NewIterator();
-                for (it.Seek(actualPrefix); it.Valid(); it.Next())
-                {
-                    if (!it.Key().SequenceEqual(actualPrefix))
-                    {
-                        break;
-                    }
-                    var key = keySerializer.Deserialize(it.Key());
-                    var value = valueSerializer.Deserialize(it.Value());
-                    action(key, value);
-                }
-            }
-        }
-
         // action returns true to continue, false to stop
         public async Task ForEach(Func<TKey, TValue, bool> action)
         {

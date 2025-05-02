@@ -49,26 +49,21 @@ namespace node
         }
 
         public DownloadManager(string dbPath, int taskCapacity = 100000)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(dbPath, nameof(dbPath));
-            ArgumentOutOfRangeException.ThrowIfLessThan(taskCapacity, 0, nameof(taskCapacity));
-
-            downloadProcessor = new TaskProcessor(20, taskCapacity);
-            stateProcessor = new TaskProcessor(1, taskCapacity);
-            fileTokens = new(new ByteStringComparer());
-
-            FileProgress = new PersistentCache<ByteString, Ui.Progress>(
+        :
+#pragma warning disable CA2000 // Dispose objects before losing scope
+            this(dbPath, taskCapacity, new PersistentCache<ByteString, Ui.Progress>(
                 System.IO.Path.Combine(dbPath, "FileProgress"),
                 new ByteStringSerializer(),
                 new Serializer<Ui.Progress>()
-            );
-
-            chunkTasks = new PersistentCache<ByteString, FileChunk>(
+            ),
+            new PersistentCache<ByteString, FileChunk>(
                 System.IO.Path.Combine(dbPath, "IncompleteChunks"),
                 new ByteStringSerializer(),
                 new Serializer<FileChunk>()
-            );
-        }
+            ))
+#pragma warning restore CA2000 // Dispose objects before losing scope
+        { }
+
 
         private async Task HandleCommandAsync(StateChange message)
         {
@@ -124,9 +119,14 @@ namespace node
         static async Task<List<FileChunk>> GetChildChunksAsync(IPersistentCache<ByteString, FileChunk> chunkTasks, ByteString hash)
         {
             List<FileChunk> chunks = [];
-            await chunkTasks.PrefixScan(hash, (k, v) =>
+            await chunkTasks.ForEach((k, v) =>
             {
+                if (!k.Take(hash.Length).SequenceEqual(hash))
+                {
+                    return true;
+                }
                 chunks.Add(v);
+                return true;
             });
             return chunks;
         }

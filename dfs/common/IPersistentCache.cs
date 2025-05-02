@@ -13,7 +13,6 @@ namespace common
         Task<TValue> GetAsync(TKey key);
         Task MutateAsync(TKey key, Func<TValue, Task<TValue>> mutate);
         Task MutateAsync(TKey key, Func<TValue?, TValue> mutate, bool ignoreNull = false);
-        Task PrefixScan(ByteString prefix, Action<TKey, TValue> action);
         Task Remove(TKey key);
         Task SetAsync(TKey key, TValue value);
         Task<TValue?> TryGetValue(TKey key);

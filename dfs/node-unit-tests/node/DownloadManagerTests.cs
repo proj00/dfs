@@ -1,4 +1,6 @@
-﻿using node;
+﻿using common_test;
+using Google.Protobuf;
+using node;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +16,17 @@ namespace unit_tests.node
         {
         }
 
+        private DownloadManager GetDownloadManager()
+        {
+            return new DownloadManager
+                (
+                "dir",
+                1,
+                new MockPersistentCache<ByteString, Ui.Progress>(),
+                new MockPersistentCache<ByteString, Node.FileChunk>()
+                );
+        }
+
         [Test]
         [TestCase(null)]
         [TestCase("")]
@@ -21,9 +34,15 @@ namespace unit_tests.node
         public void Constructor_ThrowsOnInvalidDbPath(string? path)
         {
             if (path == null)
-                Assert.Throws<ArgumentNullException>(() => new DownloadManager(path));
+                Assert.Throws<ArgumentNullException>(() => new DownloadManager(path, 1,
+                    new MockPersistentCache<ByteString, Ui.Progress>(),
+                    new MockPersistentCache<ByteString, Node.FileChunk>()
+                    ));
             else
-                Assert.Throws<ArgumentException>(() => new DownloadManager(path));
+                Assert.Throws<ArgumentException>(() => new DownloadManager(path, 1,
+                    new MockPersistentCache<ByteString, Ui.Progress>(),
+                    new MockPersistentCache<ByteString, Node.FileChunk>()
+                    ));
         }
 
         [Test]
@@ -31,14 +50,16 @@ namespace unit_tests.node
         [TestCase(-1)]
         public void Constructor_ThrowsOnInvalidTaskCapacity(int capacity)
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => new DownloadManager("dir", capacity));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new DownloadManager("dir", capacity,
+                new MockPersistentCache<ByteString, Ui.Progress>(),
+                new MockPersistentCache<ByteString, Node.FileChunk>()
+                    ));
         }
 
         [Test]
         public void Constructor_Returns()
         {
-            Assert.DoesNotThrow(() => new DownloadManager("dir"));
-            Assert.DoesNotThrow(() => new DownloadManager("dir", 1));
+            Assert.DoesNotThrow(() => GetDownloadManager());
         }
     }
 }
