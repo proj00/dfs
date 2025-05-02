@@ -10,28 +10,7 @@ import { Switch } from "./ui/switch"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"
 import { Label } from "./ui/label"
 import type { BlockListEntry } from "../lib/types"
-
-// Mock NodeService for development and testing
-// In a real app, this would be replaced with the actual NodeService
-const mockNodeService = {
-  GetBlockListEntries: async (): Promise<BlockListEntry[]> => {
-    // Return mock data for development
-    return [
-      { url: "192.168.1.1", inWhitelist: false },
-      { url: "10.0.0.0/24", inWhitelist: false },
-      { url: "2001:db8::/64", inWhitelist: true },
-      { url: "192.168.5.5", inWhitelist: true },
-    ]
-  },
-  ModifyBlockListEntry: async (address: string, inWhitelist: boolean, shouldRemove: boolean): Promise<void> => {
-    console.log(`ModifyBlockListEntry: ${address}, inWhitelist: ${inWhitelist}, shouldRemove: ${shouldRemove}`)
-    // Mock implementation - in a real app, this would call the actual service
-    return Promise.resolve()
-  },
-}
-
-// In a real app, this would be imported from the actual NodeService
-const nodeService = mockNodeService
+import { GetNodeService } from "@/IpcService/GetNodeService"
 
 interface BlockedPeersDialogProps {
   open: boolean
@@ -57,7 +36,15 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
   const fetchBlockList = async () => {
     setLoading(true)
     try {
-      const entries = await nodeService.GetBlockListEntries()
+      const nodeService = GetNodeService()
+      const blockListResponse = await nodeService.GetBlockList()
+
+      // Convert to our frontend type
+      const entries: BlockListEntry[] = (blockListResponse.entries || []).map((entry) => ({
+        url: entry.url,
+        inWhitelist: entry.inWhitelist,
+      }))
+
       setBlockList(entries)
     } catch (error) {
       console.error("Failed to fetch block list:", error)
@@ -86,7 +73,7 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
         new Address4(address)
         return true
       }
-  
+
       // Check if it's a valid IPv6 address or CIDR
       if (address.includes(":")) {
         // Check if it's a CIDR notation
@@ -101,7 +88,7 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
         new Address6(address)
         return true
       }
-  
+
       return false
     } catch (error) {
       return false
@@ -123,7 +110,12 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
     setLoading(true)
 
     try {
-      await nodeService.ModifyBlockListEntry(newAddress, isWhitelist, false)
+      const nodeService = GetNodeService()
+      await nodeService.ModifyBlockListEntry({
+        url: newAddress,
+        inWhitelist: isWhitelist,
+        shouldRemove: false,
+      })
       setNewAddress("")
       handleRefresh()
     } catch (error) {
@@ -137,7 +129,12 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
   const handleRemoveEntry = async (entry: BlockListEntry) => {
     setLoading(true)
     try {
-      await nodeService.ModifyBlockListEntry(entry.url, entry.inWhitelist, true)
+      const nodeService = GetNodeService()
+      await nodeService.ModifyBlockListEntry({
+        url: entry.url,
+        inWhitelist: entry.inWhitelist,
+        shouldRemove: true,
+      })
       handleRefresh()
     } catch (error) {
       console.error("Failed to remove block list entry:", error)
@@ -149,10 +146,19 @@ export function BlockedPeersDialog({ open, onOpenChange }: BlockedPeersDialogPro
   const handleToggleWhitelist = async (entry: BlockListEntry) => {
     setLoading(true)
     try {
+      const nodeService = GetNodeService()
       // Remove the old entry
-      await nodeService.ModifyBlockListEntry(entry.url, entry.inWhitelist, true)
+      await nodeService.ModifyBlockListEntry({
+        url: entry.url,
+        inWhitelist: entry.inWhitelist,
+        shouldRemove: true,
+      })
       // Add the new entry with toggled whitelist status
-      await nodeService.ModifyBlockListEntry(entry.url, !entry.inWhitelist, false)
+      await nodeService.ModifyBlockListEntry({
+        url: entry.url,
+        inWhitelist: !entry.inWhitelist,
+        shouldRemove: false,
+      })
       handleRefresh()
     } catch (error) {
       console.error("Failed to toggle whitelist status:", error)
