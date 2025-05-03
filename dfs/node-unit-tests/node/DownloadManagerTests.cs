@@ -102,9 +102,55 @@ namespace unit_tests.node
             {
                 foreach (var k in obj.Object.File.Hashes.Hash)
                 {
-                    added.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray()));
+                    Assert.That(added.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray())));
                 }
             }
+        }
+
+        [Test]
+        public async Task PauseFile_RequestHandledAsync()
+        {
+            // arrange
+            var obj = GenerateObject();
+            Dictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
+            chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
+                .Callback((ByteString k, FileChunk v) =>
+            {
+                if (v.Status == DownloadStatus.Paused)
+                    added[k] = v;
+            }).Returns(Task.CompletedTask);
+
+
+            int good = 0;
+            int canceled = 0;
+            // act
+            using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
+            {
+                manager.AddChunkUpdateCallback(async (chunk, token) =>
+                {
+                    Interlocked.Increment(ref good);
+
+                    try
+                    {
+                        await Task.Delay(200000, token);
+                    }
+                    catch
+                    {
+                        Interlocked.Increment(ref canceled);
+                        throw;
+                    }
+                    return chunk;
+                });
+                await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
+                await manager.PauseDownloadAsync(obj);
+            }
+
+            TestContext.Out.WriteLine(good);
+            TestContext.Out.WriteLine(canceled);
+            TestContext.Out.WriteLine(added.Count);
+            // assert
+            progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+            Assert.That(added, Has.Count.EqualTo(canceled));
         }
 
         private static ObjectWithHash GenerateObject()

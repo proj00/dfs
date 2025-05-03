@@ -4,65 +4,50 @@ using System.Linq;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace node
 {
-    public class TaskProcessor : IAsyncDisposable, IDisposable
+    public class TaskProcessor : IDisposable
     {
-        private readonly Channel<Func<CancellationToken, Task>> channel;
-        private readonly SemaphoreSlim semaphore;
+        private readonly ActionBlock<Func<CancellationToken, Task>> block;
         private readonly CancellationTokenSource cts = new();
-        private readonly Task cmdLoop;
         private bool disposedValue;
-        private readonly List<Task> tasks = [];
 
         public TaskProcessor(int maxConcurrency, int boundedCapacity = 100000)
         {
-            channel = Channel.CreateBounded<Func<CancellationToken, Task>>(new BoundedChannelOptions(boundedCapacity)
+            var options = new ExecutionDataflowBlockOptions
             {
-                FullMode = BoundedChannelFullMode.Wait,
-                SingleReader = true,
-                SingleWriter = false,
-            });
+                MaxDegreeOfParallelism = maxConcurrency,
+                BoundedCapacity = boundedCapacity,
+                CancellationToken = cts.Token
+            };
 
-            semaphore = new SemaphoreSlim(maxConcurrency);
-            cmdLoop = Task.Run(ProcessQueueAsync);
-        }
-
-        public async Task AddAsync(Func<CancellationToken, Task> taskFunc)
-        {
-            await channel.Writer.WriteAsync(taskFunc);
-        }
-
-        private async Task ProcessQueueAsync()
-        {
-            try
-            {
-                await foreach (var taskFunc in channel.Reader.ReadAllAsync(cts.Token))
+            block = new ActionBlock<Func<CancellationToken, Task>>(
+                async taskFunc =>
                 {
-                    await semaphore.WaitAsync(cts.Token);
                     try
                     {
-                        tasks.Add(taskFunc(CancellationToken.None));
+                        await taskFunc(cts.Token);
                     }
-                    finally
+                    catch (Exception e)
                     {
-                        semaphore.Release();
+                        Console.WriteLine(e);
                     }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
+                },
+                options
+            );
         }
 
-        public async ValueTask DisposeAsync()
+        public async ValueTask AddAsync(Func<CancellationToken, Task> taskFunc)
         {
-            await Task.WhenAll(tasks);
-            await cts.CancelAsync();
-            await cmdLoop.WaitAsync(CancellationToken.None);
-            semaphore.Dispose();
-            cts.Dispose();
+            bool accepted = await block.SendAsync(taskFunc, cts.Token)
+                                             .ConfigureAwait(false);
+
+            if (!accepted)
+            {
+                throw new OperationCanceledException(cts.Token);
+            }
         }
 
         protected virtual void Dispose(bool disposing)
@@ -71,13 +56,12 @@ namespace node
             {
                 if (disposing)
                 {
-#pragma warning disable VSTHRD002
-                    Task.WhenAll(tasks).Wait();
+                    block.Complete();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+                    block.Completion.Wait();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
                     cts.Cancel();
-                    cmdLoop.Wait();
-                    semaphore.Dispose();
                     cts.Dispose();
-#pragma warning restore VSTHRD002
                 }
 
                 disposedValue = true;
