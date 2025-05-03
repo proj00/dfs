@@ -1,5 +1,7 @@
-﻿using common_test;
+﻿using common;
+using common_test;
 using Google.Protobuf;
+using Moq;
 using node;
 using System;
 using System.Collections.Generic;
@@ -11,9 +13,14 @@ namespace unit_tests.node
 {
     public class DownloadManagerTests
     {
+        Mock<IPersistentCache<ByteString, Ui.Progress>> progress;
+        Mock<IPersistentCache<ByteString, Node.FileChunk>> chunks;
+
         [SetUp]
         public void Setup()
         {
+            progress = new();
+            chunks = new();
         }
 
         [Test]
@@ -24,13 +31,13 @@ namespace unit_tests.node
         {
             if (path == null)
                 Assert.Throws<ArgumentNullException>(() => new DownloadManager(path, 1,
-                    new MockPersistentCache<ByteString, Ui.Progress>(),
-                    new MockPersistentCache<ByteString, Node.FileChunk>()
+                    progress.Object,
+                    chunks.Object
                     ));
             else
                 Assert.Throws<ArgumentException>(() => new DownloadManager(path, 1,
-                    new MockPersistentCache<ByteString, Ui.Progress>(),
-                    new MockPersistentCache<ByteString, Node.FileChunk>()
+                    progress.Object,
+                    chunks.Object
                     ));
         }
 
@@ -40,8 +47,8 @@ namespace unit_tests.node
         public void Constructor_ThrowsOnInvalidTaskCapacity(int capacity)
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new DownloadManager("dir", capacity,
-                new MockPersistentCache<ByteString, Ui.Progress>(),
-                new MockPersistentCache<ByteString, Node.FileChunk>()
+                progress.Object,
+                chunks.Object
                     ));
         }
 
@@ -52,8 +59,8 @@ namespace unit_tests.node
                 (
                 "dir",
                 1,
-                new MockPersistentCache<ByteString, Ui.Progress>(),
-                new MockPersistentCache<ByteString, Node.FileChunk>()
+                progress.Object,
+                chunks.Object
                 ));
         }
     }
