@@ -214,47 +214,16 @@ namespace node
             List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
             var fileTasks = await objects.ToAsyncEnumerable()
                 .WhereAwait(async (obj) => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File
-                        && !(await state.Manager.ObjectByHash.ContainsKey(obj.Hash)))
-                .Select(obj => GetIncompleteFile(obj, tracker.GetUri(), destinationDir)).ToArrayAsync();
+                        && !(await state.Manager.ObjectByHash.ContainsKey(obj.Hash))).ToArrayAsync();
 
             guid = await state.Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
 
-            foreach (var (chunks, file) in fileTasks)
+            foreach (var file in fileTasks)
             {
-                await state.Downloads.AddNewFileAsync(file,
-                    chunks);
+                var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(file.Hash.ToByteArray());
+                System.IO.Directory.CreateDirectory(dir);
+                await state.Downloads.AddNewFileAsync(file, tracker.GetUri(), dir);
             }
-        }
-
-        private static (FileChunk[] chunks, IncompleteFile file) GetIncompleteFile(ObjectWithHash obj, Uri trackerUri, string destinationDir)
-        {
-            var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(obj.Hash.ToByteArray());
-            System.IO.Directory.CreateDirectory(dir);
-            dir = dir + "\\" + obj.Object.Name;
-
-            List<FileChunk> chunks = [];
-            var i = 0;
-            foreach (var hash in obj.Object.File.Hashes.Hash)
-            {
-                chunks.Add(new()
-                {
-                    Hash = HashUtils.ConcatHashes([obj.Hash, hash]),
-                    Offset = obj.Object.File.Hashes.ChunkSize * i,
-                    FileHash = obj.Hash,
-                    Size = Math.Min(obj.Object.File.Hashes.ChunkSize, obj.Object.File.Size - obj.Object.File.Hashes.ChunkSize * i),
-                    TrackerUri = trackerUri.ToString(),
-                    DestinationDir = dir,
-                    CurrentCount = 0,
-                    Status = DownloadStatus.Pending,
-                });
-                i++;
-            }
-            var file = new IncompleteFile()
-            {
-                Status = DownloadStatus.Pending,
-                Size = obj.Object.File.Size,
-            };
-            return (chunks.ToArray(), file);
         }
 
         private async Task<FileChunk> DownloadChunkAsync(FileChunk chunk, CancellationToken token)

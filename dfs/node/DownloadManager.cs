@@ -1,14 +1,24 @@
 ﻿using common;
 using Fs;
 using Google.Protobuf;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
+using node;
 using Node;
+using Org.BouncyCastle.Utilities.Encoders;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks.Dataflow;
+using System.Windows;
+using Tracker;
 using Ui;
 
 namespace node
@@ -183,8 +193,9 @@ namespace node
             throw new InvalidOperationException("this should never happen");
         }
 
-        public async Task AddNewFileAsync(IncompleteFile file, FileChunk[] chunks)
+        public async Task AddNewFileAsync(ObjectWithHash obj, Uri trackerUri, string destinationDir)
         {
+            (FileChunk[] chunks, IncompleteFile file) = GetIncompleteFile(obj, trackerUri, destinationDir);
             await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
             await stateProcessor.AddAsync(() => HandleCommandAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks }));
         }
@@ -239,6 +250,35 @@ namespace node
         {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        private static (FileChunk[] chunks, IncompleteFile file) GetIncompleteFile(ObjectWithHash obj, Uri trackerUri, string destinationDir)
+        {
+            destinationDir = destinationDir + "\\" + obj.Object.Name;
+
+            List<FileChunk> chunks = [];
+            var i = 0;
+            foreach (var hash in obj.Object.File.Hashes.Hash)
+            {
+                chunks.Add(new()
+                {
+                    Hash = HashUtils.ConcatHashes([obj.Hash, hash]),
+                    Offset = obj.Object.File.Hashes.ChunkSize * i,
+                    FileHash = obj.Hash,
+                    Size = Math.Min(obj.Object.File.Hashes.ChunkSize, obj.Object.File.Size - obj.Object.File.Hashes.ChunkSize * i),
+                    TrackerUri = trackerUri.ToString(),
+                    DestinationDir = destinationDir,
+                    CurrentCount = 0,
+                    Status = DownloadStatus.Pending,
+                });
+                i++;
+            }
+            var file = new IncompleteFile()
+            {
+                Status = DownloadStatus.Pending,
+                Size = obj.Object.File.Size,
+            };
+            return (chunks.ToArray(), file);
         }
     }
 }
