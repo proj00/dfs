@@ -33,7 +33,7 @@ namespace node
             changedEvent.Reset();
             Action<Guid, TransactionState> registerGuid = (g, s) => { newGuid = g; state = s; changedEvent.Set(); };
 
-            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash));
+            await processor.AddAsync((token) => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash));
             await changedEvent.WaitAsync();
             if (state != TransactionState.Ok)
             {

@@ -99,7 +99,7 @@ namespace node
                         {
                             chunk.Status = DownloadStatus.Pending;
                             await chunkTasks.SetAsync(chunk.Hash, chunk);
-                            await downloadProcessor.AddAsync(() => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                            await downloadProcessor.AddAsync((token) => UpdateAsync(chunk, fileTokens[message.Hash].Token));
                         }
 
                         break;
@@ -148,10 +148,13 @@ namespace node
                 return;
             }
 
-            chunk.Status = DownloadStatus.Active;
-            chunk = await updateCallback(chunk, token);
+            if (updateCallback != null)
+            {
+                chunk.Status = DownloadStatus.Active;
+                chunk = await updateCallback(chunk, token);
+            }
 
-            await stateProcessor.AddAsync(() => HandleCommandAsync(
+            await stateProcessor.AddAsync((token) => HandleCommandAsync(
                 new()
                 {
                     Hash = HashUtils.GetChunkHash(chunk),
@@ -174,7 +177,6 @@ namespace node
                 {
                     throw new InvalidOperationException("this should never happen");
                 }
-                Debug.Assert(newProgress != 0, $"{newProgress}");
                 v.Current += newProgress;
                 return v;
             });
@@ -197,7 +199,7 @@ namespace node
         {
             (FileChunk[] chunks, IncompleteFile file) = GetIncompleteFile(obj, trackerUri, destinationDir);
             await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
-            await stateProcessor.AddAsync(() => HandleCommandAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks }));
+            await stateProcessor.AddAsync((token) => HandleCommandAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks }));
         }
 
         public async Task<ByteString[]> GetIncompleteFilesAsync()
@@ -218,11 +220,11 @@ namespace node
 
         public async Task PauseDownloadAsync(ObjectWithHash file)
         {
-            await stateProcessor.AddAsync(() => HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused }));
+            await stateProcessor.AddAsync((token) => HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused }));
         }
         public async Task ResumeDownloadAsync(ObjectWithHash file)
         {
-            await stateProcessor.AddAsync(() => HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending }));
+            await stateProcessor.AddAsync((token) => HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending }));
         }
 
         protected virtual void Dispose(bool disposing)

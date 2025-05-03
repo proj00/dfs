@@ -2,30 +2,37 @@
 using common_test;
 using Fs;
 using Google.Protobuf;
+using Microsoft.AspNetCore.Components.Forms;
 using Moq;
 using node;
 using Node;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace unit_tests.node
 {
+    using ChunkAction = Func<ByteString, FileChunk, bool>;
+
     public class DownloadManagerTests
     {
-        Mock<IPersistentCache<ByteString, Ui.Progress>> progress;
-        Mock<IPersistentCache<ByteString, Node.FileChunk>> chunks;
-        DownloadManager manager;
+        Mock<IPersistentCache<ByteString, Ui.Progress>> progress = new();
+        Mock<IPersistentCache<ByteString, Node.FileChunk>> chunks = new();
         private static Bogus.Faker faker = new();
 
         [SetUp]
         public void Setup()
         {
-            progress = new();
-            chunks = new();
-            manager = new("path", 20000, progress.Object, chunks.Object);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            progress.Reset();
+            chunks.Reset();
         }
 
         [Test]
@@ -72,14 +79,37 @@ namespace unit_tests.node
         [Test]
         public async Task AddFile_RequestHandledAsync()
         {
+            // arrange
             var obj = GenerateObject();
-            //progress.Setup(self => self.SetAsync)
-            await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), "dest");
+            Dictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
+            chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
+                .Callback((ByteString k, FileChunk v) =>
+            {
+                added[k] = v;
+            }).Returns(Task.CompletedTask);
+
+            // act
+            using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object))
+            {
+                await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
+            }
+
+            // assert
+            progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+            chunks.Verify(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()),
+                Times.Exactly(obj.Object.File.Hashes.Hash.Count));
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var k in obj.Object.File.Hashes.Hash)
+                {
+                    added.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray()));
+                }
+            }
         }
 
         private static ObjectWithHash GenerateObject()
         {
-            int fileSize = faker.System.Random.Int(1024, 1048576);
+            int fileSize = 1048576;
             var obj = new Fs.FileSystemObject()
             {
                 Name = faker.System.FileName(),
