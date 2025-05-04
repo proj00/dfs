@@ -9,73 +9,88 @@ using System.Threading.Tasks;
 
 namespace unit_tests
 {
-    public static class MockPersistentCache
+    public class MockPersistentCache<TKey, TValue> : IPersistentCache<TKey, TValue> where TValue : class
     {
-        public static Mock<IPersistentCache<TKey, TValue>> CreateMock<TKey, TValue>(ConcurrentDictionary<TKey, TValue> dict) where TValue : class
+        public readonly ConcurrentDictionary<TKey, TValue> _dict = new ConcurrentDictionary<TKey, TValue>();
+
+        public Task<bool> ContainsKey(TKey key)
         {
-            var mock = new Mock<IPersistentCache<TKey, TValue>>();
+            return Task.FromResult(_dict.ContainsKey(key));
+        }
 
-            mock.Setup(c => c.ContainsKey(It.IsAny<TKey>()))
-                .Returns<TKey>(key => Task.FromResult(dict.ContainsKey(key)));
+        public Task<long> CountEstimate()
+        {
+            return Task.FromResult((long)_dict.Count);
+        }
 
-            mock.Setup(c => c.CountEstimate())
-                .Returns(() => Task.FromResult((long)dict.Count));
+        public Task ForEach(Func<TKey, TValue, bool> action)
+        {
+            foreach (var kv in _dict)
+            {
+                if (!action(kv.Key, kv.Value))
+                    break;
+            }
+            return Task.CompletedTask;
+        }
 
-            mock.Setup(c => c.ForEach(It.IsAny<Func<TKey, TValue, bool>>()))
-                .Returns<Func<TKey, TValue, bool>>(func =>
+        public Task<TValue> GetAsync(TKey key)
+        {
+            if (_dict.TryGetValue(key, out var value))
+                return Task.FromResult(value);
+            throw new KeyNotFoundException($"Key '{key}' not found in cache.");
+        }
+
+        public async Task MutateAsync(TKey key, Func<TValue, Task<TValue>> mutate)
+        {
+            if (!_dict.TryGetValue(key, out var current))
+                throw new KeyNotFoundException($"Key '{key}' not found in cache.");
+
+            var updated = await mutate(current).ConfigureAwait(false);
+            _dict[key] = updated;
+        }
+
+        public Task MutateAsync(TKey key, Func<TValue?, TValue> mutate, bool ignoreNull = false)
+        {
+            _dict.AddOrUpdate(
+                key,
+                k =>
                 {
-                    foreach (var kv in dict)
-                    {
-                        if (!func(kv.Key, kv.Value)) break;
-                    }
-                    return Task.CompletedTask;
-                });
-
-            mock.Setup(c => c.GetAsync(It.IsAny<TKey>()))
-                .Returns<TKey>(key => Task.FromResult(dict[key]));
-
-            mock.Setup(c => c.TryGetValue(It.IsAny<TKey>()))
-                .Returns<TKey>(key =>
+                    var result = mutate(default);
+                    if (result == null && ignoreNull)
+                        throw new InvalidOperationException($"Mutation returned null for missing key '{key}'.");
+                    return result!;
+                },
+                (k, existing) =>
                 {
-                    dict.TryGetValue(key, out var value);
-                    return Task.FromResult(value);
+                    var result = mutate(existing);
+                    if (result == null && ignoreNull)
+                        return existing;
+                    return result!;
                 });
+            return Task.CompletedTask;
+        }
 
-            mock.Setup(c => c.SetAsync(It.IsAny<TKey>(), It.IsAny<TValue>()))
-                .Returns<TKey, TValue>((key, value) =>
-                {
-                    dict[key] = value;
-                    return Task.CompletedTask;
-                });
+        public Task Remove(TKey key)
+        {
+            _dict.TryRemove(key, out _);
+            return Task.CompletedTask;
+        }
 
-            mock.Setup(c => c.Remove(It.IsAny<TKey>()))
-                .Returns<TKey>(key =>
-                {
-                    dict.TryRemove(key, out _);
-                    return Task.CompletedTask;
-                });
+        public Task SetAsync(TKey key, TValue value)
+        {
+            _dict[key] = value;
+            return Task.CompletedTask;
+        }
 
-            mock.Setup(c => c.MutateAsync(It.IsAny<TKey>(), It.IsAny<Func<TValue, Task<TValue>>>()))
-                .Returns<TKey, Func<TValue, Task<TValue>>>(
-                    async (key, func) =>
-                    {
-                        var newVal = await func(dict[key]);
-                        dict[key] = newVal;
-                    });
+        public Task<TValue?> TryGetValue(TKey key)
+        {
+            _dict.TryGetValue(key, out var value);
+            return Task.FromResult(value);
+        }
 
-            mock.Setup(c => c.MutateAsync(It.IsAny<TKey>(), It.IsAny<Func<TValue?, TValue>>(), It.IsAny<bool>()))
-                .Returns<TKey, Func<TValue?, TValue>, bool>((key, func, ignoreNull) =>
-                {
-                    dict.TryGetValue(key, out var existing);
-                    var result = func(existing);
-                    if (result != null || !ignoreNull)
-                        dict[key] = result!;
-                    return Task.CompletedTask;
-                });
-
-            mock.Setup(c => c.Dispose()).Callback(() => dict.Clear());
-
-            return mock;
+        public void Dispose()
+        {
+            _dict.Clear();
         }
     }
 }

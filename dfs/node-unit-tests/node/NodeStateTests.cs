@@ -1,5 +1,6 @@
 ﻿using common;
 using Google.Protobuf;
+using Microsoft;
 using Microsoft.Extensions.Logging;
 using Moq;
 using node;
@@ -16,34 +17,27 @@ namespace unit_tests.node
     class NodeStateTests
     {
         private static Bogus.Faker faker = new();
-        private readonly ConcurrentDictionary<string, string> whitelistDict = new();
-        private readonly ConcurrentDictionary<string, string> blacklistDict = new();
-        private Mock<IPersistentCache<string, string>> whitelist = new();
-        private Mock<IPersistentCache<string, string>> blacklist = new();
+        private MockPersistentCache<string, string> whitelist = new();
+        private MockPersistentCache<string, string> blacklist = new();
 
         [TearDown]
         public void TearDown()
         {
-            whitelist.Reset();
-            blacklist.Reset();
-            whitelistDict.Clear();
-            blacklistDict.Clear();
+            whitelist._dict.Clear();
+            blacklist._dict.Clear();
         }
 
         [SetUp]
         public void SetUp()
         {
-            whitelistDict.Clear();
-            blacklistDict.Clear();
-            whitelist = MockPersistentCache.CreateMock(whitelistDict);
-            blacklist = MockPersistentCache.CreateMock(blacklistDict);
+            whitelist = new();
+            blacklist = new();
         }
 
         [Test]
-        public async Task TestBlockListInsertionAsync()
+        [Combinatorial]
+        public async Task TestBlockListInsertionAsync([Values] bool inWhitelist)
         {
-            whitelist
-                .Setup(self => self.ContainsKey(It.IsAny<string>()));
             using var state = new NodeState
             (
                 new TimeSpan(),
@@ -52,13 +46,13 @@ namespace unit_tests.node
                 new Mock<IFilesystemManager>().Object,
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist.Object,
-                blacklist.Object
+                whitelist,
+                blacklist
             );
 
             Ui.BlockListRequest request = new()
             {
-                InWhitelist = true,
+                InWhitelist = inWhitelist,
                 ShouldRemove = false,
                 Url = "0.0.0.0/24"
             };
@@ -72,10 +66,10 @@ namespace unit_tests.node
         }
 
         [Test]
-        public void TestBlockListInvalidInsert()
+        [NonParallelizable]
+        [Combinatorial]
+        public async Task TestBlockListRemovalAsync([Values] bool inWhitelist)
         {
-            whitelist
-                .Setup(self => self.ContainsKey(It.IsAny<string>()));
             using var state = new NodeState
             (
                 new TimeSpan(),
@@ -84,8 +78,45 @@ namespace unit_tests.node
                 new Mock<IFilesystemManager>().Object,
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist.Object,
-                blacklist.Object
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = inWhitelist,
+                ShouldRemove = false,
+                Url = "0.0.0.0/24"
+            };
+            await state.FixBlockListAsync(request);
+
+            var entries = await state.GetBlockListAsync();
+
+            Assert.That(entries.Entries, Has.Count.EqualTo(1));
+            Assert.That(entries.Entries[0].InWhitelist, Is.EqualTo(request.InWhitelist));
+            Assert.That(entries.Entries[0].Url, Is.EqualTo(request.Url));
+
+            request.ShouldRemove = true;
+            await state.FixBlockListAsync(request);
+            entries = await state.GetBlockListAsync();
+
+            var mock = inWhitelist ? whitelist : blacklist;
+            Assert.That(entries.Entries, Has.Count.EqualTo(0));
+        }
+
+        [Test]
+        public void TestBlockListInvalidInsert()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
             );
 
             Assert.ThrowsAsync<FormatException>(async () => await state.FixBlockListAsync(new()
