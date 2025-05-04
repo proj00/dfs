@@ -354,6 +354,7 @@ namespace node
                 await Console.Error.WriteLineAsync($"pause cancelled : {e}");
                 throw;
             }
+
             await EnqueueStateAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused });
         }
         public async Task ResumeDownloadAsync(ObjectWithHash file, CancellationToken token)

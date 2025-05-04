@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace unit_tests.node
 {
     using ChunkAction = Func<ByteString, FileChunk, bool>;
-
+    using ProgressCallback = Func<Ui.Progress?, Ui.Progress>;
     public class DownloadManagerTests
     {
         Mock<IPersistentCache<ByteString, Ui.Progress>> progress = new();
@@ -200,6 +200,8 @@ namespace unit_tests.node
 
         [Test]
         [TestCase(1000)]
+        [TestCase(100)]
+        [TestCase(10)]
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
         {
             // arrange
@@ -211,6 +213,19 @@ namespace unit_tests.node
             {
                 added[k] = v;
             }).Returns(Task.CompletedTask);
+
+            Ui.Progress p = new();
+            using AsyncLock @lock = new();
+
+            progress.Setup(self => self.MutateAsync(It.IsAny<ByteString>(), It.IsAny<ProgressCallback>(), It.IsAny<bool>()))
+                .Callback(async (ByteString h, ProgressCallback action, bool _) =>
+                {
+                    using (await @lock.LockAsync())
+                    {
+                        action(p);
+                    }
+                })
+                .Returns(Task.CompletedTask);
 
             int completed = 0;
             chunks.Setup(self => self.Remove(It.IsAny<ByteString>()))
@@ -245,6 +260,7 @@ namespace unit_tests.node
                     try
                     {
                         await Task.Delay(downloadTime, token);
+                        await manager.UpdateFileProgressAsync(ByteString.Empty, 1);
                         chunk.Status = DownloadStatus.Complete;
                     }
                     catch
@@ -264,8 +280,12 @@ namespace unit_tests.node
                     }
                     catch (OperationCanceledException e)
                     {
-                        TestContext.Error.WriteLine(e);
-                        throw;
+                        // swallow pause cancellation for not-so-complete tasks
+                        if (downloadTime != 10)
+                        {
+                            TestContext.Error.WriteLine(e);
+                            throw;
+                        }
                     }
                 }
                 using (var source = new CancellationTokenSource(2000))
@@ -284,19 +304,27 @@ namespace unit_tests.node
 
             // assert
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+            Assert.That(p.Current, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
 
-            // did we cancel the download after pausing?
-            Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+            if (downloadTime == 1000)
+            {
+                // did we cancel the download after pausing?
+                Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+
+                // did we start all downloads (after a file was added and after the file download was resumed)?
+                Assert.That(good, Is.EqualTo(2 * obj.Object.File.Hashes.Hash.Count));
+            }
+            else
+            {
+                // did we start all downloads?
+                Assert.That(good, Is.AtLeast(obj.Object.File.Hashes.Hash.Count));
+            }
 
             // did we complete the download after resuming?
             Assert.That(completed, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
 
             // did we clean the mess up?
             Assert.That(added, Has.Count.EqualTo(0));
-
-            // did we start all downloads (after a file was added and after the file download was resumed)?
-            Assert.That(good, Is.EqualTo(2 * obj.Object.File.Hashes.Hash.Count));
-
         }
 
         private static ObjectWithHash GenerateObject(bool big = true)
