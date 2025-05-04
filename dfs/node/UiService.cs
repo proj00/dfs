@@ -15,6 +15,7 @@ using Node;
 using System.Threading.Channels;
 using System.Security.Cryptography;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace node
 {
@@ -25,13 +26,11 @@ namespace node
         private readonly NodeState state;
         private readonly Uri nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
-        private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
         public UiService(NodeState state, Uri nodeURI)
         {
-            fileLocks = new(new ByteStringComparer());
             ShutdownEvent = new AsyncManualResetEvent(true);
             ShutdownEvent.Reset();
             this.state = state;
@@ -287,13 +286,19 @@ namespace node
                 }
                 else
                 {
-                    var fileLock = fileLocks.GetOrAdd(chunk.FileHash, _ => new AsyncLock());
-                    using (await fileLock.LockAsync())
-                    {
-                        using var stream = new FileStream(chunk.DestinationDir, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-                        stream.Seek(chunk.Offset, SeekOrigin.Begin);
-                        await stream.WriteAsync(thing, CancellationToken.None);
-                    }
+                    using var stream = new FileStream
+                    (
+                        chunk.DestinationDir,
+                        FileMode.OpenOrCreate,
+                        FileAccess.Write,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
+
+                    await RandomAccess.WriteAsync(stream.SafeFileHandle, thing, chunk.Offset, CancellationToken.None);
+
                     await (new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None)).MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
                     chunk.Status = DownloadStatus.Complete;
                 }

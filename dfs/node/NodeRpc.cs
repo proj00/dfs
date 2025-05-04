@@ -46,18 +46,35 @@ namespace node
             var offset = chunkIndex * size + request.Offset;
             var remainingSize = size - request.Offset;
 
-            using var stream = new FileStream(await state.PathByHash.GetAsync(parentHash), FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-
             var buffer = new byte[remainingSize];
-            stream.Seek(offset, SeekOrigin.Begin);
+            long total = 0;
+            using var stream = new FileStream
+                    (
+                        await state.PathByHash.GetAsync(parentHash),
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
 
-            var total = await stream.ReadAsync(buffer.AsMemory(0, (int)remainingSize), context.CancellationToken);
+
+            total = await RandomAccess.ReadAsync
+                (
+                stream.SafeFileHandle,
+                buffer.AsMemory(0, (int)remainingSize),
+                offset,
+                context.CancellationToken
+                );
+
+
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
             var used = 0;
 
             for (int i = 0; i < total; i += subchunk)
             {
-                var res = ByteString.CopyFrom(buffer, i, Math.Min(subchunk, total - i));
+                var res = ByteString.CopyFrom(buffer, i, (int)Math.Min(subchunk, total - i));
                 used += res.Length;
 
                 await responseStream.WriteAsync(new ChunkResponse()

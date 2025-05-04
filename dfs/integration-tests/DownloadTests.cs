@@ -2,6 +2,7 @@ using common_test;
 using Google.Protobuf;
 using Grpc.Net.Client;
 using node;
+using Org.BouncyCastle.Utilities.Encoders;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -263,6 +264,13 @@ namespace integration_tests
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+
+            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+
+            var expected = await GetFileContents(inputPath);
+            var actual = await GetFileContents(outputPath);
+            Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
         }
 
         [Test, CancelAfter(20000)]
@@ -307,6 +315,32 @@ namespace integration_tests
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+
+            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+
+            var expected = await GetFileContents(inputPath);
+            var actual = await GetFileContents(outputPath);
+            Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
+        }
+
+        private static async Task<byte[]> GetFileContents(string path)
+        {
+            var info = new FileInfo(path);
+            using var stream = new FileStream
+                    (
+                        path,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
+
+            var buffer = new byte[info.Length];
+            await RandomAccess.ReadAsync(stream.SafeFileHandle, buffer, 0);
+            return buffer;
         }
     }
 }
