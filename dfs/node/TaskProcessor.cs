@@ -11,7 +11,7 @@ namespace node
 {
     public class TaskProcessor : IDisposable
     {
-        public ActionBlock<Func<Task>> block { get; }
+        private ActionBlock<Func<Task>> block { get; }
         private readonly CancellationTokenSource cts = new();
         private bool disposedValue;
 

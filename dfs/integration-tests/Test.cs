@@ -265,7 +265,7 @@ namespace integration_tests
             } while (progress.Current != progress.Total);
         }
 
-        [Test, CancelAfter(80000)]
+        [Test, CancelAfter(20000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(

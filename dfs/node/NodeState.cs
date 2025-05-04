@@ -26,6 +26,7 @@ namespace node
         public string LogPath { get; private set; }
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool disposedValue;
+        public TransactionManager TransactionManager { get; } = new();
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
         {
@@ -166,6 +167,7 @@ namespace node
                     PathByHash.Dispose();
                     Whitelist.Dispose();
                     Blacklist.Dispose();
+                    TransactionManager.Dispose();
                     LogPath = string.Empty;
                 }
 

@@ -4,11 +4,10 @@ using Microsoft.AspNetCore.DataProtection.KeyManagement;
 
 namespace common
 {
-    public interface IPersistentCache<TKey, TValue> where TValue : class
+    public interface IPersistentCache<TKey, TValue> : IDisposable where TValue : class
     {
         Task<bool> ContainsKey(TKey key);
         Task<long> CountEstimate();
-        void Dispose();
         Task ForEach(Func<TKey, TValue, bool> action);
         Task<TValue> GetAsync(TKey key);
         Task MutateAsync(TKey key, Func<TValue, Task<TValue>> mutate);

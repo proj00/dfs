@@ -23,7 +23,6 @@ namespace node
     public class UiService : Ui.Ui.UiBase
     {
         private readonly NodeState state;
-        private readonly TransactionManager transactionManager = new();
         private readonly Uri nodeURI;
         private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         private readonly ConcurrentDictionary<ByteString, AsyncLock> fileLocks;
@@ -169,7 +168,7 @@ namespace node
 
         private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash)
         {
-            Guid newGuid = await transactionManager.PublishObjectsAsync(tracker, container, objects,
+            Guid newGuid = await state.TransactionManager.PublishObjectsAsync(tracker, container, objects,
                             rootHash);
 
             await state.Manager.Container.SetAsync(newGuid, rootHash);
@@ -184,13 +183,13 @@ namespace node
 
         public override async Task<RpcCommon.Empty> PauseFileDownload(RpcCommon.Hash request, ServerCallContext context)
         {
-            await state.Downloads.PauseDownloadAsync(await state.Manager.ObjectByHash.GetAsync(request.Data));
+            await state.Downloads.PauseDownloadAsync(await state.Manager.ObjectByHash.GetAsync(request.Data), context.CancellationToken);
             return new RpcCommon.Empty();
         }
 
         public override async Task<RpcCommon.Empty> ResumeFileDownload(RpcCommon.Hash request, ServerCallContext context)
         {
-            await state.Downloads.ResumeDownloadAsync(await state.Manager.ObjectByHash.GetAsync(request.Data));
+            await state.Downloads.ResumeDownloadAsync(await state.Manager.ObjectByHash.GetAsync(request.Data), context.CancellationToken);
             return new RpcCommon.Empty();
         }
 

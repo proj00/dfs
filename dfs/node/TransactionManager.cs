@@ -15,7 +15,7 @@ using Tracker;
 
 namespace node
 {
-    class TransactionManager : System.IAsyncDisposable, IDisposable
+    public class TransactionManager : IDisposable
     {
         private readonly TaskProcessor processor;
         private bool disposedValue;
@@ -111,12 +111,6 @@ namespace node
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await ((System.IAsyncDisposable)processor).DisposeAsync();
             GC.SuppressFinalize(this);
         }
     }

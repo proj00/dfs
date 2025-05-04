@@ -97,7 +97,7 @@ namespace unit_tests.node
                 }).Returns(Task.CompletedTask);
 
             // act
-            using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object))
+            await using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object))
             {
                 manager.AddChunkUpdateCallback(async (chunk, token) =>
                 {
@@ -108,16 +108,28 @@ namespace unit_tests.node
             }
 
             // assert
+
+            // did we mark the file as in progress?
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+
+            // did we enqueue all chunks?
             chunks.Verify(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()),
-                Times.Exactly(obj.Object.File.Hashes.Hash.Count));
-            chunks.Verify(self => self.Remove(It.IsAny<ByteString>()),
                 Times.Exactly(obj.Object.File.Hashes.Hash.Count));
             using (Assert.EnterMultipleScope())
             {
                 foreach (var k in obj.Object.File.Hashes.Hash)
                 {
                     Assert.That(added.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray())));
+                }
+            }
+
+            // did we cleanup all chunks after completion?
+            chunks.Verify(self => self.Remove(It.IsAny<ByteString>()),
+                Times.Exactly(obj.Object.File.Hashes.Hash.Count));
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var k in obj.Object.File.Hashes.Hash)
+                {
                     Assert.That(completed.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray())));
                 }
             }
@@ -128,7 +140,7 @@ namespace unit_tests.node
         {
             // arrange
             var obj = GenerateObject();
-            Dictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
+            ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
                 .Callback((ByteString k, FileChunk v) =>
             {
@@ -140,7 +152,7 @@ namespace unit_tests.node
             int good = 0;
             int canceled = 0;
             // act
-            using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
+            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
             {
                 manager.AddChunkUpdateCallback(async (chunk, token) =>
                 {
@@ -158,7 +170,19 @@ namespace unit_tests.node
                     return chunk;
                 });
                 await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
-                await manager.PauseDownloadAsync(obj);
+
+                using (var source = new CancellationTokenSource(2000))
+                {
+                    try
+                    {
+                        await manager.PauseDownloadAsync(obj, source.Token);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        TestContext.Error.WriteLine(e);
+                        throw;
+                    }
+                }
             }
 
             // assert
@@ -174,9 +198,111 @@ namespace unit_tests.node
             Assert.That(added, Has.Count.EqualTo(good));
         }
 
-        private static ObjectWithHash GenerateObject()
+        [Test]
+        [TestCase(1000)]
+        public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
         {
-            int fileSize = 1048576;
+            // arrange
+            var obj = GenerateObject();
+            ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
+
+            chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
+                .Callback((ByteString k, FileChunk v) =>
+            {
+                added[k] = v;
+            }).Returns(Task.CompletedTask);
+
+            int completed = 0;
+            chunks.Setup(self => self.Remove(It.IsAny<ByteString>()))
+                .Callback((ByteString k) =>
+                {
+                    Interlocked.Increment(ref completed);
+                    added.TryRemove(k, out _);
+                }).Returns(Task.CompletedTask);
+
+            chunks.Setup(self => self.ForEach(It.IsAny<ChunkAction>()))
+                .Callback((ChunkAction action) =>
+                {
+                    foreach (var (k, v) in added)
+                    {
+                        if (!action(k, v))
+                        {
+                            break;
+                        }
+                    }
+                }).Returns(Task.CompletedTask);
+
+
+            int good = 0;
+            int canceled = 0;
+            // act
+            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
+            {
+                manager.AddChunkUpdateCallback(async (chunk, token) =>
+                {
+                    Interlocked.Increment(ref good);
+
+                    try
+                    {
+                        await Task.Delay(downloadTime, token);
+                        chunk.Status = DownloadStatus.Complete;
+                    }
+                    catch
+                    {
+                        Interlocked.Increment(ref canceled);
+                        throw;
+                    }
+                    return chunk;
+                });
+                await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
+
+                using (var source = new CancellationTokenSource(2000))
+                {
+                    try
+                    {
+                        await manager.PauseDownloadAsync(obj, source.Token);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        TestContext.Error.WriteLine(e);
+                        throw;
+                    }
+                }
+                using (var source = new CancellationTokenSource(2000))
+                {
+                    try
+                    {
+                        await manager.ResumeDownloadAsync(obj, source.Token);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        TestContext.Error.WriteLine(e);
+                        throw;
+                    }
+                }
+            }
+
+            // assert
+            progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+
+            // did we cancel the download after pausing?
+            Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+
+            // did we complete the download after resuming?
+            Assert.That(completed, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+
+            // did we clean the mess up?
+            Assert.That(added, Has.Count.EqualTo(0));
+
+            // did we start all downloads (after a file was added and after the file download was resumed)?
+            Assert.That(good, Is.EqualTo(2 * obj.Object.File.Hashes.Hash.Count));
+
+        }
+
+        private static ObjectWithHash GenerateObject(bool big = true)
+        {
+            int fileSize = 1024 * 3;
+            //int fileSize = big ? 1048576 : 1024;
             var obj = new Fs.FileSystemObject()
             {
                 Name = faker.System.FileName(),
