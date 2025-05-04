@@ -24,6 +24,7 @@ service Tracker
 	rpc SearchForObjects(SearchRequest) returns (stream rpc_common.SearchResponse);
 	rpc GetDataUsage(rpc_common.Empty) returns (rpc_common.DataUsage);
 	rpc ReportDataUsage(UsageReport) returns (rpc_common.Empty);
+	rpc Shutdown(rpc_common.Empty) returns (rpc_common.Empty);
 }
 
 message ContainerRootHash

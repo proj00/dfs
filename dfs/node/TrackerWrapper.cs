@@ -22,13 +22,6 @@ namespace node
             this.trackerUri = trackerUri;
         }
 
-        public TrackerWrapper(Uri trackerUri, NodeState state, CancellationToken token)
-        {
-            ArgumentNullException.ThrowIfNull(trackerUri);
-            client = state.GetTrackerClient(trackerUri);
-            this.trackerUri = trackerUri;
-        }
-
         public async Task<List<ObjectWithHash>> GetObjectTree(ByteString hash, CancellationToken token)
         {
             using var response = client.GetObjectTree(new Hash { Data = hash }, cancellationToken: token);

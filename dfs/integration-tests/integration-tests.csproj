@@ -44,4 +44,8 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cmd /c &quot;robocopy /E /XO ..\node\bin\Debug\net9.0-windows7.0 ..\node\bin\Debug\2-net9.0-windows7.0 || IF %25ERRORLEVEL%25 GEQ 8 EXIT /B %25ERRORLEVEL%25&quot;" />
+  </Target>
+
 </Project>
