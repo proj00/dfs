@@ -199,7 +199,8 @@ namespace unit_tests.node
         }
 
         [Test]
-        [TestCase(1000)]
+        [NonParallelizable]
+        [TestCase(1500)]
         [TestCase(100)]
         [TestCase(10)]
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
@@ -215,15 +216,13 @@ namespace unit_tests.node
             }).Returns(Task.CompletedTask);
 
             Ui.Progress p = new();
-            using AsyncLock @lock = new();
+            System.Threading.Lock @lock = new();
 
             progress.Setup(self => self.MutateAsync(It.IsAny<ByteString>(), It.IsAny<ProgressCallback>(), It.IsAny<bool>()))
-                .Callback(async (ByteString h, ProgressCallback action, bool _) =>
+                .Callback((ByteString h, ProgressCallback action, bool _) =>
                 {
-                    using (await @lock.LockAsync())
-                    {
+                    lock (@lock)
                         action(p);
-                    }
                 })
                 .Returns(Task.CompletedTask);
 
@@ -260,7 +259,6 @@ namespace unit_tests.node
                     try
                     {
                         await Task.Delay(downloadTime, token);
-                        await manager.UpdateFileProgressAsync(ByteString.Empty, 1);
                         chunk.Status = DownloadStatus.Complete;
                     }
                     catch
@@ -268,6 +266,7 @@ namespace unit_tests.node
                         Interlocked.Increment(ref canceled);
                         throw;
                     }
+                    await manager.UpdateFileProgressAsync(ByteString.Empty, 1);
                     return chunk;
                 });
                 await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
@@ -303,10 +302,14 @@ namespace unit_tests.node
             }
 
             // assert
+            progress
+                .Verify(self => self.MutateAsync(It.IsAny<ByteString>(), It.IsAny<ProgressCallback>(), It.IsAny<bool>()),
+                Times.Exactly(obj.Object.File.Hashes.Hash.Count));
+
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
             Assert.That(p.Current, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
 
-            if (downloadTime == 1000)
+            if (downloadTime >= 1000)
             {
                 // did we cancel the download after pausing?
                 Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
@@ -329,8 +332,7 @@ namespace unit_tests.node
 
         private static ObjectWithHash GenerateObject(bool big = true)
         {
-            int fileSize = 1024 * 3;
-            //int fileSize = big ? 1048576 : 1024;
+            int fileSize = big ? 1048576 : 1024;
             var obj = new Fs.FileSystemObject()
             {
                 Name = faker.System.FileName(),
