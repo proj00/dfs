@@ -34,14 +34,22 @@ namespace node
             public FileChunk[] Chunk { get; set; } = [];
         }
 
+        private sealed class FileContext
+        {
+            public CancellationTokenSource Source { get; } = new();
+            public int Count;
+        }
+
         private readonly IPersistentCache<ByteString, Ui.Progress> FileProgress;
         private UpdateCallback? updateCallback = null;
         private bool disposedValue;
         private readonly CancellationTokenSource tokenSource = new();
-        private readonly ConcurrentDictionary<ByteString, CancellationTokenSource> fileTokens;
+        private readonly ConcurrentDictionary<ByteString, FileContext> fileTokens;
         private readonly TaskProcessor downloadProcessor;
+        private readonly TaskProcessor stateProcessor;
         private readonly IPersistentCache<ByteString, FileChunk> chunkTasks;
-        private readonly AsyncLock taskLock = new();
+        private int taskCount = 0;
+        private bool done = false;
 
         public DownloadManager(string dbPath, int taskCapacity, IPersistentCache<ByteString, Progress> fileProgress, IPersistentCache<ByteString, FileChunk> chunkTasks)
         {
@@ -49,6 +57,7 @@ namespace node
             ArgumentOutOfRangeException.ThrowIfLessThan(taskCapacity, 0, nameof(taskCapacity));
 
             downloadProcessor = new TaskProcessor(20, taskCapacity);
+            stateProcessor = new TaskProcessor(1, taskCapacity);
             fileTokens = new(new ByteStringComparer());
 
             ArgumentNullException.ThrowIfNull(fileProgress);
@@ -73,33 +82,56 @@ namespace node
 #pragma warning restore CA2000 // Dispose objects before losing scope
         { }
 
-
         private async Task HandleCommandAsync(StateChange message)
         {
-            using var l = await taskLock.LockAsync();
             switch (message.NewStatus)
             {
+                case DownloadStatus.Stop:
+                    {
+                        done = true;
+                        break;
+                    }
                 case DownloadStatus.Complete:
                     {
                         if (message.Chunk == null || message.Chunk.Length == 0)
                         {
-                            break;
+                            throw new ArgumentException("no");
                         }
 
-                        await chunkTasks.Remove(message.Chunk[0].Hash);
+                        await chunkTasks.Remove(HashUtils.GetChunkHash(message.Chunk[0]));
                         break;
                     }
                 case DownloadStatus.Pending:
                     {
-                        fileTokens[message.Hash] = new CancellationTokenSource();
                         var chunks = await GetChildChunksAsync(chunkTasks, message.Hash);
                         if (chunks.Count == 0)
                             chunks.AddRange(message.Chunk ?? []);
+
+                        var context = new FileContext() { Count = chunks.Count };
+                        fileTokens[message.Hash] = context;
+
                         foreach (var chunk in chunks)
                         {
-                            chunk.Status = DownloadStatus.Pending;
-                            await chunkTasks.SetAsync(HashUtils.GetChunkHash(chunk), chunk);
-                            await downloadProcessor.AddAsync((token) => UpdateAsync(chunk, fileTokens[message.Hash].Token));
+                            Interlocked.Increment(ref taskCount);
+                            bool b = await downloadProcessor.AddAsync(async () =>
+                            {
+                                try
+                                {
+                                    chunk.Status = DownloadStatus.Pending;
+                                    await chunkTasks.SetAsync(HashUtils.GetChunkHash(chunk), chunk);
+                                    await UpdateAsync(chunk, context.Source.Token);
+                                }
+                                finally
+                                {
+                                    if (Interlocked.Decrement(ref context.Count) == 0)
+                                    {
+                                        fileTokens.TryRemove(message.Hash, out var a);
+                                        context.Source.Dispose();
+                                    }
+                                    Interlocked.Decrement(ref taskCount);
+                                }
+                            });
+                            if (!b) throw new OperationCanceledException();
                         }
 
                         break;
@@ -113,10 +145,9 @@ namespace node
                         }
 
                         var hash = message.Hash;
-                        if (fileTokens.TryRemove(hash, out var fileToken))
+                        if (fileTokens.TryGetValue(hash, out var fileToken))
                         {
-                            await fileToken.CancelAsync();
-                            fileToken.Dispose();
+                            await fileToken.Source.CancelAsync();
                         }
 
                         break;
@@ -143,10 +174,7 @@ namespace node
 
         private async Task UpdateAsync(FileChunk chunk, CancellationToken token)
         {
-            if (updateCallback == null)
-            {
-                return;
-            }
+            ArgumentNullException.ThrowIfNull(updateCallback);
 
             chunk.Status = DownloadStatus.Active;
             try
@@ -157,14 +185,42 @@ namespace node
             {
                 chunk.Status = DownloadStatus.Paused;
             }
+
             var newState = new StateChange()
             {
                 Hash = HashUtils.GetChunkHash(chunk),
                 NewStatus = chunk.Status,
                 Chunk = [chunk]
             };
-            await HandleCommandAsync(
-                newState
+            await EnqueueStateInternalAsync(newState, true);
+        }
+
+        private async Task EnqueueStateAsync(StateChange state)
+        {
+            await EnqueueStateInternalAsync(state, false);
+        }
+
+        private async Task EnqueueStateInternalAsync(StateChange state, bool internalUse)
+        {
+            if (done && !internalUse)
+            {
+                return;
+            }
+
+            Interlocked.Increment(ref taskCount);
+            bool b = await stateProcessor.AddAsync(async () =>
+            {
+                try
+                {
+                    await HandleCommandAsync(
+                        state
+                    );
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref taskCount);
+                }
+            }
             );
         }
 
@@ -203,7 +259,7 @@ namespace node
         {
             (FileChunk[] chunks, IncompleteFile file) = GetIncompleteFile(obj, trackerUri, destinationDir);
             await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
-            await HandleCommandAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
+            await EnqueueStateAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
         }
 
         public async Task<ByteString[]> GetIncompleteFilesAsync()
@@ -224,11 +280,11 @@ namespace node
 
         public async Task PauseDownloadAsync(ObjectWithHash file)
         {
-            await HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused });
+            await EnqueueStateAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Paused });
         }
         public async Task ResumeDownloadAsync(ObjectWithHash file)
         {
-            await HandleCommandAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending });
+            await EnqueueStateAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending });
         }
 
         protected virtual void Dispose(bool disposing)
@@ -237,11 +293,19 @@ namespace node
             {
                 if (disposing)
                 {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+                    EnqueueStateAsync(new() { NewStatus = DownloadStatus.Stop }).Wait();
+                    // this is screwed up it works
+                    while (!done || taskCount != 0)
+                    {
+                        Thread.Sleep(50);
+                    }
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+                    stateProcessor.Dispose();
                     downloadProcessor.Dispose();
+                    chunkTasks.Dispose();
                     tokenSource.Cancel();
                     tokenSource.Dispose();
-                    chunkTasks.Dispose();
-                    taskLock.Dispose();
                 }
                 disposedValue = true;
             }

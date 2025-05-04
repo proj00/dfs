@@ -234,17 +234,16 @@ namespace node
             }
 
             var tracker = new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None);
-            Debug.Assert(chunk.Hash.Length == 128);
-            var hash = ByteString.CopyFrom(chunk.Hash.Span.Slice(chunk.Hash.Length / 2));
+            Debug.Assert(chunk.Hash.Length == 64);
 
-            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = hash, MaxPeerCount = 256 }, token))
+            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
                 .ToList();
 
             if (peers.Count == 0)
             {
                 chunk.Status = DownloadStatus.Pending;
                 Debug.Assert(false, "no peers");
-                state.Logger.LogWarning($"No peers found for chunk {hash.ToBase64()}");
+                state.Logger.LogWarning($"No peers found for chunk {chunk.Hash.ToBase64()}");
                 return chunk;
             }
 
@@ -255,7 +254,7 @@ namespace node
             var peerClient = state.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {
-                Hash = hash,
+                Hash = chunk.Hash,
                 TrackerUri = tracker.GetUri().ToString(),
                 Offset = chunk.CurrentCount
             }, null, null, token);
@@ -280,9 +279,9 @@ namespace node
                 byte[] thing = chunk.Contents.SelectMany(chunk => chunk.ToArray()).ToArray();
                 var testHash = HashUtils.GetHash(thing.ToArray());
 
-                if (hash != testHash)
+                if (chunk.Hash != testHash)
                 {
-                    state.Logger.LogError($"Hash mismatch for chunk {hash.ToBase64()}");
+                    state.Logger.LogError($"Hash mismatch for chunk {chunk.Hash.ToBase64()}");
                     chunk.Contents.Clear();
                     await state.Downloads.UpdateFileProgressAsync(chunk.FileHash, -chunk.CurrentCount);
                     chunk.CurrentCount = 0;
@@ -296,7 +295,7 @@ namespace node
                         stream.Seek(chunk.Offset, SeekOrigin.Begin);
                         await stream.WriteAsync(thing, CancellationToken.None);
                     }
-                    await (new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None)).MarkReachable([chunk.FileHash], nodeURI, CancellationToken.None);
+                    await (new TrackerWrapper(new Uri(chunk.TrackerUri), state, CancellationToken.None)).MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
                     chunk.Status = DownloadStatus.Complete;
                 }
             }

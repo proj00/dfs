@@ -223,7 +223,6 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(50000)]
-        [Ignore("borked")]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
@@ -265,7 +264,7 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
         }
-        [Ignore("borked")]
+
         [Test, CancelAfter(80000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {

@@ -7,6 +7,7 @@ using Moq;
 using node;
 using Node;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -81,16 +82,28 @@ namespace unit_tests.node
         {
             // arrange
             var obj = GenerateObject();
-            Dictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
+            ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
                 .Callback((ByteString k, FileChunk v) =>
             {
                 added[k] = v;
             }).Returns(Task.CompletedTask);
 
+            ConcurrentDictionary<ByteString, ByteString> completed = [];
+            chunks.Setup(self => self.Remove(It.IsAny<ByteString>()))
+                .Callback((ByteString k) =>
+                {
+                    completed[k] = k;
+                }).Returns(Task.CompletedTask);
+
             // act
             using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object))
             {
+                manager.AddChunkUpdateCallback(async (chunk, token) =>
+                {
+                    chunk.Status = DownloadStatus.Complete;
+                    return await Task.FromResult(chunk);
+                });
                 await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
             }
 
@@ -98,11 +111,14 @@ namespace unit_tests.node
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
             chunks.Verify(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()),
                 Times.Exactly(obj.Object.File.Hashes.Hash.Count));
+            chunks.Verify(self => self.Remove(It.IsAny<ByteString>()),
+                Times.Exactly(obj.Object.File.Hashes.Hash.Count));
             using (Assert.EnterMultipleScope())
             {
                 foreach (var k in obj.Object.File.Hashes.Hash)
                 {
                     Assert.That(added.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray())));
+                    Assert.That(completed.ContainsKey(ByteString.CopyFrom(obj.Hash.Concat(k).ToArray())));
                 }
             }
         }
@@ -145,12 +161,17 @@ namespace unit_tests.node
                 await manager.PauseDownloadAsync(obj);
             }
 
-            TestContext.Out.WriteLine(good);
-            TestContext.Out.WriteLine(canceled);
-            TestContext.Out.WriteLine(added.Count);
             // assert
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
+
+            // did we start all downloads?
+            Assert.That(added, Has.Count.EqualTo(obj.Object.File.Hashes.Hash.Count));
+
+            // did we cancel all downloads?
             Assert.That(added, Has.Count.EqualTo(canceled));
+
+            // was the download callback called?
+            Assert.That(added, Has.Count.EqualTo(good));
         }
 
         private static ObjectWithHash GenerateObject()

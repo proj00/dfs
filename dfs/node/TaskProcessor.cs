@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Channels;
@@ -10,7 +11,7 @@ namespace node
 {
     public class TaskProcessor : IDisposable
     {
-        private readonly ActionBlock<Func<CancellationToken, Task>> block;
+        public ActionBlock<Func<Task>> block { get; }
         private readonly CancellationTokenSource cts = new();
         private bool disposedValue;
 
@@ -23,31 +24,18 @@ namespace node
                 CancellationToken = cts.Token
             };
 
-            block = new ActionBlock<Func<CancellationToken, Task>>(
+            block = new ActionBlock<Func<Task>>(
                 async taskFunc =>
                 {
-                    try
-                    {
-                        await taskFunc(cts.Token);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
+                    await taskFunc();
                 },
                 options
             );
         }
 
-        public async ValueTask AddAsync(Func<CancellationToken, Task> taskFunc)
+        public async Task<bool> AddAsync(Func<Task> taskFunc)
         {
-            bool accepted = await block.SendAsync(taskFunc, cts.Token)
-                                             .ConfigureAwait(false);
-
-            if (!accepted)
-            {
-                throw new OperationCanceledException(cts.Token);
-            }
+            return await block.SendAsync(taskFunc);
         }
 
         protected virtual void Dispose(bool disposing)
