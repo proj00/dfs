@@ -10,9 +10,11 @@ using Tracker;
 
 namespace common
 {
-    public sealed class FilesystemManager : IDisposable
+    public class FilesystemManager : IFilesystemManager
     {
         private readonly AsyncLock _syncRoot = new();
+        private bool disposedValue;
+
         public IPersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
         public IPersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
         public IPersistentCache<Guid, ByteString> Container { get; private set; }
@@ -52,16 +54,6 @@ namespace common
                 new ByteStringSerializer(),
                 new ByteStringSerializer()
             );
-        }
-
-        public void Dispose()
-        {
-            ChunkParents.Dispose();
-            ObjectByHash.Dispose();
-            Container.Dispose();
-            Parent.Dispose();
-            NewerVersion.Dispose();
-            _syncRoot.Dispose();
         }
 
         public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
@@ -243,6 +235,37 @@ namespace common
 
                 await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } });
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    ChunkParents.Dispose();
+                    ObjectByHash.Dispose();
+                    Container.Dispose();
+                    Parent.Dispose();
+                    NewerVersion.Dispose();
+                    _syncRoot.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~FilesystemManager()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

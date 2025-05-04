@@ -13,12 +13,12 @@ namespace node
     public class NodeState : IDisposable
     {
         public IPersistentCache<ByteString, string> PathByHash { get; }
-        public FilesystemManager Manager { get; }
+        public IFilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
         private IPersistentCache<string, string> Whitelist { get; }
         private IPersistentCache<string, string> Blacklist { get; }
-        public DownloadManager Downloads { get; }
+        public IDownloadManager Downloads { get; }
 
         private readonly ILoggerFactory loggerFactory;
 
@@ -28,34 +28,41 @@ namespace node
         private bool disposedValue;
         public TransactionManager TransactionManager { get; } = new();
 
-        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
+        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
+            IFilesystemManager manager, IDownloadManager downloads,
+            IPersistentCache<ByteString, string> pathByHash,
+            IPersistentCache<string, string> whitelist,
+            IPersistentCache<string, string> blacklist)
         {
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
             LogPath = logPath;
+            Manager = manager;
+            Downloads = downloads;
 
             NodeChannel = new ChannelCache(channelTtl);
             TrackerChannel = new ChannelCache(channelTtl);
-            Manager = new FilesystemManager(dbPath);
+            this.PathByHash = pathByHash;
+            this.Whitelist = whitelist;
+            this.Blacklist = blacklist;
+        }
 
-            PathByHash = new PersistentCache<ByteString, string>(
-                System.IO.Path.Combine(Manager.DbPath, "PathByHash"),
+        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
+            : this(channelTtl, loggerFactory, logPath, new FilesystemManager(dbPath), new DownloadManager(dbPath),
+                new PersistentCache<ByteString, string>(
+                System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
                 new StringSerializer()
-            );
-            Whitelist = new PersistentCache<string, string>(
-                System.IO.Path.Combine(Manager.DbPath, "Whitelist"),
+            ), new PersistentCache<string, string>(
+                System.IO.Path.Combine(dbPath, "Whitelist"),
                 new StringSerializer(),
                 new StringSerializer()
-            );
-            Blacklist = new PersistentCache<string, string>(
-                System.IO.Path.Combine(Manager.DbPath, "Blacklist"),
+            ), new PersistentCache<string, string>(
+                System.IO.Path.Combine(dbPath, "Blacklist"),
                 new StringSerializer(),
                 new StringSerializer()
-            );
-            LogPath = logPath;
-            Downloads = new DownloadManager(Manager.DbPath);
-        }
+            ))
+        { }
 
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
         {

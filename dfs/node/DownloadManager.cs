@@ -26,7 +26,7 @@ namespace node
 {
     using UpdateCallback = Func<FileChunk, CancellationToken, Task<FileChunk>>;
 
-    public class DownloadManager : System.IAsyncDisposable
+    public class DownloadManager : IDownloadManager
     {
         private sealed class StateChange
         {
