@@ -114,7 +114,8 @@ namespace node
             {
                 await Whitelist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network) && network.Contains(IPAddress.Parse(url.Host)))
+                    var network = IPNetwork.Parse(uri);
+                    if (network.Contains(IPAddress.Parse(url.Host)))
                     {
                         passWhitelist = true;
                         return false;
@@ -125,23 +126,27 @@ namespace node
 
             if (!passWhitelist)
             {
-                return false;
+                return true;
             }
 
-            bool passBlacklist = await Blacklist.CountEstimate() == 0;
-            if (!passBlacklist)
+            if (await Blacklist.CountEstimate() != 0)
             {
+                bool passBlacklist = false;
                 await Blacklist.ForEach((uri, _) =>
                 {
-                    if (IPNetwork.TryParse(uri, out var network) && !network.Contains(IPAddress.Parse(url.Host)))
+                    var network = IPNetwork.Parse(uri);
+                    if (network.Contains(IPAddress.Parse(url.Host)))
                     {
-                        passBlacklist = false;
+                        passBlacklist = true;
                         return false;
                     }
                     return true;
                 });
+
+                return passBlacklist;
             }
-            return !passBlacklist;
+
+            return false;
         }
 
         public async Task<BlockListResponse> GetBlockListAsync()

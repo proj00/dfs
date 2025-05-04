@@ -66,6 +66,197 @@ namespace unit_tests.node
         }
 
         [Test]
+        public async Task TestIsInBlockList_BothEmptyAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
+        }
+
+        [Test]
+        public async Task TestIsInBlockList_PassWhitelistAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = true,
+                ShouldRemove = false,
+                Url = "0.0.0.0/0"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
+        }
+
+        [Test]
+        public async Task TestIsInBlockList_PassBlocklistAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = false,
+                ShouldRemove = false,
+                Url = "192.168.0.1/32"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
+        }
+
+        [Test]
+        public async Task TestIsInBlockList_PassAllAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = false,
+                ShouldRemove = false,
+                Url = "192.168.0.1/32"
+            };
+            await state.FixBlockListAsync(request);
+
+            request = new()
+            {
+                InWhitelist = true,
+                ShouldRemove = false,
+                Url = "0.0.0.0/0"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
+        }
+
+        [Test]
+        public async Task TestIsInBlockList_DontPassWhitelistAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = true,
+                ShouldRemove = false,
+                Url = "192.168.0.1/32"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.True);
+        }
+
+        [Test]
+        [Combinatorial]
+        public async Task TestIsInBlockList_DontPassBlacklistAsync([Values] bool useWhitelist)
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = false,
+                ShouldRemove = false,
+                Url = "127.0.0.1/32"
+            };
+            await state.FixBlockListAsync(request);
+
+            request = new()
+            {
+                InWhitelist = useWhitelist,
+                ShouldRemove = false,
+                Url = "127.0.0.1/32"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.True);
+        }
+
+        [Test]
+        public async Task TestIsInBlockList_InvalidUrlAsync()
+        {
+            using var state = new NodeState
+            (
+                new TimeSpan(),
+                new Mock<ILoggerFactory>().Object,
+                "",
+                new Mock<IFilesystemManager>().Object,
+                new Mock<IDownloadManager>().Object,
+                new Mock<IPersistentCache<ByteString, string>>().Object,
+                whitelist,
+                blacklist
+            );
+
+            Ui.BlockListRequest request = new()
+            {
+                InWhitelist = true,
+                ShouldRemove = false,
+                Url = "0.0.0.0/24"
+            };
+            await state.FixBlockListAsync(request);
+
+            Assert.ThrowsAsync<FormatException>(async () => await state.IsInBlockListAsync(new Uri("http://ghdghdghdgfhgf")));
+        }
+
+        [Test]
         [NonParallelizable]
         [Combinatorial]
         public async Task TestBlockListRemovalAsync([Values] bool inWhitelist)
