@@ -23,8 +23,9 @@ namespace tracker
             new();
         private bool disposedValue;
         const int trackerResponseLimit = 30000;
+        private readonly CancellationTokenSource source;
 
-        public TrackerRpc(ILogger logger, string dbPath)
+        public TrackerRpc(ILogger logger, string dbPath, CancellationTokenSource source)
         {
             _filesystemManager = new FilesystemManager(dbPath);
             dataUsage = new PersistentCache<string, DataUsage>(
@@ -33,6 +34,7 @@ namespace tracker
                 new Serializer<DataUsage>()
             );
             this.logger = logger;
+            this.source = source;
         }
 
         public override async Task<Hash> GetContainerRootHash(
@@ -365,6 +367,12 @@ namespace tracker
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        public override async Task<Empty> Shutdown(Empty request, ServerCallContext context)
+        {
+            await source.CancelAsync();
+            return new Empty();
         }
     }
 }

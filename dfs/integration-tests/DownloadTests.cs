@@ -21,7 +21,8 @@ namespace integration_tests
         private Process _processT;
         private Ui.Ui.UiClient n1Client;
         private Ui.Ui.UiClient n2Client;
-        private TrackerWrapper trackerClient;
+        private TrackerWrapper trackerWrapper;
+        private Tracker.Tracker.TrackerClient trackerClient;
         private string _tempDirectory;
         private RefWrapper errorsPrinted = new(false);
         int testPort1 = -1;
@@ -83,8 +84,9 @@ namespace integration_tests
                 new Uri($"http://localhost:{testPort1}")));
             n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort2}")));
-            trackerClient = new TrackerWrapper(new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort3}"))), new Uri($"http://localhost:{testPort3}"));
+            trackerClient = new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
+                new Uri($"http://localhost:{testPort3}")));
+            trackerWrapper = new TrackerWrapper(trackerClient, new Uri($"http://localhost:{testPort3}"));
         }
 
         private static async Task WaitForPortAsync(int port, int timeoutMs = 40000)
@@ -117,7 +119,8 @@ namespace integration_tests
             {
                 await n1Client.ShutdownAsync(new RpcCommon.Empty());
                 await n2Client.ShutdownAsync(new RpcCommon.Empty());
-                Thread.Sleep(2000);
+                await trackerClient.ShutdownAsync(new RpcCommon.Empty());
+                await Task.Delay(3000);
                 ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
             }
             catch { }
@@ -211,7 +214,7 @@ namespace integration_tests
             }
 
             await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, null, null, token);
-            var resp2 = await trackerClient.SearchForObjects("(?s).*", token);
+            var resp2 = await trackerWrapper.SearchForObjects("(?s).*", token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp2, Is.Not.Null);
@@ -248,7 +251,7 @@ namespace integration_tests
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() },
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() },
             cancellationToken: token);
 
             var progress = new Ui.Progress();
@@ -298,7 +301,7 @@ namespace integration_tests
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() }, cancellationToken: token);
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() }, cancellationToken: token);
 
             var progress = new Ui.Progress();
             int delay = 50000;
