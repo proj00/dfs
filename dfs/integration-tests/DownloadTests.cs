@@ -2,6 +2,7 @@ using common_test;
 using Google.Protobuf;
 using Grpc.Net.Client;
 using node;
+using Org.BouncyCastle.Utilities.Encoders;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -20,10 +21,13 @@ namespace integration_tests
         private Process _processT;
         private Ui.Ui.UiClient n1Client;
         private Ui.Ui.UiClient n2Client;
-        private TrackerWrapper trackerClient;
+        private TrackerWrapper trackerWrapper;
+        private Tracker.Tracker.TrackerClient trackerClient;
         private string _tempDirectory;
-        private int testPort;
         private RefWrapper errorsPrinted = new(false);
+        int testPort1 = -1;
+        int testPort2 = -1;
+        int testPort3 = -1;
 
         public Tests()
         {
@@ -35,9 +39,13 @@ namespace integration_tests
             public RefWrapper(bool value) { Value = value; }
         }
 
-        private static readonly string NodeOutputPath = Path.GetFullPath(
+        private static readonly string Node1OutputPath = Path.GetFullPath(
         Path.Combine(TestContext.CurrentContext.TestDirectory,
         @"..\..\..\..\node\bin\Debug\net9.0-windows7.0\node.exe"));
+
+        private static readonly string Node2OutputPath = Path.GetFullPath(
+        Path.Combine(TestContext.CurrentContext.TestDirectory,
+        @"..\..\..\..\node\bin\Debug\2-net9.0-windows7.0\node.exe"));
 
         private static readonly string TrackerOutputPath = Path.GetFullPath(
             Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -49,7 +57,7 @@ namespace integration_tests
             errorsPrinted = new RefWrapper(false);
             try
             {
-                ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
+                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
             }
             catch (Exception e)
             {
@@ -60,22 +68,25 @@ namespace integration_tests
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
             // Start processes with unique ports for each test
-            testPort = FindFreePort();
+            testPort1 = FindFreePort();
+            testPort2 = FindFreePort();
+            testPort3 = FindFreePort();
 
-            _processN1 = StartProcess(NodeOutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n1\" {testPort}", errorsPrinted);
-            _processN2 = StartProcess(NodeOutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort + 1}", errorsPrinted);
-            _processT = StartProcess(TrackerOutputPath, $"\"{_tempDirectory}\\tracker\" {testPort + 2}", errorsPrinted);
+            _processN1 = StartProcess(1, Node1OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n1\" {testPort1}", errorsPrinted);
+            _processN2 = StartProcess(2, Node2OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort2}", errorsPrinted);
+            _processT = StartProcess(3, TrackerOutputPath, $"\"{_tempDirectory}\\tracker\" {testPort3}", errorsPrinted);
 
-            await WaitForPortAsync(testPort);
-            await WaitForPortAsync(testPort + 1);
-            await WaitForPortAsync(testPort + 2);
+            await WaitForPortAsync(testPort1);
+            await WaitForPortAsync(testPort2);
+            await WaitForPortAsync(testPort3);
 
             n1Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort}")));
+                new Uri($"http://localhost:{testPort1}")));
             n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort + 1}")));
-            trackerClient = new TrackerWrapper(new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort + 2}"))), new Uri($"http://localhost:{testPort + 2}"));
+                new Uri($"http://localhost:{testPort2}")));
+            trackerClient = new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
+                new Uri($"http://localhost:{testPort3}")));
+            trackerWrapper = new TrackerWrapper(trackerClient, new Uri($"http://localhost:{testPort3}"));
         }
 
         private static async Task WaitForPortAsync(int port, int timeoutMs = 40000)
@@ -100,13 +111,17 @@ namespace integration_tests
         [TearDown]
         public async Task TearDownAsync()
         {
-            testPort = -1;
+            testPort1 = -1;
+            testPort2 = -1;
+            testPort3 = -1;
+
             try
             {
                 await n1Client.ShutdownAsync(new RpcCommon.Empty());
                 await n2Client.ShutdownAsync(new RpcCommon.Empty());
-                Thread.Sleep(2000);
-                ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
+                await trackerClient.ShutdownAsync(new RpcCommon.Empty());
+                await Task.Delay(3000);
+                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
             }
             catch { }
             _processN1?.Dispose();
@@ -114,7 +129,7 @@ namespace integration_tests
             _processT?.Dispose();
             try
             {
-                ProcessHandling.KillSolutionProcesses([NodeOutputPath, TrackerOutputPath]);
+                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
                 if (Directory.Exists(_tempDirectory) && !errorsPrinted.Value && !Debugger.IsAttached)
                 {
                     //Directory.Delete(_tempDirectory, recursive: true);
@@ -125,16 +140,20 @@ namespace integration_tests
             Assert.That(b, Is.False, "errors printed");
         }
 
-        private static Process StartProcess(string exePath, string arguments, RefWrapper errorsPrinted)
+        private static Process StartProcess(int id, string exePath, string arguments, RefWrapper errorsPrinted)
         {
             if (!File.Exists(exePath))
                 throw new FileNotFoundException($"Executable not found: {exePath}");
+
+            string coverageOutput = $"../../../cov/{id}-{Guid.NewGuid()}-coverage.opencover.xml";
+            string coverletCommand = $"\"{exePath}\" --target \"{exePath}\" --targetargs \"{arguments}\" --output \"{coverageOutput}\" --format opencover ";
+
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = exePath,
-                    Arguments = arguments,
+                    FileName = "coverlet",
+                    Arguments = coverletCommand,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
@@ -194,8 +213,8 @@ namespace integration_tests
                 Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
             }
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" }, null, null, token);
-            var resp2 = await trackerClient.SearchForObjects("(?s).*", token);
+            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, null, null, token);
+            var resp2 = await trackerWrapper.SearchForObjects("(?s).*", token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp2, Is.Not.Null);
@@ -228,11 +247,11 @@ namespace integration_tests
             }
             var parts = await n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" }, cancellationToken: token);
+            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, cancellationToken: token);
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() },
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() },
             cancellationToken: token);
 
             var progress = new Ui.Progress();
@@ -248,8 +267,16 @@ namespace integration_tests
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+
+            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+
+            var expected = await GetFileContents(inputPath);
+            var actual = await GetFileContents(outputPath);
+            Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
         }
-        [Test, CancelAfter(80000)]
+
+        [Test, CancelAfter(20000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
@@ -270,11 +297,11 @@ namespace integration_tests
             }
             var parts = await n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort + 2}" }, cancellationToken: token);
+            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, cancellationToken: token);
             Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
 
             var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerClient.GetUri().ToString() }, cancellationToken: token);
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() }, cancellationToken: token);
 
             var progress = new Ui.Progress();
             int delay = 50000;
@@ -291,6 +318,32 @@ namespace integration_tests
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+
+            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+
+            var expected = await GetFileContents(inputPath);
+            var actual = await GetFileContents(outputPath);
+            Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
+        }
+
+        private static async Task<byte[]> GetFileContents(string path)
+        {
+            var info = new FileInfo(path);
+            using var stream = new FileStream
+                    (
+                        path,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
+
+            var buffer = new byte[info.Length];
+            await RandomAccess.ReadAsync(stream.SafeFileHandle, buffer, 0);
+            return buffer;
         }
     }
 }

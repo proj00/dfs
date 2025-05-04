@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.Runtime.InteropServices;
 
 namespace tracker
 {
@@ -11,10 +12,16 @@ namespace tracker
     {
         static async Task Main(string[] args)
         {
+            using CancellationTokenSource source = new();
+            using var handler = PosixSignalRegistration.Create(PosixSignal.SIGQUIT, _ =>
+            {
+                source.Cancel();
+            });
+
             AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
             (string _, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs");
             ILogger logger = loggerFactory.CreateLogger("Main");
-            using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()));
+            using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()), source);
             int port = args.Length >= 2 ? int.Parse(args[1]) : 50330;
             var app = await StartPublicServerAsync(rpc, port, loggerFactory);
 
@@ -23,46 +30,52 @@ namespace tracker
 
             logger.LogInformation($"Server is listening on port {boundPort}");
             logger.LogInformation("Press any key to quit; press a/A to view data usage...");
-            while (true)
+            while (!source.IsCancellationRequested)
             {
-                char k = ' ';
-                try
-                {
-                    k = Console.ReadKey(true).KeyChar;
-                }
-                catch { }
-                if (k == ' ')
-                {
-                    continue;
-                }
-                if (k != 'a' && k != 'A')
-                {
-                    break;
-                }
-
-                var usage = await rpc.GetTotalDataUsage();
-                (string path, ILoggerFactory factory) = InternalLoggerProvider.CreateLoggerFactory("logs/usage");
-                var usageLogger = factory.CreateLogger("DataUsage");
-
-                string output = "";
-
-                output += "Data usage: \n";
-                if (usage.Length == 0)
-                {
-                    output += "No data usage found.\n";
-                }
-                else
-                {
-                    foreach (var (key, u) in usage)
-                    {
-                        output += $"URL: {key}, Up/Down: {u.Upload}/{u.Download} bytes\n";
-                    }
-                }
-                usageLogger.LogInformation(output);
-                logger.LogInformation($"Usage logs written to {path}");
+                await ReadInput(source, rpc, logger);
             }
 
             await app.StopAsync();
+        }
+
+        private static async Task ReadInput(CancellationTokenSource source, TrackerRpc rpc, ILogger logger)
+        {
+            char k = (char)0;
+            try
+            {
+                k = Console.ReadKey(true).KeyChar;
+            }
+            catch { }
+            if (k == (char)0)
+            {
+                await Task.Delay(3000);
+                return;
+            }
+            if (k != 'a' && k != 'A')
+            {
+                source.Cancel();
+            }
+
+            var usage = await rpc.GetTotalDataUsage();
+            (string path, ILoggerFactory factory) = InternalLoggerProvider.CreateLoggerFactory("logs/usage");
+            var usageLogger = factory.CreateLogger("DataUsage");
+
+            string output = "";
+
+            output += "Data usage: \n";
+            if (usage.Length == 0)
+            {
+                output += "No data usage found.\n";
+            }
+            else
+            {
+                foreach (var (key, u) in usage)
+                {
+                    output += $"URL: {key}, Up/Down: {u.Upload}/{u.Download} bytes\n";
+                }
+            }
+            usageLogger.LogInformation(output);
+            logger.LogInformation($"Usage logs written to {path}");
         }
 
         private static async Task<WebApplication> StartPublicServerAsync(TrackerRpc rpc, int port, ILoggerFactory loggerFactory)

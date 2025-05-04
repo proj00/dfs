@@ -8,12 +8,9 @@ namespace common
 {
     public sealed class AsyncLock : IDisposable
     {
-        public void Dispose()
-        {
-            semaphore.Dispose();
-        }
-
         private readonly SemaphoreSlim semaphore;
+        private bool disposedValue;
+
         public AsyncLock(int initialCount = 1, int maxCount = 1)
         {
             semaphore = new SemaphoreSlim(initialCount, maxCount);
@@ -44,6 +41,32 @@ namespace common
                     semaphore.Release();
                 }
             }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    semaphore.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~AsyncLock()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

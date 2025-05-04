@@ -1,78 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace node
 {
-    public class TaskProcessor : IAsyncDisposable, IDisposable
+    public class TaskProcessor : IDisposable
     {
-        private readonly Channel<Func<Task>> channel;
-        private readonly SemaphoreSlim semaphore;
+        private ActionBlock<Func<Task>> block { get; }
         private readonly CancellationTokenSource cts = new();
-        private readonly Task cmdLoop;
         private bool disposedValue;
 
         public TaskProcessor(int maxConcurrency, int boundedCapacity = 100000)
         {
-            channel = Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(boundedCapacity)
+            var options = new ExecutionDataflowBlockOptions
             {
-                FullMode = BoundedChannelFullMode.Wait,
-                SingleReader = true,
-                SingleWriter = false,
-            });
+                MaxDegreeOfParallelism = maxConcurrency,
+                BoundedCapacity = boundedCapacity,
+                CancellationToken = cts.Token
+            };
 
-            semaphore = new SemaphoreSlim(maxConcurrency);
-            cmdLoop = Task.Run(ProcessQueueAsync);
-        }
-
-        public async Task AddAsync(Func<Task> taskFunc)
-        {
-            await channel.Writer.WriteAsync(taskFunc);
-        }
-
-        private async Task ProcessQueueAsync()
-        {
-            try
-            {
-                await foreach (var taskFunc in channel.Reader.ReadAllAsync(cts.Token))
+            block = new ActionBlock<Func<Task>>(
+                async taskFunc =>
                 {
-                    await semaphore.WaitAsync(cts.Token);
-
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await taskFunc();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Task error: {ex}");
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    });
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
+                    await taskFunc();
+                },
+                options
+            );
         }
 
-        public async ValueTask DisposeAsync()
+        public async Task<bool> AddAsync(Func<Task> taskFunc)
         {
-            await cts.CancelAsync();
-            channel.Writer.Complete();
-            await cmdLoop.WaitAsync(CancellationToken.None);
-            semaphore.Dispose();
-            cts.Dispose();
+            return await block.SendAsync(taskFunc);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -81,12 +44,11 @@ namespace node
             {
                 if (disposing)
                 {
+                    block.Complete();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+                    block.Completion.Wait();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
                     cts.Cancel();
-                    channel.Writer.Complete();
-#pragma warning disable VSTHRD002
-                    cmdLoop.Wait();
-#pragma warning restore VSTHRD002
-                    semaphore.Dispose();
                     cts.Dispose();
                 }
 

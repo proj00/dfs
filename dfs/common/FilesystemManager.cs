@@ -10,14 +10,16 @@ using Tracker;
 
 namespace common
 {
-    public sealed class FilesystemManager : IDisposable
+    public class FilesystemManager : IFilesystemManager
     {
         private readonly AsyncLock _syncRoot = new();
-        public PersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
-        public PersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
-        public PersistentCache<Guid, ByteString> Container { get; private set; }
-        public PersistentCache<ByteString, RpcCommon.HashList> Parent { get; private set; }
-        public PersistentCache<ByteString, ByteString> NewerVersion { get; private set; }
+        private bool disposedValue;
+
+        public IPersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
+        public IPersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
+        public IPersistentCache<Guid, ByteString> Container { get; private set; }
+        public IPersistentCache<ByteString, RpcCommon.HashList> Parent { get; private set; }
+        public IPersistentCache<ByteString, ByteString> NewerVersion { get; private set; }
         public string DbPath { get; private set; }
 
         public FilesystemManager(string dbBasePath)
@@ -25,53 +27,33 @@ namespace common
             DbPath = dbBasePath;
             ObjectByHash = new PersistentCache<ByteString, ObjectWithHash>(
                 Path.Combine(DbPath, "ObjectByHash"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: bytes => ByteString.CopyFrom(bytes),
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: bytes => ObjectWithHash.Parser.ParseFrom(bytes)
+                new ByteStringSerializer(),
+                new Serializer<ObjectWithHash>()
             );
 
             ChunkParents = new PersistentCache<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "ChunkParents"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                list => list.ToByteArray(),
-                RpcCommon.HashList.Parser.ParseFrom
+                new ByteStringSerializer(),
+                new Serializer<RpcCommon.HashList>()
             );
 
             Container = new PersistentCache<Guid, ByteString>(
                 Path.Combine(DbPath, "Container"),
-                guid => guid.ToByteArray(),
-                bytes => new Guid(bytes),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes)
+                new GuidSerializer(),
+                new ByteStringSerializer()
             );
 
             Parent = new PersistentCache<ByteString, RpcCommon.HashList>(
                 Path.Combine(DbPath, "Parent"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                list => list.ToByteArray(),
-                RpcCommon.HashList.Parser.ParseFrom
+                new ByteStringSerializer(),
+                new Serializer<RpcCommon.HashList>()
             );
 
             NewerVersion = new PersistentCache<ByteString, ByteString>(
                 Path.Combine(DbPath, "NewerVersion"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes)
+                new ByteStringSerializer(),
+                new ByteStringSerializer()
             );
-        }
-
-        public void Dispose()
-        {
-            ChunkParents.Dispose();
-            ObjectByHash.Dispose();
-            Container.Dispose();
-            Parent.Dispose();
-            NewerVersion.Dispose();
-            _syncRoot.Dispose();
         }
 
         public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
@@ -253,6 +235,37 @@ namespace common
 
                 await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } });
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    ChunkParents.Dispose();
+                    ObjectByHash.Dispose();
+                    Container.Dispose();
+                    Parent.Dispose();
+                    NewerVersion.Dispose();
+                    _syncRoot.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~FilesystemManager()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }
