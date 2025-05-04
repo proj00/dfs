@@ -47,27 +47,7 @@ namespace node
             var remainingSize = size - request.Offset;
 
             var buffer = new byte[remainingSize];
-            long total = 0;
-            using var stream = new FileStream
-                    (
-                        await state.PathByHash.GetAsync(parentHash),
-                        FileMode.Open,
-                        FileAccess.Read,
-                        FileShare.ReadWrite,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous |
-                        FileOptions.WriteThrough
-                    );
-
-
-            total = await RandomAccess.ReadAsync
-                (
-                stream.SafeFileHandle,
-                buffer.AsMemory(0, (int)remainingSize),
-                offset,
-                context.CancellationToken
-                );
-
+            long total = await state.ReadContentsAsync(await state.PathByHash.GetAsync(parentHash), buffer, offset, context.CancellationToken);
 
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
             var used = 0;
@@ -88,7 +68,7 @@ namespace node
                     break;
                 }
             }
-            var tracker = new TrackerWrapper(new Uri(request.TrackerUri), state, CancellationToken.None);
+            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
             await tracker.ReportDataUsage(true, used, CancellationToken.None);
         }
     }

@@ -1,17 +1,27 @@
 ﻿using common;
+using Fs;
 using Google.Protobuf;
+using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
+using Node;
+using Org.BouncyCastle.Asn1.Ocsp;
+using Org.BouncyCastle.Utilities.Encoders;
+using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
+using Tracker;
 using Ui;
 using static Node.Node;
 using static Tracker.Tracker;
+using static Ui.Ui;
 
 namespace node
 {
     public class NodeState : IDisposable
     {
+        private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public IPersistentCache<ByteString, string> PathByHash { get; }
         public IFilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
@@ -64,6 +74,28 @@ namespace node
             ))
         { }
 
+        public async Task<long> ReadContentsAsync(string path, byte[] buffer, long offset, CancellationToken token)
+        {
+            using var stream = new FileStream
+                    (
+                        path,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
+
+            return await RandomAccess.ReadAsync
+                (
+                stream.SafeFileHandle,
+                buffer.AsMemory(),
+                offset,
+                token
+                );
+        }
+
         public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
         {
             if (options == null)
@@ -76,6 +108,168 @@ namespace node
             }
             var channel = NodeChannel.GetOrCreate(uri, options);
             return new NodeClient(channel);
+        }
+
+        public async Task RevealHashAsync(ByteString hash)
+        {
+            var path = await PathByHash.GetAsync(hash);
+            Process.Start("explorer.exe", path);
+        }
+
+        public async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
+        {
+            if (!System.IO.Directory.Exists(destinationDir))
+            {
+                throw new ArgumentException($"Invalid destination directory: path {destinationDir} doesn't exist");
+            }
+
+            List<ObjectWithHash> objects = await tracker.GetObjectTree(hash, CancellationToken.None);
+            var fileTasks = await objects.ToAsyncEnumerable()
+                .WhereAwait(async (obj) => obj.Object.TypeCase == FileSystemObject.TypeOneofCase.File
+                        && !(await Manager.ObjectByHash.ContainsKey(obj.Hash))).ToArrayAsync();
+
+            guid = await Manager.CreateObjectContainer(objects.ToArray(), hash, guid ?? Guid.NewGuid());
+
+            foreach (var file in fileTasks)
+            {
+                var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(file.Hash.ToByteArray());
+                System.IO.Directory.CreateDirectory(dir);
+                await Downloads.AddNewFileAsync(file, tracker.GetUri(), dir);
+            }
+        }
+
+        public async Task<FileChunk> DownloadChunkAsync(FileChunk chunk, Uri nodeURI, CancellationToken token)
+        {
+            if (chunk.Status == DownloadStatus.Complete)
+            {
+                throw new ArgumentException("Already downloaded");
+            }
+
+            var tracker = GetTrackerWrapper(new Uri(chunk.TrackerUri));
+            Debug.Assert(chunk.Hash.Length == 64);
+
+            List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
+                .ToList();
+
+            if (peers.Count == 0)
+            {
+                chunk.Status = DownloadStatus.Pending;
+                Debug.Assert(false, "no peers");
+                Logger.LogWarning($"No peers found for chunk {chunk.Hash.ToBase64()}");
+                return chunk;
+            }
+
+            // for now, pick a random peer (chunk tasks are persistent and we can just add simple retries later)
+            byte[] ok = new byte[4];
+            rng.GetBytes(ok);
+            var index = BitConverter.ToInt32(ok) % peers.Count;
+            var peerClient = GetNodeClient(new Uri(peers[index]));
+            var peerCall = peerClient.GetChunk(new ChunkRequest()
+            {
+                Hash = chunk.Hash,
+                TrackerUri = tracker.GetUri().ToString(),
+                Offset = chunk.CurrentCount
+            }, null, null, token);
+
+            try
+            {
+                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                {
+                    chunk.Contents.Add(message.Response);
+                    chunk.CurrentCount += message.Response.Length;
+                    Logger.LogInformation($"Received {message.Response.Length} bytes");
+                    await Downloads.UpdateFileProgressAsync(chunk.FileHash, message.Response.Length);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
+            }
+
+            if (chunk.CurrentCount == chunk.Size)
+            {
+                byte[] thing = chunk.Contents.SelectMany(chunk => chunk.ToArray()).ToArray();
+                var testHash = HashUtils.GetHash(thing.ToArray());
+
+                if (chunk.Hash != testHash)
+                {
+                    Logger.LogError($"Hash mismatch for chunk {chunk.Hash.ToBase64()}");
+                    chunk.Contents.Clear();
+                    await Downloads.UpdateFileProgressAsync(chunk.FileHash, -chunk.CurrentCount);
+                    chunk.CurrentCount = 0;
+                }
+                else
+                {
+                    using var stream = new FileStream
+                    (
+                        chunk.DestinationDir,
+                        FileMode.OpenOrCreate,
+                        FileAccess.Write,
+                        FileShare.ReadWrite,
+                        bufferSize: 4096,
+                        FileOptions.Asynchronous |
+                        FileOptions.WriteThrough
+                    );
+
+                    await RandomAccess.WriteAsync(stream.SafeFileHandle, thing, chunk.Offset, CancellationToken.None);
+
+                    await GetTrackerWrapper(new Uri(chunk.TrackerUri))
+                        .MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
+
+                    chunk.Status = DownloadStatus.Complete;
+                }
+            }
+            else
+            {
+                chunk.Status = DownloadStatus.Paused;
+            }
+
+            return chunk;
+        }
+
+
+        public async Task<(ObjectWithHash[] objects, ByteString rootHash)> AddObjectFromDiskAsync(string path, int chunkSize)
+        {
+            ObjectWithHash[] objects = [];
+            ByteString rootHash = ByteString.Empty;
+            if (System.IO.File.Exists(path))
+            {
+                var obj = FilesystemUtils.GetFileObject(path, chunkSize);
+                rootHash = HashUtils.GetHash(obj);
+                objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
+            }
+
+            if (System.IO.Directory.Exists(path))
+            {
+                List<ObjectWithHash> dirObjects = [];
+                List<(ByteString, string)> paths = [];
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
+                {
+                    dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
+                    paths.Add((hash, path));
+                });
+
+                foreach (var (hash, p) in paths)
+                {
+                    await PathByHash.SetAsync(hash, p);
+                }
+
+                objects = dirObjects.ToArray();
+            }
+
+            return (objects, rootHash);
+        }
+
+        public void RevealFile(string path)
+        {
+            Process.Start("explorer.exe", path);
+        }
+
+        public ITrackerWrapper GetTrackerWrapper(Uri trackerUri)
+        {
+            ArgumentNullException.ThrowIfNull(trackerUri);
+            var client = GetTrackerClient(trackerUri);
+            return new TrackerWrapper(client, trackerUri);
         }
 
         public TrackerClient GetTrackerClient(Uri uri, GrpcChannelOptions? options = null)
