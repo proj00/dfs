@@ -371,6 +371,10 @@ namespace node
                     var e = fileTokens[file.Hash].PauseEvent;
                     await e.WaitAsync(token);
                 }
+                else
+                {
+                    return;
+                }
             }
             catch (OperationCanceledException e)
             {

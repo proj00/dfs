@@ -272,16 +272,16 @@ namespace unit_tests.node
                 });
                 await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
 
-                using (var source = new CancellationTokenSource(2000))
+                // no need to pause for almost-done downloads :)
+                if (downloadTime != 10)
                 {
-                    try
+                    using (var source = new CancellationTokenSource(2000))
                     {
-                        await manager.PauseDownloadAsync(obj, source.Token);
-                    }
-                    catch (OperationCanceledException e)
-                    {
-                        // swallow pause cancellation for not-so-complete tasks
-                        if (downloadTime != 10)
+                        try
+                        {
+                            await manager.PauseDownloadAsync(obj, source.Token);
+                        }
+                        catch (OperationCanceledException e)
                         {
                             TestContext.Error.WriteLine(e);
                             throw;
