@@ -237,7 +237,6 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(60000)]
-        [Ignore("hi")]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
@@ -292,7 +291,6 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(80000)]
-        [Ignore("hi")]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
