@@ -41,3 +41,10 @@ export const handleShare = async (folder: Folder) => {
   await new Promise((resolve) => setTimeout(resolve, 900));
   log.info(`Folder ${folder.name} shared successfully`);
 };
+
+export const handleCopy = async (item: File | Folder) => {
+  log.info(`Copying: ${item.name} (${item.id})`);
+  // Simulate async copy operation
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  log.info(`${item.name} copied successfully`);
+};

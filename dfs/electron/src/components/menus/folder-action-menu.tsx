@@ -19,6 +19,10 @@ interface FolderActionMenuProps {
     folder: Folder,
     e: React.MouseEvent,
   ) => Promise<void> | void;
+  readonly onCopyClick?: (
+    folder: Folder,
+    e: React.MouseEvent
+  ) => Promise<void> | void
   readonly onMoveClick?: (
     folder: Folder,
     e: React.MouseEvent,
@@ -33,6 +37,7 @@ export function FolderActionMenu({
   folder,
   onRenameClick,
   onMoveClick,
+  onCopyClick,
   onDeleteClick,
 }: FolderActionMenuProps) {
   return (
@@ -68,6 +73,14 @@ export function FolderActionMenu({
           }}
         >
           Move to
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={async (e) => {
+            e.stopPropagation()
+            if (onCopyClick) await onCopyClick(folder, e)
+          }}
+        >
+          Make a copy
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive"

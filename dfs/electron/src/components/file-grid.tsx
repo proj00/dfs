@@ -12,7 +12,8 @@ import { useState } from "react"
 import { MoveDialog } from "./move-dialog"
 import { RenameDialog } from "./rename-dialog"
 import { DeleteDialog } from "./delete-dialog"
-import { handleMove, handleRename, handleDelete } from "../lib/file-handlers"
+import { CopyDialog } from "./copy-dialog"
+import { handleMove, handleRename, handleDelete, handleCopy } from "../lib/file-handlers"
 
 interface FileGridProps {
   readonly files: File[];
@@ -33,10 +34,12 @@ export function FileGrid({
 }: FileGridProps) {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToMove, setItemToMove] = useState<File | Folder | null>(null)
   const [itemToRename, setItemToRename] = useState<File | Folder | null>(null)
   const [itemToDelete, setItemToDelete] = useState<File | Folder | null>(null)
+  const [itemToCopy, setItemToCopy] = useState<File | Folder | null>(null)
 
   const existingNames = [...files.map((file) => file.name), ...folders.map((folder) => folder.name)]
 
@@ -54,6 +57,11 @@ export function FileGrid({
     setItemToDelete(item)
     setDeleteDialogOpen(true)
   }
+
+  const handleCopyClick = (item: File | Folder) => {
+    setItemToCopy(item)
+    setCopyDialogOpen(true)
+  }
   return (
     <div className="space-y-4">
       <MoveDialog
@@ -68,6 +76,14 @@ export function FileGrid({
         onOpenChange={setRenameDialogOpen}
         item={itemToRename}
         onRename={handleRename}
+        existingNames={existingNames}
+      />
+      <CopyDialog
+        open={copyDialogOpen}
+        onOpenChange={setCopyDialogOpen}
+        item={itemToCopy}
+        folders={folders}
+        onCopy={handleCopy}
         existingNames={existingNames}
       />
       <DeleteDialog
@@ -147,6 +163,7 @@ export function FileGrid({
                   folder={folder}
                   onRenameClick={() => handleRenameClick(folder)}
                   onMoveClick={() => handleMoveClick(folder)}
+                  onCopyClick={() => handleCopyClick(folder)}
                   onDeleteClick={() => handleDeleteClick(folder)}
                 />
               </div>
@@ -231,6 +248,7 @@ export function FileGrid({
                   onOpenClick={handleFileOpen}
                   onRenameClick={() => handleRenameClick(file)}
                   onMoveClick={() => handleMoveClick(file)}
+                  onCopyClick={() => handleCopyClick(file)}
                   onDeleteClick={() => handleDeleteClick(file)}
                 />
               </div>
