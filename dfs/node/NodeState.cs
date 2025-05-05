@@ -6,6 +6,7 @@ using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Node;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Net;
@@ -39,6 +40,7 @@ namespace node
         private readonly IFileSystem fs;
         public IAsyncIOWrapper AsyncIO { get; }
         public GrpcClientHandler ClientHandler { get; }
+        private readonly ConcurrentDictionary<string, AsyncLock> peerLocks;
 
         public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
@@ -58,13 +60,14 @@ namespace node
             this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
             this.PathHandler = new(pathByHash, startProcess);
             BlockList = new BlockListHandler(whitelist, blacklist);
+            peerLocks = new();
         }
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
             : this(new FileSystem(), channelTtl, loggerFactory, logPath,
 #pragma warning disable CA2000 // Dispose objects before losing scope
                   new FilesystemManager(dbPath),
-                  new DownloadManager(dbPath),
+                  new DownloadManager(loggerFactory, dbPath),
                 new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
@@ -118,7 +121,7 @@ namespace node
 
             List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
                 .ToList();
-
+            Logger.LogInformation($"peers: {peers.Count}");
             if (peers.Count == 0)
             {
                 chunk.Status = DownloadStatus.Pending;
@@ -139,20 +142,28 @@ namespace node
                 Offset = chunk.CurrentCount
             }, null, null, token);
 
+            long start = chunk.CurrentCount;
             try
             {
-                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                var peerLock = peerLocks.GetOrAdd(peers[index], new AsyncLock());
+                Logger.LogInformation($"pending critical for {peers[index]}");
+                using (await peerLock.LockAsync())
                 {
-                    chunk.Contents.Add(message.Response);
-                    chunk.CurrentCount += message.Response.Length;
-                    Logger.LogInformation($"Received {message.Response.Length} bytes");
-                    await Downloads.UpdateFileProgressAsync(chunk.FileHash, message.Response.Length);
+                    await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                    {
+                        chunk.Contents.Add(message.Response);
+                        chunk.CurrentCount += message.Response.Length;
+                        Logger.LogInformation($"Received {message.Response.Length} bytes");
+                    }
                 }
+                Logger.LogInformation("chunk stream finished");
             }
             catch (Exception e)
             {
                 Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
             }
+            Logger.LogInformation($"reporting progress: {chunk.CurrentCount - start}");
+            await Downloads.UpdateFileProgressAsync(chunk.FileHash, chunk.CurrentCount - start);
 
             if (chunk.CurrentCount == chunk.Size)
             {

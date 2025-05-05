@@ -6,6 +6,7 @@ using Org.BouncyCastle.Tls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,20 @@ namespace node
         }
 
         public override async Task GetChunk(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
+        {
+            state.Logger.LogInformation($"request: {JsonFormatter.Default.Format(request, 0)}");
+            try
+            {
+                await HandleChunkRequestAsync(request, responseStream, context);
+            }
+            catch (Exception e)
+            {
+                state.Logger.LogError(e, "transfer failed");
+                throw new RpcException(Status.DefaultCancelled, e.Message);
+            }
+        }
+
+        private async Task HandleChunkRequestAsync(ChunkRequest request, IServerStreamWriter<ChunkResponse> responseStream, ServerCallContext context)
         {
             if (await state.BlockList.IsInBlockListAsync(new Uri(context.Peer)))
             {
@@ -45,11 +60,12 @@ namespace node
             var chunkIndex = parentObj.File.Hashes.Hash.IndexOf(request.Hash);
             var offset = chunkIndex * size + request.Offset;
             var remainingSize = size - request.Offset;
+            state.Logger.LogInformation($"Peer {context.Peer} wants {remainingSize} bytes");
 
             var buffer = new byte[remainingSize];
             long total = await state.AsyncIO.ReadBufferAsync(await state.PathHandler.GetPathAsync(parentHash), buffer, offset, context.CancellationToken);
 
-            var subchunk = GetSubchunkSize(size, 1, Constants.maxChunkSize, Constants.maxChunkSize / 16, Constants.maxChunkSize);
+            var subchunk = GetSubchunkSize(size, Constants.maxChunkSize / 16, Constants.maxChunkSize, 64 * 1024, 256 * 1024);
             var used = 0;
 
             for (int i = 0; i < total; i += subchunk)
@@ -60,16 +76,21 @@ namespace node
                 await responseStream.WriteAsync(new ChunkResponse()
                 {
                     Response = res
-                }, context.CancellationToken);
+                });
 
                 state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
                 if (context.CancellationToken.IsCancellationRequested)
                 {
+                    state.Logger.LogInformation($"Request was cancelled");
                     break;
                 }
             }
+            state.Logger.LogInformation($"Sent a total of {used} bytes to {context.Peer}");
+
             var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
-            await tracker.ReportDataUsage(true, used, CancellationToken.None);
+
+            // don't await this, we can report whenever
+            _ = tracker.ReportDataUsage(true, used, CancellationToken.None);
         }
 
         private static int GetSubchunkSize(

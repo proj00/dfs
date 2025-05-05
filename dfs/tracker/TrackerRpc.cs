@@ -16,7 +16,7 @@ namespace tracker
     public class TrackerRpc : Tracker.Tracker.TrackerBase, IDisposable
     {
         private readonly FilesystemManager _filesystemManager;
-        private readonly ConcurrentDictionary<string, List<string>> _peers = new();
+        private readonly ConcurrentDictionary<string, HashSet<string>> _peers = new();
         private readonly IPersistentCache<string, DataUsage> dataUsage;
         private readonly ILogger logger;
         private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
@@ -125,7 +125,7 @@ namespace tracker
                     foreach (var req in request.Hash)
                     {
                         string hashBase64 = req.ToBase64();
-                        if (_peers.TryGetValue(hashBase64, out List<string>? value))
+                        if (_peers.TryGetValue(hashBase64, out HashSet<string>? value))
                         {
                             value.Add(request.Peer);
                         }

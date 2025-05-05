@@ -25,7 +25,7 @@ namespace node
         static async Task Main(string[] args)
         {
 #if DEBUG
-            LogLevel level = LogLevel.Trace;
+            LogLevel level = LogLevel.Debug;
 #else
             LogLevel level = LogLevel.Information;
 #endif
@@ -176,12 +176,12 @@ namespace node
 #if !DEBUG
                         if (!IsAncestor(parentPid, clientPid))
                         {
-                            Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
+                            loggerFactory.CreateLogger("init").LogError($"Unauthorized PID: {clientPid}. Disconnecting.");
                             await stream.DisposeAsync(); // forcefully disconnect
                         }
                         else
                         {
-                            Console.WriteLine($"Authorized PID: {clientPid}");
+                            loggerFactory.CreateLogger("init").LogInformation($"Authorized PID: {clientPid}");
                         }
 #endif
                             }

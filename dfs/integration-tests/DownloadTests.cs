@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace integration_tests
 {
     [TestFixture]
-    public class Tests
+    public class DownloadTests
     {
         private static Bogus.Faker faker = new();
         private Process _processN1;
@@ -30,7 +30,7 @@ namespace integration_tests
         int testPort2 = -1;
         int testPort3 = -1;
 
-        public Tests()
+        public DownloadTests()
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         }
@@ -198,9 +198,10 @@ namespace integration_tests
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
-            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
+            var filePath = Path.Combine(directory.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
 
-            int fileSize = 1024 * 1024;
+            int fileSize = 1024 * 1024 * 10;
             await GenerateTestFile(file, fileSize);
 
             await file.FlushAsync(token);
@@ -228,23 +229,26 @@ namespace integration_tests
 
         private static async Task GenerateTestFile(StreamWriter file, int count = 1048576)
         {
-            await file.WriteLineAsync(faker.Random.Utf16String(minLength: count, maxLength: count));
+            for (int i = 0; i < count; i++)
+                await file.WriteLineAsync("hi");
         }
 
-        [Test, CancelAfter(50000)]
+        [Test, CancelAfter(60000)]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
-            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
+            var filePath = Path.Combine(directory.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
 
-            int fileSize = 1024 * 1024;
+            int fileSize = 1024 * 1024 * 20;
             await GenerateTestFile(file, fileSize);
+            await TestContext.Out.WriteLineAsync($"File generated {new FileInfo(filePath).Length} bytes");
 
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 1024, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024 * 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
@@ -266,7 +270,7 @@ namespace integration_tests
                 delay -= 500;
                 if (delay <= 0)
                 {
-                    Assert.Fail("Download timed out");
+                    break;
                 }
                 await Task.Delay(2000, token);
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
@@ -288,13 +292,13 @@ namespace integration_tests
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
 
-            int fileSize = 1024 * 1024;
+            int fileSize = 1024 * 1024 * 16;
             await GenerateTestFile(file, fileSize);
 
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 10, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);

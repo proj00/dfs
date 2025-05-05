@@ -12,7 +12,7 @@ namespace tracker
     internal class Program
     {
 #if DEBUG
-        private static LogLevel level = LogLevel.Trace;
+        private static LogLevel level = LogLevel.Debug;
 #else
         private static LogLevel level = LogLevel.Information;
 #endif

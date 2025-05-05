@@ -3,6 +3,7 @@ using common_test;
 using Fs;
 using Google.Protobuf;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 using Moq;
 using node;
 using Node;
@@ -23,15 +24,24 @@ namespace unit_tests.node
         Mock<IPersistentCache<ByteString, Ui.Progress>> progress = new();
         Mock<IPersistentCache<ByteString, Node.FileChunk>> chunks = new();
         private static Bogus.Faker faker = new();
-
+        private ILogger logger;
+        private ILoggerFactory factory;
         [SetUp]
         public void Setup()
         {
+            factory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .AddConsole()
+                    .SetMinimumLevel(LogLevel.Debug);
+            });
+            logger = factory.CreateLogger("test");
         }
 
         [TearDown]
         public void TearDown()
         {
+            factory.Dispose();
             progress.Reset();
             chunks.Reset();
         }
@@ -45,12 +55,12 @@ namespace unit_tests.node
             if (path == null)
                 Assert.Throws<ArgumentNullException>(() => new DownloadManager(path, 1,
                     progress.Object,
-                    chunks.Object
+                    chunks.Object, logger
                     ));
             else
                 Assert.Throws<ArgumentException>(() => new DownloadManager(path, 1,
                     progress.Object,
-                    chunks.Object
+                    chunks.Object, logger
                     ));
         }
 
@@ -61,7 +71,7 @@ namespace unit_tests.node
         {
             Assert.Throws<ArgumentOutOfRangeException>(() => new DownloadManager("dir", capacity,
                 progress.Object,
-                chunks.Object
+                chunks.Object, logger
                     ));
         }
 
@@ -73,7 +83,7 @@ namespace unit_tests.node
                 "dir",
                 1,
                 progress.Object,
-                chunks.Object
+                chunks.Object, logger
                 ));
         }
 
@@ -97,7 +107,7 @@ namespace unit_tests.node
                 }).Returns(Task.CompletedTask);
 
             // act
-            await using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object))
+            await using (var manager = new DownloadManager("path", 20000, progress.Object, chunks.Object, logger))
             {
                 manager.AddChunkUpdateCallback(async (chunk, token) =>
                 {
@@ -152,7 +162,7 @@ namespace unit_tests.node
             int good = 0;
             int canceled = 0;
             // act
-            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
+            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object, logger))
             {
                 manager.AddChunkUpdateCallback(async (chunk, token) =>
                 {
@@ -200,13 +210,12 @@ namespace unit_tests.node
 
         [Test]
         [NonParallelizable]
-        [TestCase(1500), Category("Slow")]
         [TestCase(100)]
         [TestCase(10)]
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
         {
             // arrange
-            var obj = GenerateObject();
+            var obj = GenerateObject(true);
             ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
 
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
@@ -250,7 +259,7 @@ namespace unit_tests.node
             int good = 0;
             int canceled = 0;
             // act
-            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object))
+            await using (var manager = new DownloadManager("path", 200000, progress.Object, chunks.Object, logger))
             {
                 manager.AddChunkUpdateCallback(async (chunk, token) =>
                 {
@@ -259,6 +268,7 @@ namespace unit_tests.node
                     try
                     {
                         await Task.Delay(downloadTime, token);
+                        await manager.UpdateFileProgressAsync(ByteString.Empty, 1);
                         chunk.Status = DownloadStatus.Complete;
                     }
                     catch
@@ -266,27 +276,22 @@ namespace unit_tests.node
                         Interlocked.Increment(ref canceled);
                         throw;
                     }
-                    await manager.UpdateFileProgressAsync(ByteString.Empty, 1);
                     return chunk;
                 });
                 await manager.AddNewFileAsync(obj, new Uri(faker.Internet.Url()), faker.System.DirectoryPath());
-
-                // no need to pause for almost-done downloads :)
-                if (downloadTime != 10)
+                using (var source = new CancellationTokenSource(2000))
                 {
-                    using (var source = new CancellationTokenSource(2000))
+                    try
                     {
-                        try
-                        {
-                            await manager.PauseDownloadAsync(obj, source.Token);
-                        }
-                        catch (OperationCanceledException e)
-                        {
-                            TestContext.Error.WriteLine(e);
-                            throw;
-                        }
+                        await manager.PauseDownloadAsync(obj, source.Token);
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        TestContext.Error.WriteLine(e);
+                        throw;
                     }
                 }
+
                 using (var source = new CancellationTokenSource(2000))
                 {
                     try
@@ -308,20 +313,13 @@ namespace unit_tests.node
 
             progress.Verify(self => self.SetAsync(obj.Hash, new() { Current = 0, Total = obj.Object.File.Size }), Times.Once());
             Assert.That(p.Current, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+            TestContext.Out.WriteLine($"canceled: {canceled}, good {good}, completed {completed}");
 
-            if (downloadTime >= 1000)
-            {
-                // did we cancel the download after pausing?
-                Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
+            // did we cancel the download after pausing?
+            Assert.That(canceled, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
 
-                // did we start all downloads (after a file was added and after the file download was resumed)?
-                Assert.That(good, Is.EqualTo(2 * obj.Object.File.Hashes.Hash.Count));
-            }
-            else
-            {
-                // did we start all downloads?
-                Assert.That(good, Is.AtLeast(obj.Object.File.Hashes.Hash.Count));
-            }
+            // did we start all downloads (after a file was added and after the file download was resumed)?
+            Assert.That(good, Is.EqualTo(2 * obj.Object.File.Hashes.Hash.Count));
 
             // did we complete the download after resuming?
             Assert.That(completed, Is.EqualTo(obj.Object.File.Hashes.Hash.Count));
@@ -332,7 +330,7 @@ namespace unit_tests.node
 
         private static ObjectWithHash GenerateObject(bool big = true)
         {
-            int fileSize = big ? 1048576 : 1024;
+            int fileSize = big ? 1048576 : 10 * 1024;
             var obj = new Fs.FileSystemObject()
             {
                 Name = faker.System.FileName(),
