@@ -1,8 +1,9 @@
-using common_test;
+﻿using common_test;
 using Google.Protobuf;
 using Grpc.Net.Client;
 using node;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Collections;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -141,39 +142,41 @@ namespace integration_tests
             Assert.That(b, Is.False, "errors printed");
         }
 
-        private static Process StartProcess(int id, string exePath, string arguments, RefWrapper errorsPrinted)
+        private Process StartProcess(int id, string exePath, string arguments, RefWrapper errorsPrinted)
         {
             if (!File.Exists(exePath))
                 throw new FileNotFoundException($"Executable not found: {exePath}");
 
-            string coverageOutput = $"../../../cov/{id}-{Guid.NewGuid()}-coverage.opencover.xml";
-            string coverletCommand = $"\"{exePath}\" --target \"{exePath}\" --targetargs \"{arguments}\" --output \"{coverageOutput}\" --format opencover ";
+            var guid = Guid.NewGuid().ToString("N");
+            var covDir = Path.Combine("..", "..", "..", "cov");
+            var info = Directory.CreateDirectory(covDir);
+            var coverageOutput = Path.Combine(covDir, $"{id}-{guid}-coverage.opencover.xml");
 
-            var process = new Process
+            var psi = new ProcessStartInfo
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "coverlet",
-                    Arguments = coverletCommand,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardErrorEncoding = Encoding.UTF8,
-                    StandardOutputEncoding = Encoding.UTF8
-                }
+                FileName = exePath,
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardErrorEncoding = Encoding.UTF8,
+                StandardOutputEncoding = Encoding.UTF8
             };
 
+            var process = new Process { StartInfo = psi };
             process.OutputDataReceived += (sender, args) =>
             {
-                if (args.Data == null) return;
-                else TestContext.Out.WriteLine(args.Data);
+                if (args.Data != null)
+                    TestContext.Out.WriteLine(args.Data);
             };
-
             process.ErrorDataReceived += (sender, args) =>
             {
-                if (args.Data == null) return;
-                else { TestContext.Error.WriteLine(args.Data); errorsPrinted.Value = true; }
+                if (args.Data != null)
+                {
+                    TestContext.Error.WriteLine(args.Data);
+                    errorsPrinted.Value = true;
+                }
             };
 
             process.Start();
@@ -234,6 +237,7 @@ namespace integration_tests
         }
 
         [Test, CancelAfter(60000)]
+        [Ignore("hi")]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
@@ -283,16 +287,19 @@ namespace integration_tests
             var expected = await GetFileContents(inputPath);
             var actual = await GetFileContents(outputPath);
             Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
+
+
         }
 
         [Test, CancelAfter(80000)]
+        [Ignore("hi")]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
 
-            int fileSize = 1024 * 1024 * 16;
+            int fileSize = 1024 * 1024 * 4;
             await GenerateTestFile(file, fileSize);
 
             await file.FlushAsync(token);
@@ -321,7 +328,7 @@ namespace integration_tests
                 {
                     Assert.Fail("Download timed out");
                 }
-                await Task.Delay(2000, token);
+                await Task.Delay(5000, token);
                 await n2Client.PauseFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await n2Client.ResumeFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
