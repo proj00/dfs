@@ -21,11 +21,11 @@ export const handleRename = async (item: File | Folder) => {
   log.info(`${item.name} renamed successfully`);
 };
 
-export const handleMove = async (item: File | Folder) => {
-  log.info(`Moving: ${item.name} to a new location`);
+export const handleMove = async (item: File | Folder, destinationFolderId: string | null) => {
+  console.log(`Moving: ${item.name} to ${destinationFolderId ? `folder ${destinationFolderId}` : "a new location"}`)
   // Simulate async move operation
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  log.info(`${item.name} moved successfully`);
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+  console.log(`${item.name} moved successfully`)
 };
 
 export const handleDelete = async (item: File | Folder) => {
