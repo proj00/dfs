@@ -122,12 +122,11 @@ app.on("before-quit", async () => {
   backendProcess = undefined;
 });
 
-ipcMain.handle(
-  "write-clipboard",
-  (_event: Electron.IpcMainInvokeEvent, args: any[]) => {
-    clipboard.writeText(args[0]);
-  },
-);
+ipcMain.handle("write-clipboard", (_event, text: string) => {
+  if (typeof text === "string") {
+    clipboard.writeText(text);
+  }
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
