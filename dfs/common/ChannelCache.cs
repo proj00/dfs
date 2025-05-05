@@ -9,13 +9,15 @@ using System.Threading.Tasks;
 
 namespace common
 {
+    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, GrpcChannel>;
     public sealed class ChannelCache : IDisposable
     {
         private readonly MemoryCache cache;
         private readonly TimeSpan timeToLive;
-
-        public ChannelCache(TimeSpan timeToLive)
+        private readonly GrpcChannelFactory createChannel;
+        public ChannelCache(TimeSpan timeToLive, GrpcChannelFactory createChannel)
         {
+            this.createChannel = createChannel;
             cache = new MemoryCache(new MemoryCacheOptions());
             this.timeToLive = timeToLive;
         }
@@ -30,7 +32,7 @@ namespace common
             return cache.GetOrCreate(uri, entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = timeToLive;
-                return GrpcChannel.ForAddress(uri, options ?? new GrpcChannelOptions());
+                return createChannel(uri, options ?? new GrpcChannelOptions());
             }) ?? throw new ArgumentException("Failed to fetch channel from cache");
         }
     }

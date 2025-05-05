@@ -5,9 +5,9 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Node;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,7 +19,9 @@ using static Ui.Ui;
 
 namespace node
 {
-    public class NodeState : IDisposable
+    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, GrpcChannel>;
+
+    public partial class NodeState : IDisposable
     {
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public IPersistentCache<ByteString, string> PathByHash { get; }
@@ -37,28 +39,33 @@ namespace node
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool disposedValue;
         public TransactionManager TransactionManager { get; } = new();
+        private readonly IFileSystem fs;
+        private readonly IAsyncIOWrapper io;
 
-        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
+        public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
             IPersistentCache<ByteString, string> pathByHash,
             IPersistentCache<string, string> whitelist,
-            IPersistentCache<string, string> blacklist)
+            IPersistentCache<string, string> blacklist,
+            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io)
         {
+            this.fs = fs;
+            this.io = io;
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
             LogPath = logPath;
             Manager = manager;
             Downloads = downloads;
 
-            NodeChannel = new ChannelCache(channelTtl);
-            TrackerChannel = new ChannelCache(channelTtl);
+            NodeChannel = new ChannelCache(channelTtl, grpcChannelFactory);
+            TrackerChannel = new ChannelCache(channelTtl, grpcChannelFactory);
             this.PathByHash = pathByHash;
             this.Whitelist = whitelist;
             this.Blacklist = blacklist;
         }
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
-            : this(channelTtl, loggerFactory, logPath, new FilesystemManager(dbPath), new DownloadManager(dbPath),
+            : this(new FileSystem(), channelTtl, loggerFactory, logPath, new FilesystemManager(dbPath), new DownloadManager(dbPath),
                 new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
@@ -71,32 +78,10 @@ namespace node
                 System.IO.Path.Combine(dbPath, "Blacklist"),
                 new StringSerializer(),
                 new StringSerializer()
-            ))
+            ), GrpcChannel.ForAddress, new AsyncIOWrapper())
         { }
 
-        public async Task<long> ReadContentsAsync(string path, byte[] buffer, long offset, CancellationToken token)
-        {
-            using var stream = new FileStream
-                    (
-                        path,
-                        FileMode.Open,
-                        FileAccess.Read,
-                        FileShare.ReadWrite,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous |
-                        FileOptions.WriteThrough
-                    );
-
-            return await RandomAccess.ReadAsync
-                (
-                stream.SafeFileHandle,
-                buffer.AsMemory(),
-                offset,
-                token
-                );
-        }
-
-        public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
+        private NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
         {
             if (options == null)
             {
@@ -118,7 +103,7 @@ namespace node
 
         public async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
         {
-            if (!System.IO.Directory.Exists(destinationDir))
+            if (!fs.Directory.Exists(destinationDir))
             {
                 throw new ArgumentException($"Invalid destination directory: path {destinationDir} doesn't exist");
             }
@@ -133,7 +118,7 @@ namespace node
             foreach (var file in fileTasks)
             {
                 var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(file.Hash.ToByteArray());
-                System.IO.Directory.CreateDirectory(dir);
+                fs.Directory.CreateDirectory(dir);
                 await Downloads.AddNewFileAsync(file, tracker.GetUri(), dir);
             }
         }
@@ -200,18 +185,7 @@ namespace node
                 }
                 else
                 {
-                    using var stream = new FileStream
-                    (
-                        chunk.DestinationDir,
-                        FileMode.OpenOrCreate,
-                        FileAccess.Write,
-                        FileShare.ReadWrite,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous |
-                        FileOptions.WriteThrough
-                    );
-
-                    await RandomAccess.WriteAsync(stream.SafeFileHandle, thing, chunk.Offset, CancellationToken.None);
+                    await io.WriteBufferAsync(chunk.DestinationDir, thing, chunk.Offset);
 
                     await GetTrackerWrapper(new Uri(chunk.TrackerUri))
                         .MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
@@ -227,23 +201,22 @@ namespace node
             return chunk;
         }
 
-
         public async Task<(ObjectWithHash[] objects, ByteString rootHash)> AddObjectFromDiskAsync(string path, int chunkSize)
         {
             ObjectWithHash[] objects = [];
             ByteString rootHash = ByteString.Empty;
-            if (System.IO.File.Exists(path))
+            if (fs.File.Exists(path))
             {
-                var obj = FilesystemUtils.GetFileObject(path, chunkSize);
+                var obj = FilesystemUtils.GetFileObject(fs, path, chunkSize);
                 rootHash = HashUtils.GetHash(obj);
                 objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
             }
 
-            if (System.IO.Directory.Exists(path))
+            if (fs.Directory.Exists(path))
             {
                 List<ObjectWithHash> dirObjects = [];
                 List<(ByteString, string)> paths = [];
-                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(fs, path, chunkSize, (hash, path, obj) =>
                 {
                     dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
                     paths.Add((hash, path));

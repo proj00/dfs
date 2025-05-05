@@ -1,13 +1,12 @@
 ﻿using Fs;
 using Google.Protobuf;
-using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Tracker;
@@ -16,11 +15,12 @@ namespace common
 {
     public static partial class FilesystemUtils
     {
-        public static Fs.FileSystemObject GetFileObject(string path, int chunkSize)
+        public static Fs.FileSystemObject GetFileObject(IFileSystem fs, string path, int chunkSize)
         {
-            Debug.Assert(System.IO.File.Exists(path), $"file not found: {path}");
+            ArgumentNullException.ThrowIfNull(fs);
+            Debug.Assert(fs.File.Exists(path), $"file not found: {path}");
 
-            var info = new FileInfo(path);
+            var info = fs.FileInfo.New(path);
 
             var obj = new Fs.FileSystemObject
             {
@@ -32,7 +32,7 @@ namespace common
             obj.File.Size = info.Length;
             obj.File.Hashes.ChunkSize = chunkSize;
 
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = fs.FileStream.New(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var buffer = new byte[chunkSize];
             long chunkCount = obj.File.Size / chunkSize;
             chunkCount += obj.File.Size % chunkSize == 0 ? 0 : 1;
@@ -52,23 +52,24 @@ namespace common
             return obj;
         }
 
-        public static string? GetLinkTarget(string path)
+        public static string? GetLinkTarget(string path,
+            INativeMethods nativeMethods)
         {
-            using var handle = CreateFile(path, 0, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero, FileMode.Open, FileAttributes.None, IntPtr.Zero);
+            ArgumentNullException.ThrowIfNull(nativeMethods);
+            using var handle = nativeMethods.GetFileHandle(path);
             if (handle.IsInvalid)
             {
                 return null;
             }
 
-            var buffer = new byte[1024];
-            int returned = 0;
-            if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, IntPtr.Zero, 0, buffer, buffer.Length, out returned, IntPtr.Zero))
+            byte[]? buffer = nativeMethods.GetReparsePoint(handle);
+            if (buffer == null)
             {
                 return null;
             }
 
             int tag = BitConverter.ToInt32(buffer, 0);
-            if (tag != IO_REPARSE_TAG_SYMLINK)
+            if (tag != INativeMethods.IO_REPARSE_TAG_SYMLINK)
             {
                 return null;
             }
@@ -90,7 +91,7 @@ namespace common
             var obj = new Fs.FileSystemObject();
             obj.Name = Path.GetFileName(path);
 
-            var target = GetLinkTarget(path);
+            var target = GetLinkTarget(path, new NativeMethods());
             if (target == null)
             {
                 throw new FileNotFoundException("GetLinkObject didn't receive symlink");
@@ -181,20 +182,24 @@ namespace common
             return h.Hash;
         }
 
-        public static ByteString GetRecursiveDirectoryObject(string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
+        public static ByteString GetRecursiveDirectoryObject(IFileSystem fs, string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
         {
+            ArgumentNullException.ThrowIfNull(fs);
             void Add(ByteString hash, string path, Fs.FileSystemObject obj)
             {
                 appendHashPathObj(hash, path, obj);
             }
 
-            ObjectWithHash GetInternal(DirectoryInfo info)
+            ObjectWithHash GetInternal(IDirectoryInfo info)
             {
                 List<ObjectWithHash> children = [];
 
                 foreach (var file in info.GetFiles())
                 {
-                    var obj = GetLinkTarget(file.FullName) == null ? GetFileObject(file.FullName, chunkSize) : GetLinkObject(file.FullName);
+                    var obj = GetLinkTarget(file.FullName, new NativeMethods()) == null
+                        ? GetFileObject(fs, file.FullName, chunkSize)
+                        : GetLinkObject(file.FullName);
+
                     var hash = HashUtils.GetHash(obj);
 
                     children.Add(new ObjectWithHash { Hash = hash, Object = obj });
@@ -203,7 +208,7 @@ namespace common
 
                 foreach (var dir in info.GetDirectories())
                 {
-                    if (GetLinkTarget(dir.FullName) != null)
+                    if (GetLinkTarget(dir.FullName, new NativeMethods()) != null)
                     {
                         var obj = GetLinkObject(dir.FullName);
                         var hash = HashUtils.GetHash(obj);
@@ -226,34 +231,7 @@ namespace common
                 return new ObjectWithHash { Hash = currentHash, Object = current };
             }
 
-            return GetInternal(new DirectoryInfo(path)).Hash;
+            return GetInternal(fs.DirectoryInfo.New(path)).Hash;
         }
-
-        private const int FSCTL_GET_REPARSE_POINT = 0x000900A8;
-        private const int IO_REPARSE_TAG_SYMLINK = unchecked((int)0xA000000C);
-
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern SafeFileHandle CreateFile(
-            string lpFileName,
-            int dwDesiredAccess,
-            FileShare dwShareMode,
-            IntPtr lpSecurityAttributes,
-            FileMode dwCreationDisposition,
-            FileAttributes dwFlagsAndAttributes,
-            IntPtr hTemplateFile);
-
-        [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool DeviceIoControl(
-            SafeFileHandle hDevice,
-            int dwIoControlCode,
-            IntPtr lpInBuffer,
-            int nInBufferSize,
-            byte[] lpOutBuffer,
-            int nOutBufferSize,
-            out int lpBytesReturned,
-            IntPtr lpOverlapped);
     }
 }
