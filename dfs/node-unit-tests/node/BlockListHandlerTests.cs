@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace unit_tests.node
 {
-    class NodeStateTests
+    class BlockListHandlerTests
     {
         private static Bogus.Faker faker = new();
         private MockPersistentCache<string, string> whitelist = new();
@@ -41,20 +41,7 @@ namespace unit_tests.node
         [Combinatorial]
         public async Task TestBlockListInsertionAsync([Values] bool inWhitelist)
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -74,20 +61,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_BothEmptyAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
         }
@@ -95,20 +69,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_PassWhitelistAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -124,20 +85,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_PassBlocklistAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -153,20 +101,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_PassAllAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -190,20 +125,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_DontPassWhitelistAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -220,20 +142,7 @@ namespace unit_tests.node
         [Combinatorial]
         public async Task TestIsInBlockList_DontPassBlacklistAsync([Values] bool useWhitelist)
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -257,20 +166,7 @@ namespace unit_tests.node
         [Test]
         public async Task TestIsInBlockList_InvalidUrlAsync()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -288,20 +184,7 @@ namespace unit_tests.node
         [Combinatorial]
         public async Task TestBlockListRemovalAsync([Values] bool inWhitelist)
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Ui.BlockListRequest request = new()
             {
@@ -328,20 +211,7 @@ namespace unit_tests.node
         [Test]
         public void TestBlockListInvalidInsert()
         {
-            using var state = new NodeState
-            (
-                new Mock<IFileSystem>().Object,
-                new TimeSpan(),
-                new Mock<ILoggerFactory>().Object,
-                "",
-                new Mock<IFilesystemManager>().Object,
-                new Mock<IDownloadManager>().Object,
-                new Mock<IPersistentCache<ByteString, string>>().Object,
-                whitelist,
-                blacklist,
-                GrpcChannel.ForAddress,
-                new Mock<IAsyncIOWrapper>().Object
-            );
+            using var state = new BlockListHandler(whitelist, blacklist);
 
             Assert.ThrowsAsync<FormatException>(async () => await state.FixBlockListAsync(new()
             {

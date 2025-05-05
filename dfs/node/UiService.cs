@@ -195,13 +195,13 @@ namespace node
 
         public override async Task<RpcCommon.Empty> ModifyBlockListEntry(BlockListRequest request, ServerCallContext context)
         {
-            await state.FixBlockListAsync(request);
+            await state.BlockList.FixBlockListAsync(request);
             return new RpcCommon.Empty();
         }
 
         public override async Task<BlockListResponse> GetBlockList(RpcCommon.Empty request, ServerCallContext context)
         {
-            return await state.GetBlockListAsync();
+            return await state.BlockList.GetBlockListAsync();
         }
 
         public override async Task<RpcCommon.Empty> LogMessage(LogRequest request, ServerCallContext context)
