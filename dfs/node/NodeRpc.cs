@@ -47,7 +47,7 @@ namespace node
             var remainingSize = size - request.Offset;
 
             var buffer = new byte[remainingSize];
-            long total = await state.AsyncIO.ReadBufferAsync(await state.PathByHash.GetAsync(parentHash), buffer, offset, context.CancellationToken);
+            long total = await state.AsyncIO.ReadBufferAsync(await state.PathHandler.GetPathAsync(parentHash), buffer, offset, context.CancellationToken);
 
             var subchunk = Math.Max(1, (int)Math.Sqrt(size));
             var used = 0;

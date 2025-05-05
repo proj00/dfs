@@ -11,6 +11,7 @@ using System.IO.Abstractions;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Navigation;
 using Tracker;
 using Ui;
 using static Node.Node;
@@ -24,16 +25,14 @@ namespace node
     public partial class NodeState : IDisposable
     {
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
-        public IPersistentCache<ByteString, string> PathByHash { get; }
         public IFilesystemManager Manager { get; }
         private ChannelCache NodeChannel { get; }
         private ChannelCache TrackerChannel { get; }
         public IDownloadManager Downloads { get; }
-
         public BlockListHandler BlockList { get; }
 
         private readonly ILoggerFactory loggerFactory;
-
+        public FilePathHandler PathHandler { get; }
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
@@ -47,7 +46,7 @@ namespace node
             IPersistentCache<ByteString, string> pathByHash,
             IPersistentCache<string, string> whitelist,
             IPersistentCache<string, string> blacklist,
-            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io)
+            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io, Action<string, string> startProcess)
         {
             this.fs = fs;
             this.AsyncIO = io;
@@ -59,12 +58,15 @@ namespace node
 
             NodeChannel = new ChannelCache(channelTtl, grpcChannelFactory);
             TrackerChannel = new ChannelCache(channelTtl, grpcChannelFactory);
-            this.PathByHash = pathByHash;
+            this.PathHandler = new(pathByHash, startProcess);
             BlockList = new BlockListHandler(whitelist, blacklist);
         }
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
-            : this(new FileSystem(), channelTtl, loggerFactory, logPath, new FilesystemManager(dbPath), new DownloadManager(dbPath),
+            : this(new FileSystem(), channelTtl, loggerFactory, logPath,
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                  new FilesystemManager(dbPath),
+                  new DownloadManager(dbPath),
                 new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
@@ -77,7 +79,11 @@ namespace node
                 System.IO.Path.Combine(dbPath, "Blacklist"),
                 new StringSerializer(),
                 new StringSerializer()
-            ), GrpcChannel.ForAddress, new AsyncIOWrapper())
+            ),
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                GrpcChannel.ForAddress,
+                new AsyncIOWrapper(),
+                (string name, string args) => Process.Start(name, args))
         { }
 
         private NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
@@ -92,16 +98,6 @@ namespace node
             }
             var channel = NodeChannel.GetOrCreate(uri, options);
             return new NodeClient(channel);
-        }
-
-        public async Task RevealHashAsync(ByteString hash)
-        {
-            var path = await PathByHash.GetAsync(hash);
-            if (!System.IO.Path.IsPathFullyQualified(path) || System.IO.Path.GetFullPath(path) != path)
-            {
-                throw new ArgumentException("Path contains relative directories");
-            }
-            Process.Start("explorer.exe", path);
         }
 
         public async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
@@ -227,22 +223,13 @@ namespace node
 
                 foreach (var (hash, p) in paths)
                 {
-                    await PathByHash.SetAsync(hash, p);
+                    await PathHandler.SetPathAsync(hash, p);
                 }
 
                 objects = dirObjects.ToArray();
             }
 
             return (objects, rootHash);
-        }
-
-        public void RevealFile(string path)
-        {
-            if (System.IO.Path.GetFullPath(path) != path)
-            {
-                throw new ArgumentException("Path contains relative directories");
-            }
-            Process.Start("explorer.exe", path);
         }
 
         public ITrackerWrapper GetTrackerWrapper(Uri trackerUri)
@@ -277,7 +264,7 @@ namespace node
                     NodeChannel.Dispose();
                     TrackerChannel.Dispose();
                     Manager.Dispose();
-                    PathByHash.Dispose();
+                    PathHandler.Dispose();
                     BlockList.Dispose();
                     TransactionManager.Dispose();
                     LogPath = string.Empty;

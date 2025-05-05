@@ -39,12 +39,12 @@ namespace node
         }
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
-            return new Ui.Path { Path_ = await state.PathByHash.GetAsync(request.Data) };
+            return new Ui.Path { Path_ = await state.PathHandler.GetPathAsync(request.Data) };
         }
 
         public override async Task<RpcCommon.Empty> RevealObjectInExplorer(RpcCommon.Hash request, ServerCallContext context)
         {
-            await state.RevealHashAsync(request.Data);
+            await state.PathHandler.RevealHashAsync(request.Data);
 
             return new RpcCommon.Empty();
         }
@@ -235,7 +235,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
         {
-            state.RevealFile(state.LogPath);
+            state.PathHandler.RevealFile(state.LogPath);
             return await Task.FromResult(new RpcCommon.Empty());
         }
 
