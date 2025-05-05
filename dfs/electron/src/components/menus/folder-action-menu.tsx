@@ -27,10 +27,6 @@ interface FolderActionMenuProps {
     folder: Folder,
     e: React.MouseEvent,
   ) => Promise<void> | void;
-  readonly onShareClick?: (
-    folder: Folder,
-    e: React.MouseEvent,
-  ) => Promise<void> | void;
 }
 
 export function FolderActionMenu({
@@ -38,7 +34,6 @@ export function FolderActionMenu({
   onRenameClick,
   onMoveClick,
   onDeleteClick,
-  onShareClick,
 }: FolderActionMenuProps) {
   return (
     <DropdownMenu>
@@ -49,16 +44,6 @@ export function FolderActionMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {onShareClick && (
-          <DropdownMenuItem
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (onShareClick) await onShareClick(folder, e);
-            }}
-          >
-            Share
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem
           onClick={async (e) => {
             e.stopPropagation();

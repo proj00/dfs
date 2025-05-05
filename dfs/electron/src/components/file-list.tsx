@@ -9,7 +9,6 @@ import { FolderActionMenu } from "./menus/folder-action-menu";
 import {
   handleFileOpen,
   handleMove,
-  handleShare,
 } from "@/lib/file-handlers";
 import { useState } from "react"
 import { MoveDialog } from "./move-dialog"
@@ -162,7 +161,6 @@ export function FileList({
                   onRenameClick={() => handleRenameClick(folder)}
                   onMoveClick={() => handleMoveClick(folder)}
                   onDeleteClick={() => handleDeleteClick(folder)}
-                  onShareClick={handleShare}
                 />
               </div>
             </div>

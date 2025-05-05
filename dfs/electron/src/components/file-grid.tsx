@@ -6,7 +6,6 @@ import type { File, Folder } from "../lib/types";
 import { FileActionMenu } from "./menus/file-action-menu";
 import { FolderActionMenu } from "./menus/folder-action-menu";
 import {
-  handleShare,
   handleFileOpen,
 } from "@/lib/file-handlers";
 import { useState } from "react"
@@ -149,7 +148,6 @@ export function FileGrid({
                   onRenameClick={() => handleRenameClick(folder)}
                   onMoveClick={() => handleMoveClick(folder)}
                   onDeleteClick={() => handleDeleteClick(folder)}
-                  onShareClick={handleShare}
                 />
               </div>
             </div>
