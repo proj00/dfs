@@ -32,7 +32,7 @@ namespace common
             obj.File.Size = info.Length;
             obj.File.Hashes.ChunkSize = chunkSize;
 
-            using var stream = fs.FileStream.New(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var stream = fs.FileStream.New(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
             var buffer = new byte[chunkSize];
             long chunkCount = obj.File.Size / chunkSize;
             chunkCount += obj.File.Size % chunkSize == 0 ? 0 : 1;
@@ -89,12 +89,12 @@ namespace common
         public static Fs.FileSystemObject GetLinkObject(string path)
         {
             var obj = new Fs.FileSystemObject();
-            obj.Name = Path.GetFileName(path);
+            obj.Name = System.IO.Path.GetFileName(path);
 
             var target = GetLinkTarget(path, new NativeMethods());
             if (target == null)
             {
-                throw new FileNotFoundException("GetLinkObject didn't receive symlink");
+                throw new System.IO.FileNotFoundException("GetLinkObject didn't receive symlink");
             }
 
             obj.Link = new();
@@ -106,7 +106,7 @@ namespace common
         {
             var obj = new Fs.FileSystemObject
             {
-                Name = Path.GetFileName(path)
+                Name = System.IO.Path.GetFileName(path)
             };
 
             obj.Directory = new Fs.Directory();

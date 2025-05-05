@@ -16,7 +16,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
+	<ItemGroup>
+		<Using Remove="System.IO" />
+	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.0-beta.114" />
     <PackageReference Include="Google.Protobuf" Version="3.30.2" />
@@ -32,6 +34,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.4" />
     <PackageReference Include="RocksDB" Version="9.10.0.55496" />
+    <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
     <PackageReference Include="System.IO.Abstractions" Version="22.0.14" />
   </ItemGroup>
 

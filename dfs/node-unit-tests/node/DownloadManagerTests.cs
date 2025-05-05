@@ -200,7 +200,7 @@ namespace unit_tests.node
 
         [Test]
         [NonParallelizable]
-        [TestCase(1500)]
+        [TestCase(1500), Category("Slow")]
         [TestCase(100)]
         [TestCase(10)]
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)

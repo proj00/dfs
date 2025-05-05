@@ -40,7 +40,7 @@ namespace node
         private bool disposedValue;
         public TransactionManager TransactionManager { get; } = new();
         private readonly IFileSystem fs;
-        private readonly IAsyncIOWrapper io;
+        public IAsyncIOWrapper AsyncIO { get; }
 
         public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
@@ -50,7 +50,7 @@ namespace node
             GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io)
         {
             this.fs = fs;
-            this.io = io;
+            this.AsyncIO = io;
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
             LogPath = logPath;
@@ -185,7 +185,7 @@ namespace node
                 }
                 else
                 {
-                    await io.WriteBufferAsync(chunk.DestinationDir, thing, chunk.Offset);
+                    await AsyncIO.WriteBufferAsync(chunk.DestinationDir, thing, chunk.Offset);
 
                     await GetTrackerWrapper(new Uri(chunk.TrackerUri))
                         .MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);

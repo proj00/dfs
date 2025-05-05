@@ -1,5 +1,6 @@
 ﻿using common;
 using Google.Protobuf;
+using Grpc.Net.Client;
 using Microsoft;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,6 +8,7 @@ using node;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -40,6 +42,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -47,7 +50,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -70,6 +75,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -77,7 +83,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Assert.That(await state.IsInBlockListAsync(new Uri("http://127.0.0.1")), Is.False);
@@ -88,6 +96,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -95,7 +104,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -114,6 +125,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -121,7 +133,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -140,6 +154,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -147,7 +162,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -174,6 +191,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -181,7 +199,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -201,6 +221,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -208,7 +229,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -235,6 +258,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -242,7 +266,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -263,6 +289,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -270,7 +297,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Ui.BlockListRequest request = new()
@@ -300,6 +329,7 @@ namespace unit_tests.node
         {
             using var state = new NodeState
             (
+                new Mock<IFileSystem>().Object,
                 new TimeSpan(),
                 new Mock<ILoggerFactory>().Object,
                 "",
@@ -307,7 +337,9 @@ namespace unit_tests.node
                 new Mock<IDownloadManager>().Object,
                 new Mock<IPersistentCache<ByteString, string>>().Object,
                 whitelist,
-                blacklist
+                blacklist,
+                GrpcChannel.ForAddress,
+                new Mock<IAsyncIOWrapper>().Object
             );
 
             Assert.ThrowsAsync<FormatException>(async () => await state.FixBlockListAsync(new()

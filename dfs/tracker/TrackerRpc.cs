@@ -29,7 +29,7 @@ namespace tracker
         {
             _filesystemManager = new FilesystemManager(dbPath);
             dataUsage = new PersistentCache<string, DataUsage>(
-                Path.Combine(_filesystemManager.DbPath, "DataUsage"),
+                System.IO.Path.Combine(_filesystemManager.DbPath, "DataUsage"),
                 new StringSerializer(),
                 new Serializer<DataUsage>()
             );

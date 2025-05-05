@@ -5,13 +5,20 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace tracker
 {
     internal class Program
     {
+#if DEBUG
+        private static LogLevel level = LogLevel.Trace;
+#else
+        private static LogLevel level = LogLevel.Information;
+#endif
         static async Task Main(string[] args)
         {
+
             using CancellationTokenSource source = new();
             using var handler = PosixSignalRegistration.Create(PosixSignal.SIGQUIT, _ =>
             {
@@ -19,7 +26,7 @@ namespace tracker
             });
 
             AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
-            (string _, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs");
+            (string _, ILoggerFactory loggerFactory) = InternalLogger.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs", level);
             ILogger logger = loggerFactory.CreateLogger("Main");
             using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()), source);
             int port = args.Length >= 2 ? int.Parse(args[1]) : 50330;
@@ -57,7 +64,7 @@ namespace tracker
             }
 
             var usage = await rpc.GetTotalDataUsage();
-            (string path, ILoggerFactory factory) = InternalLoggerProvider.CreateLoggerFactory("logs/usage");
+            (string path, ILoggerFactory factory) = InternalLogger.CreateLoggerFactory("logs/usage", level);
             var usageLogger = factory.CreateLogger("DataUsage");
 
             string output = "";

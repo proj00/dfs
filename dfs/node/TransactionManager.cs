@@ -37,7 +37,7 @@ namespace node
             await changedEvent.WaitAsync();
             if (state != TransactionState.Ok)
             {
-                throw new InternalBufferOverflowException($"Failed to publish objects, received state: {state.ToString()}");
+                throw new SystemException($"Failed to publish objects, received state: {state.ToString()}");
             }
             return newGuid;
         }
