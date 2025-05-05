@@ -98,6 +98,10 @@ namespace node
         public async Task RevealHashAsync(ByteString hash)
         {
             var path = await PathByHash.GetAsync(hash);
+            if (!System.IO.Path.IsPathFullyQualified(path) || System.IO.Path.GetFullPath(path) != path)
+            {
+                throw new ArgumentException("Path contains relative directories");
+            }
             Process.Start("explorer.exe", path);
         }
 
@@ -235,6 +239,10 @@ namespace node
 
         public void RevealFile(string path)
         {
+            if (System.IO.Path.GetFullPath(path) != path)
+            {
+                throw new ArgumentException("Path contains relative directories");
+            }
             Process.Start("explorer.exe", path);
         }
 
