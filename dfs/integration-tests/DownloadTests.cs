@@ -244,7 +244,7 @@ namespace integration_tests
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 10, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);

@@ -103,6 +103,7 @@ namespace node
             {
                 throw new RpcException(Grpc.Core.Status.DefaultCancelled, "Invalid chunk size");
             }
+            chunkSize = Math.Clamp(chunkSize, Constants.maxChunkSize / 16, Constants.maxChunkSize);
 
             (ObjectWithHash[] objects, ByteString rootHash) = await state.AddObjectFromDiskAsync(path, chunkSize);
 

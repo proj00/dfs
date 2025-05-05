@@ -49,7 +49,7 @@ namespace node
             var buffer = new byte[remainingSize];
             long total = await state.AsyncIO.ReadBufferAsync(await state.PathHandler.GetPathAsync(parentHash), buffer, offset, context.CancellationToken);
 
-            var subchunk = Math.Max(1, (int)Math.Sqrt(size));
+            var subchunk = GetSubchunkSize(size, 1, Constants.maxChunkSize, Constants.maxChunkSize / 16, Constants.maxChunkSize);
             var used = 0;
 
             for (int i = 0; i < total; i += subchunk)
@@ -70,6 +70,26 @@ namespace node
             }
             var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             await tracker.ReportDataUsage(true, used, CancellationToken.None);
+        }
+
+        private static int GetSubchunkSize(
+        long fileSize,
+        long minChunkSize,
+        long maxChunkSize,
+        int minSize,
+        int maxSize)
+        {
+            fileSize = Math.Clamp(fileSize, minChunkSize, maxChunkSize);
+            // Clamp t between 0 and 1
+            double t = (double)(fileSize - minChunkSize) / (maxChunkSize - minChunkSize);
+            t = Math.Clamp(t, 0.0, 1.0);
+
+            // Smoothstep: t * t * (3 - 2 * t)
+            t = t * t * (3.0 - 2.0 * t);
+
+            // Interpolate chunk size
+            int size = Math.Clamp((int)(minSize + t * (maxSize - minSize)), minSize, maxSize);
+            return size;
         }
     }
 }

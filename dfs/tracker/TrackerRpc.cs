@@ -66,6 +66,10 @@ namespace tracker
                 {
                     foreach (var o in await _filesystemManager.GetObjectTree(request.Data))
                     {
+                        if (context.CancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
                         await responseStream.WriteAsync(o);
                     }
                 }
@@ -94,6 +98,10 @@ namespace tracker
                 {
                     foreach (var peer in peerList)
                     {
+                        if (context.CancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
                         await responseStream.WriteAsync(new PeerResponse { Peer = peer });
                     }
                 }
@@ -188,11 +196,21 @@ namespace tracker
                     .Where(o => re.IsMatch(o.Object.Name))
                     .Select(o => new SearchResponse { Guid = container.ToString(), Object = o })
                     .ToList();
+
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
                 if (matches.Count == 0)
                     continue;
 
                 foreach (var match in matches)
                 {
+                    if (context.CancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
                     await responseStream.WriteAsync(match);
                 }
             }
@@ -268,7 +286,7 @@ namespace tracker
             ByteString rootHash = ByteString.Empty;
             ValueTuple<System.Guid, long> transactionInfo = default;
 
-            await foreach (var obj in requestStream.ReadAllAsync())
+            await foreach (var obj in requestStream.ReadAllAsync(context.CancellationToken))
             {
                 if (!found)
                 {
