@@ -68,7 +68,7 @@ namespace node
                     break;
                 }
             }
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             await tracker.ReportDataUsage(true, used, CancellationToken.None);
         }
     }

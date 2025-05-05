@@ -26,8 +26,6 @@ namespace node
     {
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         public IFilesystemManager Manager { get; }
-        private ChannelCache NodeChannel { get; }
-        private ChannelCache TrackerChannel { get; }
         public IDownloadManager Downloads { get; }
         public BlockListHandler BlockList { get; }
 
@@ -40,6 +38,7 @@ namespace node
         public TransactionManager TransactionManager { get; } = new();
         private readonly IFileSystem fs;
         public IAsyncIOWrapper AsyncIO { get; }
+        public GrpcClientHandler ClientHandler { get; }
 
         public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
@@ -56,8 +55,7 @@ namespace node
             Manager = manager;
             Downloads = downloads;
 
-            NodeChannel = new ChannelCache(channelTtl, grpcChannelFactory);
-            TrackerChannel = new ChannelCache(channelTtl, grpcChannelFactory);
+            this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
             this.PathHandler = new(pathByHash, startProcess);
             BlockList = new BlockListHandler(whitelist, blacklist);
         }
@@ -85,20 +83,6 @@ namespace node
                 new AsyncIOWrapper(),
                 (string name, string args) => Process.Start(name, args))
         { }
-
-        private NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
-        {
-            if (options == null)
-            {
-                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
-            }
-            else
-            {
-                options.LoggerFactory = loggerFactory;
-            }
-            var channel = NodeChannel.GetOrCreate(uri, options);
-            return new NodeClient(channel);
-        }
 
         public async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
         {
@@ -129,7 +113,7 @@ namespace node
                 throw new ArgumentException("Already downloaded");
             }
 
-            var tracker = GetTrackerWrapper(new Uri(chunk.TrackerUri));
+            var tracker = ClientHandler.GetTrackerWrapper(new Uri(chunk.TrackerUri));
             Debug.Assert(chunk.Hash.Length == 64);
 
             List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
@@ -147,7 +131,7 @@ namespace node
             byte[] ok = new byte[4];
             rng.GetBytes(ok);
             var index = BitConverter.ToInt32(ok) % peers.Count;
-            var peerClient = GetNodeClient(new Uri(peers[index]));
+            var peerClient = ClientHandler.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {
                 Hash = chunk.Hash,
@@ -186,7 +170,7 @@ namespace node
                 {
                     await AsyncIO.WriteBufferAsync(chunk.DestinationDir, thing, chunk.Offset);
 
-                    await GetTrackerWrapper(new Uri(chunk.TrackerUri))
+                    await ClientHandler.GetTrackerWrapper(new Uri(chunk.TrackerUri))
                         .MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
 
                     chunk.Status = DownloadStatus.Complete;
@@ -232,27 +216,6 @@ namespace node
             return (objects, rootHash);
         }
 
-        public ITrackerWrapper GetTrackerWrapper(Uri trackerUri)
-        {
-            ArgumentNullException.ThrowIfNull(trackerUri);
-            var client = GetTrackerClient(trackerUri);
-            return new TrackerWrapper(client, trackerUri);
-        }
-
-        public TrackerClient GetTrackerClient(Uri uri, GrpcChannelOptions? options = null)
-        {
-            if (options == null)
-            {
-                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
-            }
-            else
-            {
-                options.LoggerFactory = loggerFactory;
-            }
-            var channel = TrackerChannel.GetOrCreate(uri, options);
-            return new TrackerClient(channel);
-        }
-
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -261,13 +224,13 @@ namespace node
                 {
                     cts.Cancel();
                     cts.Dispose();
-                    NodeChannel.Dispose();
-                    TrackerChannel.Dispose();
+                    ClientHandler.Dispose();
                     Manager.Dispose();
                     PathHandler.Dispose();
                     BlockList.Dispose();
                     TransactionManager.Dispose();
                     LogPath = string.Empty;
+                    loggerFactory.Dispose();
                 }
 
                 disposedValue = true;

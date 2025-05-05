@@ -16,6 +16,7 @@ namespace integration_tests
     [TestFixture]
     public class Tests
     {
+        private static Bogus.Faker faker = new();
         private Process _processN1;
         private Process _processN2;
         private Process _processT;
@@ -198,15 +199,14 @@ namespace integration_tests
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
+
+            int fileSize = 1024 * 1024;
+            await GenerateTestFile(file, fileSize);
 
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, null, null, token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = (fileSize / 1024) / 3, Path = directory.FullName }, null, null, token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
@@ -226,20 +226,25 @@ namespace integration_tests
             }
         }
 
+        private static async Task GenerateTestFile(StreamWriter file, int count = 1048576)
+        {
+            await file.WriteLineAsync(faker.Random.Utf16String(minLength: count, maxLength: count));
+        }
+
         [Test, CancelAfter(50000)]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
+
+            int fileSize = 1024 * 1024;
+            await GenerateTestFile(file, fileSize);
+
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 10, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
@@ -276,20 +281,20 @@ namespace integration_tests
             Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
         }
 
-        [Test, CancelAfter(20000)]
+        [Test, CancelAfter(80000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             var directory = Directory.CreateDirectory(
                 Path.Combine(_tempDirectory, "test1"));
             using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
+
+            int fileSize = 1024 * 1024;
+            await GenerateTestFile(file, fileSize);
+
             await file.FlushAsync(token);
             await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 10, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);

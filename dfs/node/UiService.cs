@@ -78,7 +78,7 @@ namespace node
 
         public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             var list = new Ui.SearchResponseList();
             list.Results.AddRange(await tracker.SearchForObjects(request.Query, context.CancellationToken));
             return list;
@@ -123,7 +123,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.GetTrackerWrapper(new Uri(request.TrackerUri)));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri)));
             return new RpcCommon.Empty();
         }
 
@@ -168,7 +168,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             var guid = Guid.Parse(request.ContainerGuid);
             var hash = await tracker.GetContainerRootHash(guid, CancellationToken.None);
             await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
@@ -180,7 +180,7 @@ namespace node
 
         public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             return await tracker.GetDataUsage(context.CancellationToken);
         }
 
@@ -245,7 +245,7 @@ namespace node
             var guid = Guid.Parse(request.ContainerGuid);
             if (request.HasTrackerUri)
             {
-                var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+                var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
                 await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot);
             }
             else
