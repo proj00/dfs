@@ -27,6 +27,10 @@ export interface BackendServiceInterface {
   // Backend endpoints for data usage and download progress
   GetDataUsage: () => Promise<DataUsage>;
   GetDownloadProgress: (fileId: string) => Promise<DownloadProgress>;
+
+  pauseDownload: (fileId: string) => Promise<void>;
+  resumeDownload: (fileId: string) => Promise<void>;
+  cancelDownload: (fileId: string) => Promise<void>; // Not implemented
 }
 
 // Define the data structure
@@ -72,14 +76,49 @@ class BackendService implements BackendServiceInterface {
   async GetDownloadProgress(fileId: string): Promise<DownloadProgress> {
     const service = await GetNodeService();
     const progress = await service.GetDownloadProgress(hashFromBase64(fileId));
-
-    return {
+  
+    const result: DownloadProgress = {
       fileId,
       receivedBytes: Number(progress.current),
       totalBytes: Number(progress.total),
       status: progress.total == progress.current ? "completed" : "active",
       fileName: fileId,
     };
+  
+    const now = Date.now();
+    const existing = this.activeDownloads.get(fileId);
+  
+    if (existing) {
+      const deltaBytes = result.receivedBytes - existing.progress.receivedBytes;
+      const lastUpdate = (existing as any).lastUpdate ?? existing.startTime.getTime();
+      const deltaTime = (now - lastUpdate) / 1000;
+  
+      const speed = deltaTime > 0 ? deltaBytes / deltaTime : 0;
+  
+      this.activeDownloads.set(fileId, {
+        ...existing,
+        progress: result,
+        speed,
+        lastUpdate: now, // <- naujas laukas (nebūtina tipizuoti – tik vidinei reikšmei)
+      });
+    }
+  
+    return result;
+  }
+
+  async pauseDownload(fileId: string): Promise<void> {
+    const service = await GetNodeService();
+    await service.PauseFileDownload(hashFromBase64(fileId));
+  }
+
+  async resumeDownload(fileId: string): Promise<void> {
+    const service = await GetNodeService();
+    await service.ResumeFileDownload(hashFromBase64(fileId));
+  }
+
+  async cancelDownload(fileId: string): Promise<void> {
+    // Neturi CancelFileDownload, bet galima čia log'ą palikt ar simuliuot
+    console.warn("Cancel not implemented — fileId:", fileId);
   }
 
   async publishToTracker(
@@ -118,7 +157,21 @@ class BackendService implements BackendServiceInterface {
     const IDs = (
       await this.getContainerObjects(service, containerGuid)
     ).files.map((file) => file.id);
-
+    const now = new Date();
+    for (const id of IDs) {
+      this.activeDownloads.set(id, {
+        containerGuid,
+        startTime: now,
+        speed: 0,
+        progress: {
+                    fileId: id,
+                    receivedBytes: 0,
+                    totalBytes: 0,
+                    status: "active",
+                    fileName: id,
+                  },
+  });
+}
     return IDs;
   }
 
@@ -164,6 +217,17 @@ class BackendService implements BackendServiceInterface {
     }
     return containerObjects;
   }
+  getAllActiveDownloads() {
+    return this.activeDownloads;
+  }
+
+  private activeDownloads = new Map<string, {
+    containerGuid: string;
+    startTime: Date;
+    speed: number;
+    progress: DownloadProgress;
+    lastUpdate?: number; // <- pridėtas čia
+  }>();
 }
 
 // Export a singleton instance
