@@ -18,7 +18,6 @@ namespace tracker
 #endif
         static async Task Main(string[] args)
         {
-
             using CancellationTokenSource source = new();
             using var handler = PosixSignalRegistration.Create(PosixSignal.SIGQUIT, _ =>
             {

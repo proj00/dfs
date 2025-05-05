@@ -5,6 +5,7 @@ using Microsoft;
 using Microsoft.Extensions.Logging;
 using Moq;
 using node;
+using node_unit_tests.mocks;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

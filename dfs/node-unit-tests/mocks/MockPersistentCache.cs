@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace unit_tests
+namespace node_unit_tests.mocks
 {
     public class MockPersistentCache<TKey, TValue> : IPersistentCache<TKey, TValue> where TValue : class
     {

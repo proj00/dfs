@@ -5,20 +5,20 @@ using RpcCommon;
 using Tracker;
 using Guid = System.Guid;
 
-namespace common_test
+namespace node_unit_tests.mocks
 {
     public class MockTrackerWrapper : ITrackerWrapper
     {
-        public Dictionary<ByteString, Fs.FileSystemObject> objects { get; set; }
+        public Dictionary<ByteString, FileSystemObject> objects { get; set; }
         public Dictionary<ByteString, string[]> peers { get; set; }
         public Dictionary<Guid, ByteString> Container { get; }
         public string peerId { get; set; }
 
         public MockTrackerWrapper()
         {
-            this.objects = new(new ByteStringComparer());
-            this.peers = new(new ByteStringComparer());
-            this.peerId = "";
+            objects = new(new ByteStringComparer());
+            peers = new(new ByteStringComparer());
+            peerId = "";
             Container = [];
         }
 
