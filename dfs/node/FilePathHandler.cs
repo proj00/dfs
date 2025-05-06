@@ -66,7 +66,7 @@ namespace node
 
         public async Task RevealHashAsync(ByteString hash)
         {
-            var path = await PathByHash.GetAsync(hash);
+            var path = await GetPathAsync(hash);
             RevealFile(path);
         }
 

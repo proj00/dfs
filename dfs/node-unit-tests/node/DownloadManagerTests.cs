@@ -91,7 +91,7 @@ namespace unit_tests.node
         public async Task AddFile_RequestHandledAsync()
         {
             // arrange
-            var obj = GenerateObject();
+            var obj = MockFsUtils.GenerateObject(faker);
             ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
                 .Callback((ByteString k, FileChunk v) =>
@@ -149,7 +149,7 @@ namespace unit_tests.node
         public async Task PauseFile_RequestHandledAsync()
         {
             // arrange
-            var obj = GenerateObject();
+            var obj = MockFsUtils.GenerateObject(faker);
             ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
                 .Callback((ByteString k, FileChunk v) =>
@@ -215,7 +215,7 @@ namespace unit_tests.node
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
         {
             // arrange
-            var obj = GenerateObject(true);
+            var obj = MockFsUtils.GenerateObject(faker, true);
             ConcurrentDictionary<ByteString, FileChunk> added = new(new ByteStringComparer());
 
             chunks.Setup(self => self.SetAsync(It.IsAny<ByteString>(), It.IsAny<FileChunk>()))
@@ -326,31 +326,6 @@ namespace unit_tests.node
 
             // did we clean the mess up?
             Assert.That(added, Has.Count.EqualTo(0));
-        }
-
-        private static ObjectWithHash GenerateObject(bool big = true)
-        {
-            int fileSize = big ? 1048576 : 10 * 1024;
-            var obj = new Fs.FileSystemObject()
-            {
-                Name = faker.System.FileName(),
-                File = new()
-                {
-                    Size = fileSize,
-                    Hashes = new()
-                    {
-                        ChunkSize = 1024,
-                        Hash =
-                        {
-                            Enumerable.Range(0, fileSize / 1024 + fileSize % 1024)
-                            .Select(a => HashUtils.GetHash(faker.System.Random.Bytes((a + 1) * 10)))
-                        }
-                    }
-                }
-
-            };
-
-            return new() { Hash = HashUtils.GetHash(obj), Object = obj };
         }
     }
 }

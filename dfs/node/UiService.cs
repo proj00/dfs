@@ -124,11 +124,11 @@ namespace node
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri)));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri)), context.CancellationToken);
             return new RpcCommon.Empty();
         }
 
-        private async Task PublishToTrackerAsync(Guid container, ITrackerWrapper tracker)
+        private async Task PublishToTrackerAsync(Guid container, ITrackerWrapper tracker, CancellationToken token)
         {
             if (!await state.Manager.Container.ContainsKey(container))
             {
@@ -137,13 +137,13 @@ namespace node
 
             var objects = await state.Manager.GetContainerTree(container);
             var rootHash = await state.Manager.Container.GetAsync(container);
-            await PublishContainerUpdateAsync(container, tracker, objects, rootHash);
+            await PublishContainerUpdateAsync(container, tracker, objects, rootHash, token);
         }
 
-        private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash)
+        private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash, CancellationToken token)
         {
-            Guid newGuid = await state.TransactionManager.PublishObjectsAsync(tracker, container, objects,
-                            rootHash);
+            Guid newGuid = await state.Transactions.PublishObjectsAsync(tracker, container, objects,
+                            rootHash, token);
 
             await state.Manager.Container.SetAsync(newGuid, rootHash);
 
@@ -247,7 +247,7 @@ namespace node
             if (request.HasTrackerUri)
             {
                 var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
-                await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot);
+                await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot, context.CancellationToken);
             }
             else
             {

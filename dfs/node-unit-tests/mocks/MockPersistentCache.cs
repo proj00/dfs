@@ -1,4 +1,5 @@
 ﻿using common;
+using Google.Protobuf;
 using Moq;
 using System;
 using System.Collections.Concurrent;
@@ -11,7 +12,17 @@ namespace unit_tests.mocks
 {
     public class MockPersistentCache<TKey, TValue> : IPersistentCache<TKey, TValue> where TValue : class
     {
-        public readonly ConcurrentDictionary<TKey, TValue> _dict = new ConcurrentDictionary<TKey, TValue>();
+        public readonly ConcurrentDictionary<TKey, TValue> _dict;
+
+        public MockPersistentCache(ByteStringComparer? comparer = null)
+        {
+            if (comparer != null && typeof(TKey) == typeof(ByteString))
+            {
+                _dict = new ConcurrentDictionary<TKey, TValue>(comparer as IEqualityComparer<TKey>);
+                return;
+            }
+            _dict = new ConcurrentDictionary<TKey, TValue>();
+        }
 
         public Task<bool> ContainsKey(TKey key)
         {

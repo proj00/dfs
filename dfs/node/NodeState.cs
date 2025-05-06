@@ -36,7 +36,7 @@ namespace node
         public string LogPath { get; private set; }
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool disposedValue;
-        public TransactionManager TransactionManager { get; } = new();
+        public TransactionManager Transactions { get; }
         private readonly IFileSystem fs;
         public IAsyncIOWrapper AsyncIO { get; }
         public GrpcClientHandler ClientHandler { get; }
@@ -60,6 +60,7 @@ namespace node
             this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
             this.PathHandler = new(pathByHash, startProcess);
             BlockList = new BlockListHandler(whitelist, blacklist);
+            Transactions = new(Logger);
             peerLocks = new();
         }
 
@@ -239,7 +240,6 @@ namespace node
                     Manager.Dispose();
                     PathHandler.Dispose();
                     BlockList.Dispose();
-                    TransactionManager.Dispose();
                     LogPath = string.Empty;
                     loggerFactory.Dispose();
                 }
