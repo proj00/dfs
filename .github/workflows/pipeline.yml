@@ -54,7 +54,7 @@ jobs:
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
           /d:sonar.coverage.exclusions="dfs/common/generated/**/*,dfs/common/generated/*" `
           /d:typescript.lcov.reportPaths=coverage/jest/lcov.info `
-          /d:sonar.cs.vscoveragexml.reportsPaths="**/vscoverage.xml" `
+          /d:sonar.cs.vscoveragexml.reportsPaths="dfs/node-unit-tests/**/vscoverage.xml" `
           /d:sonar.verbose=true
 
       - name: Build .NET project

@@ -1,4 +1,5 @@
-﻿using common_test;
+﻿using common;
+using common_test;
 using Google.Protobuf;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Collections;
@@ -14,7 +15,8 @@ namespace integration_tests
     public class DownloadTests
     {
         private static Bogus.Faker faker = new();
-        private static ConcurrentDictionary<int, ProcessContext> contexts = new();
+        private static ConcurrentQueue<ProcessContext> contexts = new();
+        private static ConcurrentQueue<ProcessContext> disposedContexts = new();
 
         public DownloadTests()
         {
@@ -33,10 +35,11 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync(e.ToString());
             }
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 6; i++)
             {
-                contexts[i] = new();
-                await contexts[i].Init();
+                var ctx = new ProcessContext();
+                contexts.Enqueue(ctx);
+                await ctx.Init();
             }
         }
 
@@ -44,9 +47,14 @@ namespace integration_tests
         public async Task TearDownAsync()
         {
             bool b = false;
-            foreach (var (k, v) in contexts)
+            while (contexts.TryDequeue(out ProcessContext? ctx))
             {
-                bool now = await v.StopAsync();
+                bool now = await ctx.StopAsync();
+                b = now || b;
+            }
+            while (disposedContexts.TryDequeue(out ProcessContext? ctx))
+            {
+                bool now = await ctx.StopAsync();
                 b = now || b;
             }
             Assert.That(b, Is.False, "errors printed");
@@ -56,7 +64,11 @@ namespace integration_tests
         [Test, CancelAfter(40000)]
         public async Task PublishAndSearchTestAsync(CancellationToken token)
         {
-            var ctx = contexts[0];
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
             var directory = Directory.CreateDirectory(
                 Path.Combine(ctx._tempDirectory, "test1"));
             var filePath = Path.Combine(directory.FullName, "test.txt");
@@ -91,13 +103,16 @@ namespace integration_tests
         private static async Task GenerateTestFile(StreamWriter file, int count = 1048576)
         {
             for (int i = 0; i < count; i++)
-                await file.WriteLineAsync("hi");
+                await file.WriteLineAsync(faker.Random.AlphaNumeric(2));
         }
 
         [Test, CancelAfter(40000)]
         public async Task TestDownloadAsync(CancellationToken token)
         {
-            var ctx = contexts[1];
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
 
             var directory = Directory.CreateDirectory(
                 Path.Combine(ctx._tempDirectory, "test1"));
@@ -122,6 +137,8 @@ namespace integration_tests
             await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, cancellationToken: token);
             Directory.CreateDirectory(Path.Combine(ctx._tempDirectory, "output"));
 
+            var timer = new Stopwatch();
+            timer.Start();
             var res2 = await ctx.n2Client.DownloadContainerAsync(new()
             { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(ctx._tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = ctx.trackerWrapper.GetUri().ToString() },
             cancellationToken: token);
@@ -139,6 +156,10 @@ namespace integration_tests
                 progress = await ctx.n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+            timer.Stop();
+
+            double mbps = (double)(progress.Total / 131072) / timer.Elapsed.TotalSeconds;
+            TestContext.Out.WriteLine($"got {progress.Total / 1048576.0} MB, time {timer.Elapsed.TotalSeconds,5}s, download speed: {mbps,5} Mbps");
 
             var outputPath = Path.Combine(ctx._tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
             var inputPath = Path.Combine(ctx._tempDirectory, "test1", "test.txt");
@@ -151,7 +172,10 @@ namespace integration_tests
         [Test, CancelAfter(40000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
-            var ctx = contexts[2];
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
 
             var directory = Directory.CreateDirectory(
                 Path.Combine(ctx._tempDirectory, "test1"));
