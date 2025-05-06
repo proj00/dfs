@@ -286,8 +286,6 @@ namespace integration_tests
             var expected = await GetFileContents(inputPath);
             var actual = await GetFileContents(outputPath);
             Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
-
-
         }
 
         [Test, CancelAfter(80000)]
