@@ -42,9 +42,15 @@ export const handleShare = async (folder: Folder) => {
   log.info(`Folder ${folder.name} shared successfully`);
 };
 
-export const handleCopy = async (item: File | Folder) => {
-  log.info(`Copying: ${item.name} (${item.id})`);
-  // Simulate async copy operation
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  log.info(`${item.name} copied successfully`);
-};
+export async function handleCopy(
+  item: File | Folder
+): Promise<boolean> {
+  try {
+    // Copy logic here
+    log.info(`Copying: ${item.name} (${item.id})`);
+    return true; // Return true if successful
+  } catch (error) {
+    log.error("Error copying item:", error);
+    return false; // Return false if an error occurs
+  }
+}
