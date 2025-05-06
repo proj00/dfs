@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
-    <RootNamespace>node_unit_tests</RootNamespace>
+    <RootNamespace>unit_tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 

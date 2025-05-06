@@ -5,7 +5,7 @@ using RpcCommon;
 using Tracker;
 using Guid = System.Guid;
 
-namespace node_unit_tests.mocks
+namespace unit_tests.mocks
 {
     public class MockTrackerWrapper : ITrackerWrapper
     {

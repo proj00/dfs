@@ -1,4 +1,5 @@
 ﻿using common;
+using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using static Node.Node;
@@ -6,7 +7,7 @@ using static Tracker.Tracker;
 
 namespace node
 {
-    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, GrpcChannel>;
+    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, ChannelBase>;
 
     public class GrpcClientHandler : IDisposable
     {
