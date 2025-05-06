@@ -23,7 +23,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
     const service = await GetNodeService();
     const path = (await window.electronAPI.selectFolder()) ?? "";
     log.info(`got: ${path}`);
-    await service.ImportObjectToContainer({ path, chunkSize: 1024 });
+    await service.ImportObjectToContainer({ path, chunkSize: 1024 * 1024 });
     log.info(`imported: ${path}`);
   };
 

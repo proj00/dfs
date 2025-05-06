@@ -3,6 +3,7 @@ using Google.Protobuf;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,31 +27,31 @@ namespace common
         {
             DbPath = dbBasePath;
             ObjectByHash = new PersistentCache<ByteString, ObjectWithHash>(
-                Path.Combine(DbPath, "ObjectByHash"),
+                System.IO.Path.Combine(DbPath, "ObjectByHash"),
                 new ByteStringSerializer(),
                 new Serializer<ObjectWithHash>()
             );
 
             ChunkParents = new PersistentCache<ByteString, RpcCommon.HashList>(
-                Path.Combine(DbPath, "ChunkParents"),
+                System.IO.Path.Combine(DbPath, "ChunkParents"),
                 new ByteStringSerializer(),
                 new Serializer<RpcCommon.HashList>()
             );
 
             Container = new PersistentCache<Guid, ByteString>(
-                Path.Combine(DbPath, "Container"),
+                System.IO.Path.Combine(DbPath, "Container"),
                 new GuidSerializer(),
                 new ByteStringSerializer()
             );
 
             Parent = new PersistentCache<ByteString, RpcCommon.HashList>(
-                Path.Combine(DbPath, "Parent"),
+                System.IO.Path.Combine(DbPath, "Parent"),
                 new ByteStringSerializer(),
                 new Serializer<RpcCommon.HashList>()
             );
 
             NewerVersion = new PersistentCache<ByteString, ByteString>(
-                Path.Combine(DbPath, "NewerVersion"),
+                System.IO.Path.Combine(DbPath, "NewerVersion"),
                 new ByteStringSerializer(),
                 new ByteStringSerializer()
             );

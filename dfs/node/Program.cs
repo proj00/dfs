@@ -12,6 +12,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
+using System.IO;
 
 namespace node
 {
@@ -23,8 +24,14 @@ namespace node
         /// </summary>
         static async Task Main(string[] args)
         {
+#if DEBUG
+            LogLevel level = LogLevel.Debug;
+#else
+            LogLevel level = LogLevel.Information;
+#endif
+
             AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
-            (string logPath, ILoggerFactory loggerFactory) = InternalLoggerProvider.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs");
+            (string logPath, ILoggerFactory loggerFactory) = InternalLogger.CreateLoggerFactory(args.Length >= 3 ? args[2] + "\\logs" : "logs", level);
 
             ILogger logger = loggerFactory.CreateLogger("Main");
 
@@ -169,12 +176,12 @@ namespace node
 #if !DEBUG
                         if (!IsAncestor(parentPid, clientPid))
                         {
-                            Console.WriteLine($"Unauthorized PID: {clientPid}. Disconnecting.");
+                            loggerFactory.CreateLogger("init").LogError($"Unauthorized PID: {clientPid}. Disconnecting.");
                             await stream.DisposeAsync(); // forcefully disconnect
                         }
                         else
                         {
-                            Console.WriteLine($"Authorized PID: {clientPid}");
+                            loggerFactory.CreateLogger("init").LogInformation($"Authorized PID: {clientPid}");
                         }
 #endif
                             }
