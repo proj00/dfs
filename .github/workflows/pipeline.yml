@@ -61,7 +61,7 @@ jobs:
         run: dotnet build --no-restore dfs/dfs.sln
 
       - name: Test .NET project
-        run: dotnet-coverage collect "dotnet test --no-build dfs/dfs.sln --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "vscoverage.xml"
+        run: dotnet-coverage collect "dotnet test --no-build dfs/dfs.sln --verbosity d /p:ParallelizeTestCollections=true" -f xml -o "vscoverage.xml"
 
       - name: Finish SonarScanner
         env:
