@@ -8,6 +8,6 @@ namespace node
 {
     public static class Constants
     {
-        public static readonly int maxChunkSize = 256 * 1024 * 1024;
+        public static readonly int maxChunkSize = 16 * 1024 * 1024;
     }
 }

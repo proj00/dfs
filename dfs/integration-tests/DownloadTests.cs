@@ -1,220 +1,94 @@
+﻿using common;
 using common_test;
 using Google.Protobuf;
-using Grpc.Net.Client;
-using node;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace integration_tests
 {
     [TestFixture]
-    public class Tests
+    public class DownloadTests
     {
-        private Process _processN1;
-        private Process _processN2;
-        private Process _processT;
-        private Ui.Ui.UiClient n1Client;
-        private Ui.Ui.UiClient n2Client;
-        private TrackerWrapper trackerWrapper;
-        private Tracker.Tracker.TrackerClient trackerClient;
-        private string _tempDirectory;
-        private RefWrapper errorsPrinted = new(false);
-        int testPort1 = -1;
-        int testPort2 = -1;
-        int testPort3 = -1;
+        private static Bogus.Faker faker = new();
+        private static ConcurrentQueue<ProcessContext> contexts = new();
+        private static ConcurrentQueue<ProcessContext> disposedContexts = new();
 
-        public Tests()
+        public DownloadTests()
         {
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
         }
-        class RefWrapper
-        {
-            public bool Value { get; set; }
-            public RefWrapper(bool value) { Value = value; }
-        }
 
-        private static readonly string Node1OutputPath = Path.GetFullPath(
-        Path.Combine(TestContext.CurrentContext.TestDirectory,
-        @"..\..\..\..\node\bin\Debug\net9.0-windows7.0\node.exe"));
-
-        private static readonly string Node2OutputPath = Path.GetFullPath(
-        Path.Combine(TestContext.CurrentContext.TestDirectory,
-        @"..\..\..\..\node\bin\Debug\2-net9.0-windows7.0\node.exe"));
-
-        private static readonly string TrackerOutputPath = Path.GetFullPath(
-            Path.Combine(TestContext.CurrentContext.TestDirectory,
-            @"..\..\..\..\tracker\bin\Debug\net9.0-windows\tracker.exe"));
-
-        [SetUp]
+        [OneTimeSetUp]
         public async Task SetUpAsync()
         {
-            errorsPrinted = new RefWrapper(false);
             try
             {
-                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
+                ProcessHandling.KillSolutionProcesses([ProcessContext.Node1OutputPath, ProcessContext.Node2OutputPath, ProcessContext.TrackerOutputPath]);
             }
             catch (Exception e)
             {
                 await TestContext.Out.WriteLineAsync(e.ToString());
             }
-            _tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Directory.CreateDirectory(_tempDirectory);
-            await TestContext.Out.WriteLineAsync(_tempDirectory);
 
-            // Start processes with unique ports for each test
-            testPort1 = FindFreePort();
-            testPort2 = FindFreePort();
-            testPort3 = FindFreePort();
-
-            _processN1 = StartProcess(1, Node1OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n1\" {testPort1}", errorsPrinted);
-            _processN2 = StartProcess(2, Node2OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort2}", errorsPrinted);
-            _processT = StartProcess(3, TrackerOutputPath, $"\"{_tempDirectory}\\tracker\" {testPort3}", errorsPrinted);
-
-            await WaitForPortAsync(testPort1);
-            await WaitForPortAsync(testPort2);
-            await WaitForPortAsync(testPort3);
-
-            n1Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort1}")));
-            n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort2}")));
-            trackerClient = new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
-                new Uri($"http://localhost:{testPort3}")));
-            trackerWrapper = new TrackerWrapper(trackerClient, new Uri($"http://localhost:{testPort3}"));
-        }
-
-        private static async Task WaitForPortAsync(int port, int timeoutMs = 40000)
-        {
-            var stopWatch = Stopwatch.StartNew();
-            while (stopWatch.ElapsedMilliseconds < timeoutMs)
+            for (int i = 0; i < 6; i++)
             {
-                try
-                {
-                    using var client = new TcpClient();
-                    await client.ConnectAsync(IPAddress.Loopback, port);
-                    return;
-                }
-                catch
-                {
-                    await Task.Delay(250);
-                }
+                var ctx = new ProcessContext();
+                contexts.Enqueue(ctx);
+                await ctx.Init();
             }
-            throw new TimeoutException($"Port {port} did not open in time.");
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public async Task TearDownAsync()
         {
-            testPort1 = -1;
-            testPort2 = -1;
-            testPort3 = -1;
-
-            try
+            bool b = false;
+            while (contexts.TryDequeue(out ProcessContext? ctx))
             {
-                await n1Client.ShutdownAsync(new RpcCommon.Empty());
-                await n2Client.ShutdownAsync(new RpcCommon.Empty());
-                await trackerClient.ShutdownAsync(new RpcCommon.Empty());
-                await Task.Delay(3000);
-                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
+                bool now = await ctx.StopAsync();
+                b = now || b;
             }
-            catch { }
-            _processN1?.Dispose();
-            _processN2?.Dispose();
-            _processT?.Dispose();
-            try
+            while (disposedContexts.TryDequeue(out ProcessContext? ctx))
             {
-                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
-                if (Directory.Exists(_tempDirectory) && !errorsPrinted.Value && !Debugger.IsAttached)
-                {
-                    //Directory.Delete(_tempDirectory, recursive: true);
-                }
+                bool now = await ctx.StopAsync();
+                b = now || b;
             }
-            catch { /* Ignore cleanup errors */ }
-            var b = errorsPrinted.Value;
             Assert.That(b, Is.False, "errors printed");
         }
 
-        private static Process StartProcess(int id, string exePath, string arguments, RefWrapper errorsPrinted)
-        {
-            if (!File.Exists(exePath))
-                throw new FileNotFoundException($"Executable not found: {exePath}");
 
-            string coverageOutput = $"../../../cov/{id}-{Guid.NewGuid()}-coverage.opencover.xml";
-            string coverletCommand = $"\"{exePath}\" --target \"{exePath}\" --targetargs \"{arguments}\" --output \"{coverageOutput}\" --format opencover ";
-
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "coverlet",
-                    Arguments = coverletCommand,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardErrorEncoding = Encoding.UTF8,
-                    StandardOutputEncoding = Encoding.UTF8
-                }
-            };
-
-            process.OutputDataReceived += (sender, args) =>
-            {
-                if (args.Data == null) return;
-                else TestContext.Out.WriteLine(args.Data);
-            };
-
-            process.ErrorDataReceived += (sender, args) =>
-            {
-                if (args.Data == null) return;
-                else { TestContext.Error.WriteLine(args.Data); errorsPrinted.Value = true; }
-            };
-
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            return process;
-        }
-
-        private static int FindFreePort()
-        {
-            using var listener = new System.Net.Sockets.TcpListener(
-                System.Net.IPAddress.Loopback, 0);
-            listener.Start();
-            int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-            return port;
-        }
-
-        [Test, CancelAfter(50000)]
+        [Test, CancelAfter(40000)]
         public async Task PublishAndSearchTestAsync(CancellationToken token)
         {
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
             var directory = Directory.CreateDirectory(
-                Path.Combine(_tempDirectory, "test1"));
-            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
+                Path.Combine(ctx._tempDirectory, "test1"));
+            var filePath = Path.Combine(directory.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 10;
+            await GenerateTestFile(file, fileSize);
 
             await file.FlushAsync(token);
-            await TestContext.Out.WriteLineAsync(_tempDirectory);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, null, null, token);
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = (fileSize / 1024) / 3, Path = directory.FullName }, null, null, token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
                 Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
             }
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, null, null, token);
-            var resp2 = await trackerWrapper.SearchForObjects("(?s).*", token);
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+            var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp2, Is.Not.Null);
@@ -226,32 +100,47 @@ namespace integration_tests
             }
         }
 
-        [Test, CancelAfter(50000)]
+        private static async Task GenerateTestFile(StreamWriter file, int count = 1048576)
+        {
+            for (int i = 0; i < count; i++)
+                await file.WriteLineAsync(faker.Random.AlphaNumeric(2));
+        }
+
+        [Test, CancelAfter(40000)]
         public async Task TestDownloadAsync(CancellationToken token)
         {
-            var directory = Directory.CreateDirectory(
-                Path.Combine(_tempDirectory, "test1"));
-            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
-            await file.FlushAsync(token);
-            await TestContext.Out.WriteLineAsync(_tempDirectory);
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            var filePath = Path.Combine(directory.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 20;
+            await GenerateTestFile(file, fileSize);
+            await TestContext.Out.WriteLineAsync($"File generated {new FileInfo(filePath).Length} bytes");
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024 * 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
                 Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
             }
-            var parts = await n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
+            var parts = await ctx.n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, cancellationToken: token);
-            Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, cancellationToken: token);
+            Directory.CreateDirectory(Path.Combine(ctx._tempDirectory, "output"));
 
-            var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() },
+            var timer = new Stopwatch();
+            timer.Start();
+            var res2 = await ctx.n2Client.DownloadContainerAsync(new()
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(ctx._tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = ctx.trackerWrapper.GetUri().ToString() },
             cancellationToken: token);
 
             var progress = new Ui.Progress();
@@ -261,47 +150,56 @@ namespace integration_tests
                 delay -= 500;
                 if (delay <= 0)
                 {
-                    Assert.Fail("Download timed out");
+                    break;
                 }
                 await Task.Delay(2000, token);
-                progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
+                progress = await ctx.n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
+            timer.Stop();
 
-            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
-            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+            double mbps = (double)(progress.Total / 131072) / timer.Elapsed.TotalSeconds;
+            TestContext.Out.WriteLine($"got {progress.Total / 1048576.0} MB, time {timer.Elapsed.TotalSeconds,5}s, download speed: {mbps,5} Mbps");
+
+            var outputPath = Path.Combine(ctx._tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(ctx._tempDirectory, "test1", "test.txt");
 
             var expected = await GetFileContents(inputPath);
             var actual = await GetFileContents(outputPath);
             Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
         }
 
-        [Test, CancelAfter(20000)]
+        [Test, CancelAfter(40000)]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
-            var directory = Directory.CreateDirectory(
-                Path.Combine(_tempDirectory, "test1"));
-            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
-            for (int i = 0; i < 1024; i++)
-            {
-                await file.WriteLineAsync("hello world");
-            }
-            await file.FlushAsync(token);
-            await TestContext.Out.WriteLineAsync(_tempDirectory);
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
 
-            var resp = await n1Client.ImportObjectToContainerAsync(new() { ChunkSize = 1024, Path = directory.FullName }, cancellationToken: token);
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            using var file = File.CreateText(Path.Combine(directory.FullName, "test.txt"));
+
+            int fileSize = 1024 * 1024 * 4;
+            await GenerateTestFile(file, fileSize);
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize / 1024, Path = directory.FullName }, cancellationToken: token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp, Is.Not.Null);
                 Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
             }
-            var parts = await n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
+            var parts = await ctx.n1Client.GetContainerObjectsAsync(resp, cancellationToken: token);
 
-            await n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{testPort3}" }, cancellationToken: token);
-            Directory.CreateDirectory(Path.Combine(_tempDirectory, "output"));
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, cancellationToken: token);
+            Directory.CreateDirectory(Path.Combine(ctx._tempDirectory, "output"));
 
-            var res2 = await n2Client.DownloadContainerAsync(new()
-            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(_tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = trackerWrapper.GetUri().ToString() }, cancellationToken: token);
+            var res2 = await ctx.n2Client.DownloadContainerAsync(new()
+            { ContainerGuid = resp.Guid_, DestinationDir = Path.Combine(ctx._tempDirectory, "output"), MaxConcurrentChunks = 20, TrackerUri = ctx.trackerWrapper.GetUri().ToString() }, cancellationToken: token);
 
             var progress = new Ui.Progress();
             int delay = 50000;
@@ -312,15 +210,15 @@ namespace integration_tests
                 {
                     Assert.Fail("Download timed out");
                 }
-                await Task.Delay(2000, token);
-                await n2Client.PauseFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
-                await n2Client.ResumeFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
-                progress = await n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
+                await Task.Delay(5000, token);
+                await ctx.n2Client.PauseFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
+                await ctx.n2Client.ResumeFileDownloadAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
+                progress = await ctx.n2Client.GetDownloadProgressAsync(new() { Data = parts.Data[1].Hash }, cancellationToken: token);
                 await TestContext.Out.WriteLineAsync($"{progress.Current} {progress.Total}");
             } while (progress.Current != progress.Total);
 
-            var outputPath = Path.Combine(_tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
-            var inputPath = Path.Combine(_tempDirectory, "test1", "test.txt");
+            var outputPath = Path.Combine(ctx._tempDirectory, "output", Hex.ToHexString(parts.Data[1].Hash.ToByteArray()), "test.txt");
+            var inputPath = Path.Combine(ctx._tempDirectory, "test1", "test.txt");
 
             var expected = await GetFileContents(inputPath);
             var actual = await GetFileContents(outputPath);

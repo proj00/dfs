@@ -1,6 +1,7 @@
 ﻿using common;
 using Fs;
 using Google.Protobuf;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
 using RocksDbSharp;
 using System;
@@ -15,103 +16,72 @@ using Tracker;
 
 namespace node
 {
-    public class TransactionManager : IDisposable
+    public class TransactionManager
     {
-        private readonly TaskProcessor processor;
-        private bool disposedValue;
+        private readonly ILogger logger;
 
-        public TransactionManager()
+        public TransactionManager(ILogger logger)
         {
-            processor = new TaskProcessor(1000);
+            this.logger = logger;
         }
 
-        public async Task<Guid> PublishObjectsAsync(ITrackerWrapper client, Guid containerGuid, IEnumerable<ObjectWithHash> objects, ByteString rootHash)
+        public async Task<Guid> PublishObjectsAsync(ITrackerWrapper client, Guid containerGuid, IEnumerable<ObjectWithHash> objects, ByteString rootHash, CancellationToken token)
         {
             Guid newGuid = Guid.Empty;
-            TransactionState state = TransactionState.Pending;
-            AsyncManualResetEvent changedEvent = new(true);
-            changedEvent.Reset();
-            Action<Guid, TransactionState> registerGuid = (g, s) => { newGuid = g; state = s; changedEvent.Set(); };
 
-            await processor.AddAsync(() => RunTransactionAsync(client, containerGuid, registerGuid, objects, rootHash));
-            await changedEvent.WaitAsync();
-            if (state != TransactionState.Ok)
+            try
             {
-                throw new InternalBufferOverflowException($"Failed to publish objects, received state: {state.ToString()}");
+                newGuid = await RunTransactionAsync(client, containerGuid, objects, rootHash, token);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, e.Message);
+                throw;
+            }
+
+            if (newGuid == Guid.Empty)
+            {
+                throw new SystemException($"Failed to publish objects, received empty container GUID");
             }
             return newGuid;
         }
 
-        private static async Task RunTransactionAsync(ITrackerWrapper client, Guid containerGuid,
-            Action<Guid, TransactionState> registerGuid, IEnumerable<ObjectWithHash> objects, ByteString rootHash)
+        private static async Task<Guid> RunTransactionAsync(ITrackerWrapper client, Guid containerGuid,
+            IEnumerable<ObjectWithHash> objects, ByteString rootHash, CancellationToken token)
         {
             TransactionRequest request = new()
             {
                 ContainerGuid = containerGuid.ToString()
             };
 
-            var start = await client.StartTransaction(request, CancellationToken.None);
+            var start = await client.StartTransaction(request, token);
             for (var i = 0; i < 5; i++)
             {
                 if (start.State == TransactionState.Ok)
                 {
                     break;
                 }
-                await Task.Delay(1000);
-                start = await client.StartTransaction(request, CancellationToken.None);
+                await Task.Delay(1000, token);
+                start = await client.StartTransaction(request, token);
             }
 
             var actualGuid = Guid.Parse(start.ActualContainerGuid);
 
             if (start.State != TransactionState.Ok)
             {
-                registerGuid(Guid.Empty, start.State);
-                return;
+                throw new Exception($"Failed to start transaction, received state: {start.State}");
             }
 
-            try
-            {
-                _ = await client.Publish(
-                    objects.Select(o => new PublishedObject
-                    {
-                        TransactionGuid = start.TransactionGuid,
-                        Object = o,
-                        IsRoot = o.Hash == rootHash
-                    })
-                    .ToList(), CancellationToken.None);
-            }
-            catch
-            {
-                registerGuid(Guid.Empty, TransactionState.Failed);
-                return;
-            }
-
-            registerGuid(actualGuid, TransactionState.Ok);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
+            _ = await client.Publish(
+                objects.Select(o => new PublishedObject
                 {
-                    processor.Dispose();
-                }
-                disposedValue = true;
-            }
-        }
+                    TransactionGuid = start.TransactionGuid,
+                    Object = o,
+                    IsRoot = o.Hash == rootHash
+                })
+                .ToList(), token);
 
-        ~TransactionManager()
-        {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: false);
-        }
-
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            return actualGuid;
         }
     }
 }

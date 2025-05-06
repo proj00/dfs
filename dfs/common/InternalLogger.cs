@@ -7,48 +7,20 @@ using System.Threading.Tasks;
 
 namespace common
 {
-    public sealed class InternalLoggerProvider : ILoggerProvider
+    public static class InternalLogger
     {
-        private readonly string _path;
-
-        public InternalLoggerProvider(string path)
-        {
-            _path = path;
-        }
-
-        public ILogger CreateLogger(string categoryName) =>
-            new InternalLogger(_path);
-
-        public void Dispose() { }
-
         // LoggerFactoryFactoryFactory...
-        public static (string logPath, ILoggerFactory factory) CreateLoggerFactory(string logDirectory)
+        public static (string logPath, ILoggerFactory factory) CreateLoggerFactory(string logDirectory, LogLevel level)
         {
-            Directory.CreateDirectory(logDirectory);
-            string logPath = $"{logDirectory}/log_{DateTime.Now:yyyyMMdd_HHmmssfff}.log";
+            System.IO.Directory.CreateDirectory(logDirectory);
+            string logPath = System.IO.Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmssfff}.log");
+
             return (logPath, LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Debug);
-                builder.AddProvider(new InternalLoggerProvider(logPath));
+                builder.SetMinimumLevel(level);
+                builder.AddFile(logPath, minimumLevel: level);
             }));
-        }
-    }
-
-    sealed class InternalLogger : ILogger
-    {
-        private readonly string _filePath;
-        public InternalLogger(string filePath) => _filePath = filePath;
-
-        IDisposable ILogger.BeginScope<TState>(TState state) => null!;
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId,
-            TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        {
-            Console.WriteLine($"{DateTime.Now}: {formatter(state, exception)}{Environment.NewLine}");
-            // i removed the log to file thing because it broke stuff
-            // please readd if you see this (log4net or something)
         }
     }
 }

@@ -5,12 +5,14 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Node;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Org.BouncyCastle.Utilities.Encoders;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Navigation;
 using Tracker;
 using Ui;
 using static Node.Node;
@@ -19,46 +21,54 @@ using static Ui.Ui;
 
 namespace node
 {
-    public class NodeState : IDisposable
+    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, GrpcChannel>;
+
+    public partial class NodeState : IDisposable
     {
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
-        public IPersistentCache<ByteString, string> PathByHash { get; }
         public IFilesystemManager Manager { get; }
-        private ChannelCache NodeChannel { get; }
-        private ChannelCache TrackerChannel { get; }
-        private IPersistentCache<string, string> Whitelist { get; }
-        private IPersistentCache<string, string> Blacklist { get; }
         public IDownloadManager Downloads { get; }
+        public BlockListHandler BlockList { get; }
 
         private readonly ILoggerFactory loggerFactory;
-
+        public FilePathHandler PathHandler { get; }
         public ILogger Logger { get; private set; }
         public string LogPath { get; private set; }
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool disposedValue;
-        public TransactionManager TransactionManager { get; } = new();
+        public TransactionManager Transactions { get; }
+        private readonly IFileSystem fs;
+        public IAsyncIOWrapper AsyncIO { get; }
+        public GrpcClientHandler ClientHandler { get; }
+        private readonly ConcurrentDictionary<string, AsyncLock> peerLocks;
 
-        public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
+        public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
             IPersistentCache<ByteString, string> pathByHash,
             IPersistentCache<string, string> whitelist,
-            IPersistentCache<string, string> blacklist)
+            IPersistentCache<string, string> blacklist,
+            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io, Action<string, string> startProcess)
         {
+            this.fs = fs;
+            this.AsyncIO = io;
             this.loggerFactory = loggerFactory;
             Logger = this.loggerFactory.CreateLogger("Node");
             LogPath = logPath;
             Manager = manager;
             Downloads = downloads;
 
-            NodeChannel = new ChannelCache(channelTtl);
-            TrackerChannel = new ChannelCache(channelTtl);
-            this.PathByHash = pathByHash;
-            this.Whitelist = whitelist;
-            this.Blacklist = blacklist;
+            this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
+            this.PathHandler = new(pathByHash, startProcess);
+            BlockList = new BlockListHandler(whitelist, blacklist);
+            Transactions = new(Logger);
+            peerLocks = new();
         }
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
-            : this(channelTtl, loggerFactory, logPath, new FilesystemManager(dbPath), new DownloadManager(dbPath),
+            : this(new FileSystem(), channelTtl, loggerFactory, logPath,
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                  new FilesystemManager(dbPath),
+                  new DownloadManager(loggerFactory, dbPath),
                 new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
@@ -71,54 +81,16 @@ namespace node
                 System.IO.Path.Combine(dbPath, "Blacklist"),
                 new StringSerializer(),
                 new StringSerializer()
-            ))
+            ),
+#pragma warning restore CA2000 // Dispose objects before losing scope
+                GrpcChannel.ForAddress,
+                new AsyncIOWrapper(),
+                (string name, string args) => Process.Start(name, args))
         { }
-
-        public async Task<long> ReadContentsAsync(string path, byte[] buffer, long offset, CancellationToken token)
-        {
-            using var stream = new FileStream
-                    (
-                        path,
-                        FileMode.Open,
-                        FileAccess.Read,
-                        FileShare.ReadWrite,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous |
-                        FileOptions.WriteThrough
-                    );
-
-            return await RandomAccess.ReadAsync
-                (
-                stream.SafeFileHandle,
-                buffer.AsMemory(),
-                offset,
-                token
-                );
-        }
-
-        public NodeClient GetNodeClient(Uri uri, GrpcChannelOptions? options = null)
-        {
-            if (options == null)
-            {
-                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
-            }
-            else
-            {
-                options.LoggerFactory = loggerFactory;
-            }
-            var channel = NodeChannel.GetOrCreate(uri, options);
-            return new NodeClient(channel);
-        }
-
-        public async Task RevealHashAsync(ByteString hash)
-        {
-            var path = await PathByHash.GetAsync(hash);
-            Process.Start("explorer.exe", path);
-        }
 
         public async Task DownloadObjectByHashAsync(ByteString hash, Guid? guid, ITrackerWrapper tracker, string destinationDir)
         {
-            if (!System.IO.Directory.Exists(destinationDir))
+            if (!fs.Directory.Exists(destinationDir))
             {
                 throw new ArgumentException($"Invalid destination directory: path {destinationDir} doesn't exist");
             }
@@ -133,7 +105,7 @@ namespace node
             foreach (var file in fileTasks)
             {
                 var dir = @"\\?\" + destinationDir + "\\" + Hex.ToHexString(file.Hash.ToByteArray());
-                System.IO.Directory.CreateDirectory(dir);
+                fs.Directory.CreateDirectory(dir);
                 await Downloads.AddNewFileAsync(file, tracker.GetUri(), dir);
             }
         }
@@ -145,12 +117,12 @@ namespace node
                 throw new ArgumentException("Already downloaded");
             }
 
-            var tracker = GetTrackerWrapper(new Uri(chunk.TrackerUri));
+            var tracker = ClientHandler.GetTrackerWrapper(new Uri(chunk.TrackerUri));
             Debug.Assert(chunk.Hash.Length == 64);
 
             List<string> peers = (await tracker.GetPeerList(new PeerRequest() { ChunkHash = chunk.Hash, MaxPeerCount = 256 }, token))
                 .ToList();
-
+            Logger.LogInformation($"peers: {peers.Count}");
             if (peers.Count == 0)
             {
                 chunk.Status = DownloadStatus.Pending;
@@ -163,7 +135,7 @@ namespace node
             byte[] ok = new byte[4];
             rng.GetBytes(ok);
             var index = BitConverter.ToInt32(ok) % peers.Count;
-            var peerClient = GetNodeClient(new Uri(peers[index]));
+            var peerClient = ClientHandler.GetNodeClient(new Uri(peers[index]));
             var peerCall = peerClient.GetChunk(new ChunkRequest()
             {
                 Hash = chunk.Hash,
@@ -171,20 +143,28 @@ namespace node
                 Offset = chunk.CurrentCount
             }, null, null, token);
 
+            long start = chunk.CurrentCount;
             try
             {
-                await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                var peerLock = peerLocks.GetOrAdd(peers[index], new AsyncLock());
+                Logger.LogInformation($"pending critical for {peers[index]}");
+                using (await peerLock.LockAsync())
                 {
-                    chunk.Contents.Add(message.Response);
-                    chunk.CurrentCount += message.Response.Length;
-                    Logger.LogInformation($"Received {message.Response.Length} bytes");
-                    await Downloads.UpdateFileProgressAsync(chunk.FileHash, message.Response.Length);
+                    await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
+                    {
+                        chunk.Contents.Add(message.Response);
+                        chunk.CurrentCount += message.Response.Length;
+                        Logger.LogInformation($"Received {message.Response.Length} bytes");
+                    }
                 }
+                Logger.LogInformation("chunk stream finished");
             }
             catch (Exception e)
             {
                 Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
             }
+            Logger.LogInformation($"reporting progress: {chunk.CurrentCount - start}");
+            await Downloads.UpdateFileProgressAsync(chunk.FileHash, chunk.CurrentCount - start);
 
             if (chunk.CurrentCount == chunk.Size)
             {
@@ -200,20 +180,9 @@ namespace node
                 }
                 else
                 {
-                    using var stream = new FileStream
-                    (
-                        chunk.DestinationDir,
-                        FileMode.OpenOrCreate,
-                        FileAccess.Write,
-                        FileShare.ReadWrite,
-                        bufferSize: 4096,
-                        FileOptions.Asynchronous |
-                        FileOptions.WriteThrough
-                    );
+                    await AsyncIO.WriteBufferAsync(chunk.DestinationDir, thing, chunk.Offset);
 
-                    await RandomAccess.WriteAsync(stream.SafeFileHandle, thing, chunk.Offset, CancellationToken.None);
-
-                    await GetTrackerWrapper(new Uri(chunk.TrackerUri))
+                    await ClientHandler.GetTrackerWrapper(new Uri(chunk.TrackerUri))
                         .MarkReachable([chunk.Hash], nodeURI, CancellationToken.None);
 
                     chunk.Status = DownloadStatus.Complete;
@@ -227,23 +196,22 @@ namespace node
             return chunk;
         }
 
-
         public async Task<(ObjectWithHash[] objects, ByteString rootHash)> AddObjectFromDiskAsync(string path, int chunkSize)
         {
             ObjectWithHash[] objects = [];
             ByteString rootHash = ByteString.Empty;
-            if (System.IO.File.Exists(path))
+            if (fs.File.Exists(path))
             {
-                var obj = FilesystemUtils.GetFileObject(path, chunkSize);
+                var obj = FilesystemUtils.GetFileObject(fs, path, chunkSize);
                 rootHash = HashUtils.GetHash(obj);
                 objects = [new ObjectWithHash { Hash = rootHash, Object = obj }];
             }
 
-            if (System.IO.Directory.Exists(path))
+            if (fs.Directory.Exists(path))
             {
                 List<ObjectWithHash> dirObjects = [];
                 List<(ByteString, string)> paths = [];
-                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(path, chunkSize, (hash, path, obj) =>
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(fs, path, chunkSize, (hash, path, obj) =>
                 {
                     dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
                     paths.Add((hash, path));
@@ -251,112 +219,13 @@ namespace node
 
                 foreach (var (hash, p) in paths)
                 {
-                    await PathByHash.SetAsync(hash, p);
+                    await PathHandler.SetPathAsync(hash, p);
                 }
 
                 objects = dirObjects.ToArray();
             }
 
             return (objects, rootHash);
-        }
-
-        public void RevealFile(string path)
-        {
-            Process.Start("explorer.exe", path);
-        }
-
-        public ITrackerWrapper GetTrackerWrapper(Uri trackerUri)
-        {
-            ArgumentNullException.ThrowIfNull(trackerUri);
-            var client = GetTrackerClient(trackerUri);
-            return new TrackerWrapper(client, trackerUri);
-        }
-
-        public TrackerClient GetTrackerClient(Uri uri, GrpcChannelOptions? options = null)
-        {
-            if (options == null)
-            {
-                options = new GrpcChannelOptions { LoggerFactory = loggerFactory };
-            }
-            else
-            {
-                options.LoggerFactory = loggerFactory;
-            }
-            var channel = TrackerChannel.GetOrCreate(uri, options);
-            return new TrackerClient(channel);
-        }
-
-        public async Task FixBlockListAsync(BlockListRequest request)
-        {
-            _ = IPNetwork.Parse(request.Url);
-
-            IPersistentCache<string, string> reference = request.InWhitelist ? Whitelist : Blacklist;
-            if (request.ShouldRemove && await reference.ContainsKey(request.Url))
-            {
-                await reference.Remove(request.Url);
-            }
-            else
-            {
-                await reference.SetAsync(request.Url, request.Url);
-            }
-        }
-
-        public async Task<bool> IsInBlockListAsync(Uri url)
-        {
-            bool passWhitelist = await Whitelist.CountEstimate() == 0;
-            if (!passWhitelist)
-            {
-                await Whitelist.ForEach((uri, _) =>
-                {
-                    var network = IPNetwork.Parse(uri);
-                    if (network.Contains(IPAddress.Parse(url.Host)))
-                    {
-                        passWhitelist = true;
-                        return false;
-                    }
-                    return true;
-                });
-            }
-
-            if (!passWhitelist)
-            {
-                return true;
-            }
-
-            if (await Blacklist.CountEstimate() != 0)
-            {
-                bool passBlacklist = false;
-                await Blacklist.ForEach((uri, _) =>
-                {
-                    var network = IPNetwork.Parse(uri);
-                    if (network.Contains(IPAddress.Parse(url.Host)))
-                    {
-                        passBlacklist = true;
-                        return false;
-                    }
-                    return true;
-                });
-
-                return passBlacklist;
-            }
-
-            return false;
-        }
-
-        public async Task<BlockListResponse> GetBlockListAsync()
-        {
-            var response = new BlockListResponse();
-            await Whitelist.ForEach((string key, string value) =>
-            {
-                response.Entries.Add(new BlockListEntry { InWhitelist = true, Url = key });
-                return true;
-            });
-            await Blacklist.ForEach((string key, string value) =>
-            {
-                response.Entries.Add(new BlockListEntry { InWhitelist = false, Url = key });
-                return true;
-            });
-            return response;
         }
 
         protected virtual void Dispose(bool disposing)
@@ -367,14 +236,12 @@ namespace node
                 {
                     cts.Cancel();
                     cts.Dispose();
-                    NodeChannel.Dispose();
-                    TrackerChannel.Dispose();
+                    ClientHandler.Dispose();
                     Manager.Dispose();
-                    PathByHash.Dispose();
-                    Whitelist.Dispose();
-                    Blacklist.Dispose();
-                    TransactionManager.Dispose();
+                    PathHandler.Dispose();
+                    BlockList.Dispose();
                     LogPath = string.Empty;
+                    loggerFactory.Dispose();
                 }
 
                 disposedValue = true;

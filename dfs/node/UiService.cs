@@ -39,12 +39,12 @@ namespace node
         }
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
-            return new Ui.Path { Path_ = await state.PathByHash.GetAsync(request.Data) };
+            return new Ui.Path { Path_ = await state.PathHandler.GetPathAsync(request.Data) };
         }
 
         public override async Task<RpcCommon.Empty> RevealObjectInExplorer(RpcCommon.Hash request, ServerCallContext context)
         {
-            await state.RevealHashAsync(request.Data);
+            await state.PathHandler.RevealHashAsync(request.Data);
 
             return new RpcCommon.Empty();
         }
@@ -78,7 +78,7 @@ namespace node
 
         public override async Task<Ui.SearchResponseList> SearchForObjects(Ui.SearchRequest request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             var list = new Ui.SearchResponseList();
             list.Results.AddRange(await tracker.SearchForObjects(request.Query, context.CancellationToken));
             return list;
@@ -103,6 +103,7 @@ namespace node
             {
                 throw new RpcException(Grpc.Core.Status.DefaultCancelled, "Invalid chunk size");
             }
+            chunkSize = Math.Clamp(chunkSize, Constants.maxChunkSize / 16, Constants.maxChunkSize);
 
             (ObjectWithHash[] objects, ByteString rootHash) = await state.AddObjectFromDiskAsync(path, chunkSize);
 
@@ -123,11 +124,11 @@ namespace node
 
         public override async Task<RpcCommon.Empty> PublishToTracker(Ui.PublishingOptions request, ServerCallContext context)
         {
-            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.GetTrackerWrapper(new Uri(request.TrackerUri)));
+            await PublishToTrackerAsync(Guid.Parse(request.ContainerGuid), state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri)), context.CancellationToken);
             return new RpcCommon.Empty();
         }
 
-        private async Task PublishToTrackerAsync(Guid container, ITrackerWrapper tracker)
+        private async Task PublishToTrackerAsync(Guid container, ITrackerWrapper tracker, CancellationToken token)
         {
             if (!await state.Manager.Container.ContainsKey(container))
             {
@@ -136,13 +137,13 @@ namespace node
 
             var objects = await state.Manager.GetContainerTree(container);
             var rootHash = await state.Manager.Container.GetAsync(container);
-            await PublishContainerUpdateAsync(container, tracker, objects, rootHash);
+            await PublishContainerUpdateAsync(container, tracker, objects, rootHash, token);
         }
 
-        private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash)
+        private async Task PublishContainerUpdateAsync(Guid container, ITrackerWrapper tracker, List<ObjectWithHash> objects, ByteString rootHash, CancellationToken token)
         {
-            Guid newGuid = await state.TransactionManager.PublishObjectsAsync(tracker, container, objects,
-                            rootHash);
+            Guid newGuid = await state.Transactions.PublishObjectsAsync(tracker, container, objects,
+                            rootHash, token);
 
             await state.Manager.Container.SetAsync(newGuid, rootHash);
 
@@ -168,7 +169,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> DownloadContainer(Ui.DownloadContainerOptions request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             var guid = Guid.Parse(request.ContainerGuid);
             var hash = await tracker.GetContainerRootHash(guid, CancellationToken.None);
             await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
@@ -180,7 +181,7 @@ namespace node
 
         public override async Task<RpcCommon.DataUsage> GetDataUsage(Ui.UsageRequest request, ServerCallContext context)
         {
-            var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
+            var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             return await tracker.GetDataUsage(context.CancellationToken);
         }
 
@@ -195,13 +196,13 @@ namespace node
 
         public override async Task<RpcCommon.Empty> ModifyBlockListEntry(BlockListRequest request, ServerCallContext context)
         {
-            await state.FixBlockListAsync(request);
+            await state.BlockList.FixBlockListAsync(request);
             return new RpcCommon.Empty();
         }
 
         public override async Task<BlockListResponse> GetBlockList(RpcCommon.Empty request, ServerCallContext context)
         {
-            return await state.GetBlockListAsync();
+            return await state.BlockList.GetBlockListAsync();
         }
 
         public override async Task<RpcCommon.Empty> LogMessage(LogRequest request, ServerCallContext context)
@@ -235,7 +236,7 @@ namespace node
 
         public override async Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
         {
-            state.RevealFile(state.LogPath);
+            state.PathHandler.RevealFile(state.LogPath);
             return await Task.FromResult(new RpcCommon.Empty());
         }
 
@@ -245,8 +246,8 @@ namespace node
             var guid = Guid.Parse(request.ContainerGuid);
             if (request.HasTrackerUri)
             {
-                var tracker = state.GetTrackerWrapper(new Uri(request.TrackerUri));
-                await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot);
+                var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
+                await PublishContainerUpdateAsync(guid, tracker, newObjects, newRoot, context.CancellationToken);
             }
             else
             {
