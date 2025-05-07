@@ -138,8 +138,10 @@ namespace common
             {
                 var root = await Container.GetAsync(Guid.Parse(operation.ContainerGuid));
                 var objects = await GetObjectTree(root, true);
+                Dictionary<ByteString, ObjectWithHash> removalDiff = new(new ByteStringComparer());
+
                 ObjectWithHash? extracted = null;
-                Debugger.Break();
+
                 if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Create)
                 {
                     extracted = await ObjectByHash.GetAsync(operation.Target.Data);
@@ -149,10 +151,17 @@ namespace common
                         extracted.Hash = HashUtils.GetHash(extracted.Object);
                     }
 
-                    var diff = FilesystemUtils.RemoveObjectFromTree(objects, root, operation.Parent.Data, operation.Target.Data);
-                    root = diff[root].Hash;
-                    objects.RemoveAll(o => diff.ContainsKey(o.Hash));
-                    objects.AddRange(diff.Values);
+                    removalDiff = FilesystemUtils
+                        .RemoveObjectFromTree(objects, root, operation.Target.Data, operation.Parent.Data)
+                        .ToDictionary(new ByteStringComparer());
+
+                    root = removalDiff[root].Hash;
+
+                    if (extracted != null)
+                        objects.RemoveAll(o => o.Hash == operation.Target.Data);
+
+                    objects.RemoveAll(o => removalDiff.ContainsKey(o.Hash));
+                    objects.AddRange(removalDiff.Values);
                 }
 
                 if (operation.Type != Ui.OperationType.Delete)
@@ -170,10 +179,16 @@ namespace common
                     var newParent = operation.Type == Ui.OperationType.Move || operation.Type == Ui.OperationType.Copy
                         ? operation.NewParent.Data
                         : operation.Parent.Data;
-                    var diff = FilesystemUtils.AddObjectToTree(objects, root, operation.Target.Data, newParent);
+
+                    if (removalDiff.TryGetValue(newParent, out ObjectWithHash? value))
+                    {
+                        newParent = value.Hash;
+                    }
+
+                    var diff = FilesystemUtils.AddObjectToTree(objects, root, extracted == null ? operation.Target.Data : extracted.Hash, newParent);
                     root = diff[root].Hash;
                     objects.RemoveAll(o => diff.ContainsKey(o.Hash));
-
+                    objects.AddRange(diff.Values);
                     if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Move)
                     {
                         objects.AddRange(toAdd.Data);

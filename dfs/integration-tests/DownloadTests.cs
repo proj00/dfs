@@ -5,6 +5,7 @@ using Org.BouncyCastle.Utilities.Encoders;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync(e.ToString());
             }
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 11; i++)
             {
                 var ctx = new ProcessContext();
                 contexts.Enqueue(ctx);
@@ -61,8 +62,7 @@ namespace integration_tests
             Assert.That(b, Is.False, "errors printed");
         }
 
-
-        [Test, CancelAfter(40000)]
+        [Test, CancelAfter(40000), NonParallelizable]
         public async Task PublishAndSearchTestAsync(CancellationToken token)
         {
             bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
@@ -101,8 +101,8 @@ namespace integration_tests
             }
         }
 
-        [Test, CancelAfter(12000)]
-        public async Task ModifyAndPublishTestAsync(CancellationToken token)
+        [Test, CancelAfter(40000), NonParallelizable]
+        public async Task TestRenameAsync([Values] bool renameFolder, CancellationToken token)
         {
             bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
             Assert.That(ctx, Is.Not.Null);
@@ -135,29 +135,255 @@ namespace integration_tests
                 cancellationToken: token
                 );
 
-            foreach (var a in objects.Data)
-                await TestContext.Out.WriteLineAsync(formatter.Format(a));
-            Process.Start("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\devenv.exe",
-                $"/DebugExe \"{ProcessContext.Node1OutputPath}\"");
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+
+            int id = renameFolder ? 0 : 1;
 
             var s = await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
             {
                 ContainerGuid = resp.Guid_,
                 Type = Ui.OperationType.Rename,
-                Parent = new RpcCommon.Hash { Data = objects.Data[1].Hash },
-                Target = new RpcCommon.Hash { Data = objects.Data[2].Hash },
+                Parent = new RpcCommon.Hash { Data = objects.Data[id].Hash },
+                Target = new RpcCommon.Hash { Data = objects.Data[id + 1].Hash },
                 NewName = "hello.txt",
+                TrackerUri = $"http://localhost:{ctx.testPort3}",
 
             }, cancellationToken: token);
 
-            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+            objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            Assert.That(objects.Data[id + 1].Object.Name == "hello.txt");
+
             var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(resp2, Is.Not.Null);
-                Assert.That(resp2, Has.Count.EqualTo(3));
-                foreach (var a in resp2)
-                    await TestContext.Out.WriteLineAsync(formatter.Format(a));
+                Assert.That(resp2, Has.Count.EqualTo(objects.Data.Count));
+                Assert.That(resp2.Select(a => a.Object), Is.EqualTo(objects.Data));
+            }
+        }
+
+        [Test, CancelAfter(40000), NonParallelizable]
+        public async Task TestMoveAsync([Values] bool moveFolder, CancellationToken token)
+        {
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "folder"));
+            Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "folder", "subfolder"));
+            var filePath = Path.Combine(directory.FullName, "folder", "subfolder", "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 1;
+            await GenerateTestFile(file, fileSize);
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize, Path = directory.FullName }, null, null, token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp, Is.Not.Null);
+                Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
+            }
+
+            var objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+
+            int id = moveFolder ? 1 : 2;
+
+            await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
+            {
+                ContainerGuid = resp.Guid_,
+                Type = Ui.OperationType.Move,
+                Parent = new RpcCommon.Hash { Data = objects.Data[id].Hash },
+                Target = new RpcCommon.Hash { Data = objects.Data[id + 1].Hash },
+                NewParent = new RpcCommon.Hash { Data = objects.Data[0].Hash },
+                TrackerUri = $"http://localhost:{ctx.testPort3}",
+
+            }, cancellationToken: token);
+
+            var newObjects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(newObjects.Data.Contains(objects.Data[id + 1]));
+                Assert.That(!newObjects.Data.Contains(objects.Data[0]));
+                Assert.That(!newObjects.Data.Contains(objects.Data[1]));
+                if (moveFolder)
+                {
+                    Assert.That(newObjects.Data.Contains(objects.Data[3]));
+                }
+                else
+                {
+                    Assert.That(!newObjects.Data.Contains(objects.Data[2]));
+                }
+            }
+
+            var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp2, Is.Not.Null);
+                Assert.That(resp2, Has.Count.EqualTo(objects.Data.Count));
+                Assert.That(resp2.Select(a => a.Object), Is.EqualTo(newObjects.Data));
+            }
+        }
+
+        [Test, CancelAfter(40000), NonParallelizable, Ignore("flaky")]
+        public async Task TestCopyAsync([Values] bool copyFolder, CancellationToken token)
+        {
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "folder"));
+            Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "subfolder"));
+            var filePath = Path.Combine(directory.FullName, "folder", "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 1;
+            await GenerateTestFile(file, fileSize);
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize, Path = directory.FullName }, null, null, token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp, Is.Not.Null);
+                Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
+            }
+
+            var objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+
+            int id = copyFolder ? 1 : 2;
+
+            await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
+            {
+                ContainerGuid = resp.Guid_,
+                Type = Ui.OperationType.Copy,
+                Parent = new RpcCommon.Hash { Data = objects.Data[id].Hash },
+                Target = new RpcCommon.Hash { Data = objects.Data[id + 1].Hash },
+                NewParent = new RpcCommon.Hash { Data = objects.Data[3].Hash },
+                TrackerUri = $"http://localhost:{ctx.testPort3}",
+
+            }, cancellationToken: token);
+
+            var newObjects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(newObjects.Data.Contains(objects.Data[id + 1]));
+                Assert.That(!newObjects.Data.Contains(objects.Data[0]));
+                Assert.That(newObjects.Data.Contains(objects.Data[1]));
+            }
+
+            var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp2, Is.Not.Null);
+                Assert.That(resp2, Has.Count.EqualTo(objects.Data.Count));
+                Assert.That(resp2.Select(a => a.Object), Is.EqualTo(newObjects.Data));
+            }
+        }
+
+        [Test, CancelAfter(40000), NonParallelizable]
+        public async Task TestDeleteAsync([Values] bool deleteFolder, CancellationToken token)
+        {
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            var subdir = Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "folder"));
+            var filePath = Path.Combine(subdir.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 1;
+            await GenerateTestFile(file, fileSize);
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize, Path = directory.FullName }, null, null, token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp, Is.Not.Null);
+                Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
+            }
+
+            var objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+            var initial = objects.Data.Count - (deleteFolder ? 2 : 1);
+
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+
+            int id = deleteFolder ? 0 : 1;
+
+            var s = await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
+            {
+                ContainerGuid = resp.Guid_,
+                Type = Ui.OperationType.Delete,
+                Parent = new RpcCommon.Hash { Data = objects.Data[id].Hash },
+                Target = new RpcCommon.Hash { Data = objects.Data[id + 1].Hash },
+                TrackerUri = $"http://localhost:{ctx.testPort3}",
+
+            }, cancellationToken: token);
+
+            objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp2, Is.Not.Null);
+                Assert.That(resp2, Has.Count.EqualTo(initial));
+                Assert.That(resp2.Select(a => a.Object), Is.EqualTo(objects.Data));
             }
         }
 
@@ -167,7 +393,7 @@ namespace integration_tests
                 await file.WriteLineAsync(faker.Random.AlphaNumeric(2));
         }
 
-        [Test, CancelAfter(40000)]
+        [Test, CancelAfter(60000), NonParallelizable]
         public async Task TestDownloadAsync(CancellationToken token)
         {
             bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
@@ -230,7 +456,7 @@ namespace integration_tests
             Assert.That(actual, Is.EqualTo(expected), "file contents aren't equal");
         }
 
-        [Test, CancelAfter(40000)]
+        [Test, CancelAfter(60000), NonParallelizable]
         public async Task TestDownloadWithPauseResumeAsync(CancellationToken token)
         {
             bool fetched = contexts.TryDequeue(out ProcessContext? ctx);

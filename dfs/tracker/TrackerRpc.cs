@@ -178,41 +178,56 @@ namespace tracker
             ServerCallContext context
         )
         {
-            using var re = new IronRe2.Regex(request.Query);
-
-            // collect all container GUIDs
             var allContainers = new List<System.Guid>();
-            await _filesystemManager.Container.ForEach(
-                (guid, bs) =>
-                {
-                    allContainers.Add(guid);
-                    return true;
-                }
-            );
-
-            foreach (var container in allContainers)
+            IronRe2.Regex? re = null;
+            try
             {
-                var matches = (await _filesystemManager.GetContainerTree(container))
-                    .Where(o => re.IsMatch(o.Object.Name))
-                    .Select(o => new SearchResponse { Guid = container.ToString(), Object = o })
-                    .ToList();
-
-                if (context.CancellationToken.IsCancellationRequested)
+                if (request.Query.StartsWith("guid:"))
                 {
-                    break;
+                    request.Query = request.Query.Substring(5);
+                    allContainers.Add(System.Guid.Parse(request.Query));
+                }
+                else
+                {
+                    re = new IronRe2.Regex(request.Query);
+                    // collect all container GUIDs
+                    await _filesystemManager.Container.ForEach(
+                        (guid, bs) =>
+                        {
+                            allContainers.Add(guid);
+                            return true;
+                        }
+                    );
                 }
 
-                if (matches.Count == 0)
-                    continue;
-
-                foreach (var match in matches)
+                foreach (var container in allContainers)
                 {
+                    var matches = (await _filesystemManager.GetContainerTree(container))
+                        .Where(o => re == null || re.IsMatch(o.Object.Name))
+                        .Select(o => new SearchResponse { Guid = container.ToString(), Object = o })
+                        .ToList();
+
                     if (context.CancellationToken.IsCancellationRequested)
                     {
                         break;
                     }
-                    await responseStream.WriteAsync(match);
+
+                    if (matches.Count == 0)
+                        continue;
+
+                    foreach (var match in matches)
+                    {
+                        if (context.CancellationToken.IsCancellationRequested)
+                        {
+                            break;
+                        }
+                        await responseStream.WriteAsync(match);
+                    }
                 }
+            }
+            finally
+            {
+                if (re != null) re.Dispose();
             }
         }
 
@@ -285,7 +300,7 @@ namespace tracker
 
             ByteString rootHash = ByteString.Empty;
             ValueTuple<System.Guid, long> transactionInfo = default;
-
+            System.Guid transactionGuid = default;
             await foreach (var obj in requestStream.ReadAllAsync(context.CancellationToken))
             {
                 if (!found)
@@ -304,6 +319,7 @@ namespace tracker
 
                         throw new RpcException(new Status(StatusCode.DeadlineExceeded, "TTL has expired"));
                     }
+                    transactionGuid = System.Guid.Parse(obj.TransactionGuid);
                 }
                 found = true;
                 objects.Add(obj);
@@ -316,6 +332,12 @@ namespace tracker
                 rootHash,
                 transactionInfo.Item1
             );
+
+            transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
+                            (
+                            transactionGuid,
+                            transactionInfo)
+                            );
             return new Empty();
         }
 

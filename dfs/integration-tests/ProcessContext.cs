@@ -40,17 +40,17 @@ namespace integration_tests
             testPort3 = FindFreePort();
 
             _processN1 = StartProcess(1, Node1OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n1\" {testPort1}", errorsPrinted);
-            //_processN2 = StartProcess(2, Node2OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort2}", errorsPrinted);
+            _processN2 = StartProcess(2, Node2OutputPath, $"{Guid.NewGuid().ToString()} {0} \"{_tempDirectory}\\n2\" {testPort2}", errorsPrinted);
             _processT = StartProcess(3, TrackerOutputPath, $"\"{_tempDirectory}\\tracker\" {testPort3}", errorsPrinted);
 
             await WaitForPortAsync(testPort1);
-            //await WaitForPortAsync(testPort2);
+            await WaitForPortAsync(testPort2);
             await WaitForPortAsync(testPort3);
 
             n1Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort1}")));
-            //n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
-            //new Uri($"http://localhost:{testPort2}")));
+            n2Client = new Ui.Ui.UiClient(GrpcChannel.ForAddress(
+                new Uri($"http://localhost:{testPort2}")));
             trackerClient = new Tracker.Tracker.TrackerClient(GrpcChannel.ForAddress(
                 new Uri($"http://localhost:{testPort3}")));
             trackerWrapper = new TrackerWrapper(trackerClient, new Uri($"http://localhost:{testPort3}"));
