@@ -1,6 +1,7 @@
 import { Hash } from "@/types/rpc_common";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Buffer } from "buffer";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -50,15 +51,15 @@ export function formatDate(dateString: string): string {
 }
 
 export function toBase64(array: Uint8Array): string {
-  return btoa(String.fromCharCode(...array));
+  return Buffer.from(array).toString("base64");
 }
 
 export function fromBase64(b64: string): Uint8Array {
-  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return Uint8Array.from(Buffer.from(b64, "base64"));
 }
 
 export function hashFromBase64(b64: string): Hash {
-  return { data: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) };
+  return { data: Uint8Array.from(Buffer.from(b64, "base64")) };
 }
 
 export function formatProgress(current: number, total: number): string {

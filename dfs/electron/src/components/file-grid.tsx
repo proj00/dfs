@@ -5,15 +5,13 @@ import { Button } from "./ui/button";
 import type { File, Folder } from "../lib/types";
 import { FileActionMenu } from "./menus/file-action-menu";
 import { FolderActionMenu } from "./menus/folder-action-menu";
-import {
-  handleFileOpen,
-} from "@/lib/file-handlers";
+import { handleFileOpen, handleMove as moveHandler, handleCopy as copyHandler } from "@/lib/file-handlers"
 import { useState } from "react"
 import { MoveDialog } from "./move-dialog"
 import { RenameDialog } from "./rename-dialog"
 import { DeleteDialog } from "./delete-dialog"
 import { CopyDialog } from "./copy-dialog"
-import { handleMove, handleRename, handleDelete, handleCopy } from "../lib/file-handlers"
+import { handleRename, handleDelete } from "../lib/file-handlers"
 
 interface FileGridProps {
   readonly files: File[];
@@ -42,6 +40,34 @@ export function FileGrid({
   const [itemToCopy, setItemToCopy] = useState<File | Folder | null>(null)
 
   const existingNames = [...files.map((file) => file.name), ...folders.map((folder) => folder.name)]
+
+  const handleMove = async (item: File | Folder, destinationFolderId: string | null): Promise<void> => {
+    if (destinationFolderId === null) {
+      // Handle root folder case
+      await moveHandler(item, { id: "", name: "Root", parentId: [], hasChildren: false, containerGuid: "", createdAt: new Date().toISOString(), modifiedAt: new Date().toISOString() })
+    } else {
+      const destinationFolder = folders.find((f) => f.id === destinationFolderId)
+      if (destinationFolder) {
+        await moveHandler(item, destinationFolder)
+      }
+    }
+  }
+
+  const handleCopy = async (
+    item: File | Folder,
+    destinationFolderId: string | null,
+  ): Promise<boolean> => {
+    if (destinationFolderId === null) {
+      // Handle root folder case
+      return await copyHandler(item, { id: "", name: "Root", parentId: [], hasChildren: false, containerGuid: "", createdAt: new Date().toISOString(), modifiedAt: new Date().toISOString() })
+    } else {
+      const destinationFolder = folders.find((f) => f.id === destinationFolderId)
+      if (destinationFolder) {
+        return await copyHandler(item, destinationFolder)
+      }
+    }
+    return false
+  }
 
   const handleMoveClick = (item: File | Folder) => {
     setItemToMove(item)

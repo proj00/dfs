@@ -6,10 +6,7 @@ import type { File, Folder } from "../lib/types";
 import { formatFileSize, formatDate } from "../lib/utils";
 import { FileActionMenu } from "./menus/file-action-menu";
 import { FolderActionMenu } from "./menus/folder-action-menu";
-import {
-  handleFileOpen,
-  handleMove,
-} from "@/lib/file-handlers";
+import { handleFileOpen, handleMove as moveHandler } from "@/lib/file-handlers"
 import { useState } from "react"
 import { MoveDialog } from "./move-dialog"
 import { RenameDialog } from "./rename-dialog"
@@ -41,6 +38,17 @@ export function FileList({
   const [itemToDelete, setItemToDelete] = useState<File | Folder | null>(null)
 
   const existingNames = [...files.map((file) => file.name), ...folders.map((folder) => folder.name)]
+
+  const handleMove = async (item: File | Folder, destinationFolderId: string | null): Promise<void> => {
+    if (destinationFolderId === null) {
+      await moveHandler(item, { id: "", name: "Root", parentId: [], hasChildren: false, containerGuid: "", createdAt: new Date().toISOString(), modifiedAt: new Date().toISOString() })
+    } else {
+      const destinationFolder = folders.find((f) => f.id === destinationFolderId)
+      if (destinationFolder) {
+        await moveHandler(item, destinationFolder)
+      }
+    }
+  }
 
   const handleMoveClick = (item: File | Folder) => {
     setItemToMove(item)
