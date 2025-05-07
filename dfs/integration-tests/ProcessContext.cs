@@ -108,8 +108,7 @@ namespace integration_tests
                 await n1Client.ShutdownAsync(new RpcCommon.Empty());
                 await n2Client.ShutdownAsync(new RpcCommon.Empty());
                 await trackerClient.ShutdownAsync(new RpcCommon.Empty());
-                await Task.Delay(3000);
-                ProcessHandling.KillSolutionProcesses([Node1OutputPath, Node2OutputPath, TrackerOutputPath]);
+                await Task.Delay(1000);
             }
             catch { }
             _processN1?.Dispose();

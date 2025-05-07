@@ -146,6 +146,7 @@ namespace node
                             rootHash, token);
 
             await state.Manager.Container.SetAsync(newGuid, rootHash);
+            await state.Manager.CreateObjectContainer([.. objects], rootHash, newGuid);
 
             var hashes = objects
                 .Select(o => o.Object)

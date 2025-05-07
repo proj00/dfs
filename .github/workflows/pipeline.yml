@@ -62,8 +62,8 @@ jobs:
 
       - name: Test .NET project
         run: |
-          dotnet-coverage collect "dotnet test --no-build dfs/node-unit-tests/unit-tests.csproj --verbosity d /p:ParallelizeTestCollections=true" -f xml -o "unitcoverage.xml"
-          #dotnet-coverage collect "dotnet test --no-build dfs/integration-tests/integration-tests.csproj --verbosity d /p:ParallelizeTestCollections=true" -f xml -o "bigcoverage.xml"
+          dotnet-coverage collect "dotnet test --no-build dfs/node-unit-tests/unit-tests.csproj --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "unitcoverage.xml"
+          dotnet-coverage collect "dotnet test --no-build dfs/integration-tests/integration-tests.csproj --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "bigcoverage.xml"
 
       - name: Finish SonarScanner
         env:
