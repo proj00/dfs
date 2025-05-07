@@ -14,6 +14,7 @@ namespace integration_tests
     [TestFixture]
     public class DownloadTests
     {
+        static JsonFormatter formatter = new JsonFormatter(JsonFormatter.Settings.Default.WithIndentation());
         private static Bogus.Faker faker = new();
         private static ConcurrentQueue<ProcessContext> contexts = new();
         private static ConcurrentQueue<ProcessContext> disposedContexts = new();
@@ -35,7 +36,7 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync(e.ToString());
             }
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 1; i++)
             {
                 var ctx = new ProcessContext();
                 contexts.Enqueue(ctx);
@@ -97,6 +98,66 @@ namespace integration_tests
                     Assert.That(a.Guid, Is.EqualTo(resp.Guid_));
                 Assert.That(resp2[0].Object.Object.Name, Is.EqualTo("test1"));
                 Assert.That(resp2[1].Object.Object.Name, Is.EqualTo("test.txt"));
+            }
+        }
+
+        [Test, CancelAfter(12000)]
+        public async Task ModifyAndPublishTestAsync(CancellationToken token)
+        {
+            bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
+            Assert.That(ctx, Is.Not.Null);
+            Assert.That(fetched, Is.True);
+            disposedContexts.Enqueue(ctx);
+
+            var directory = Directory.CreateDirectory(
+                Path.Combine(ctx._tempDirectory, "test1"));
+            var subdir = Directory.CreateDirectory(
+                Path.Combine(directory.FullName, "folder"));
+            var filePath = Path.Combine(subdir.FullName, "test.txt");
+            using var file = File.CreateText(filePath);
+
+            int fileSize = 1024 * 1024 * 1;
+            await GenerateTestFile(file, fileSize);
+
+            await file.FlushAsync(token);
+            await TestContext.Out.WriteLineAsync(ctx._tempDirectory);
+
+            var resp = await ctx.n1Client.ImportObjectToContainerAsync(new() { ChunkSize = fileSize, Path = directory.FullName }, null, null, token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp, Is.Not.Null);
+                Assert.That(Guid.TryParse(resp.Guid_, out _), Is.True);
+            }
+
+            var objects = await ctx.n1Client.GetContainerObjectsAsync
+                (
+                resp,
+                cancellationToken: token
+                );
+
+            foreach (var a in objects.Data)
+                await TestContext.Out.WriteLineAsync(formatter.Format(a));
+            Process.Start("C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\devenv.exe",
+                $"/DebugExe \"{ProcessContext.Node1OutputPath}\"");
+
+            var s = await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
+            {
+                ContainerGuid = resp.Guid_,
+                Type = Ui.OperationType.Rename,
+                Parent = new RpcCommon.Hash { Data = objects.Data[1].Hash },
+                Target = new RpcCommon.Hash { Data = objects.Data[2].Hash },
+                NewName = "hello.txt",
+
+            }, cancellationToken: token);
+
+            await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
+            var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resp2, Is.Not.Null);
+                Assert.That(resp2, Has.Count.EqualTo(3));
+                foreach (var a in resp2)
+                    await TestContext.Out.WriteLineAsync(formatter.Format(a));
             }
         }
 

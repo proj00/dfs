@@ -3,6 +3,7 @@ using Google.Protobuf;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -136,9 +137,9 @@ namespace common
             using (await _syncRoot.LockAsync())
             {
                 var root = await Container.GetAsync(Guid.Parse(operation.ContainerGuid));
-                var objects = await GetObjectTree(root);
+                var objects = await GetObjectTree(root, true);
                 ObjectWithHash? extracted = null;
-
+                Debugger.Break();
                 if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Create)
                 {
                     extracted = await ObjectByHash.GetAsync(operation.Target.Data);
