@@ -37,7 +37,7 @@ namespace integration_tests
                 await TestContext.Out.WriteLineAsync(e.ToString());
             }
 
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < (Debugger.IsAttached ? 1 : 11); i++)
             {
                 var ctx = new ProcessContext();
                 contexts.Enqueue(ctx);
@@ -249,7 +249,7 @@ namespace integration_tests
             }
         }
 
-        [Test, CancelAfter(40000), NonParallelizable, Ignore("flaky")]
+        [Test, CancelAfter(40000), NonParallelizable]
         public async Task TestCopyAsync([Values] bool copyFolder, CancellationToken token)
         {
             bool fetched = contexts.TryDequeue(out ProcessContext? ctx);
@@ -287,7 +287,7 @@ namespace integration_tests
 
             await ctx.n1Client.PublishToTrackerAsync(new() { ContainerGuid = resp.Guid_, TrackerUri = $"http://localhost:{ctx.testPort3}" }, null, null, token);
 
-            int id = copyFolder ? 1 : 2;
+            int id = copyFolder ? 0 : 1;
 
             await ctx.n1Client.ApplyFsOperationAsync(new Ui.FsOperation
             {
@@ -308,9 +308,10 @@ namespace integration_tests
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(newObjects.Data.Contains(objects.Data[id + 1]));
-                Assert.That(!newObjects.Data.Contains(objects.Data[0]));
                 Assert.That(newObjects.Data.Contains(objects.Data[1]));
+                Assert.That(newObjects.Data.Contains(objects.Data[2]));
+                Assert.That(!newObjects.Data.Contains(objects.Data[0]));
+                Assert.That(!newObjects.Data.Contains(objects.Data[3]));
             }
 
             var resp2 = await ctx.trackerWrapper.SearchForObjects("(?s).*", token);
