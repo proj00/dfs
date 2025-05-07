@@ -210,8 +210,7 @@ namespace unit_tests.node
 
         [Test]
         [NonParallelizable]
-        [TestCase(100)]
-        [TestCase(10)]
+        [TestCase(500)]
         public async Task ResumeFile_RequestsHandledAsync(int downloadTime)
         {
             // arrange

@@ -65,12 +65,12 @@ namespace node
                 start = await client.StartTransaction(request, token);
             }
 
-            var actualGuid = Guid.Parse(start.ActualContainerGuid);
-
             if (start.State != TransactionState.Ok)
             {
                 throw new Exception($"Failed to start transaction, received state: {start.State}");
             }
+
+            var actualGuid = Guid.Parse(start.ActualContainerGuid);
 
             _ = await client.Publish(
                 objects.Select(o => new PublishedObject
