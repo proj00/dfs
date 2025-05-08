@@ -11,6 +11,9 @@ module.exports = {
     "!src/App.tsx",
   ],
   coverageDirectory: "./coverage",
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
   coverageReporters: ["lcov", "text", "json"],
   transform: {
     "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.json" }],

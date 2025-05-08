@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from "@testing-library/react"
-import { FileGrid } from "../components/file-grid"
-import { jest } from "@jest/globals"
+import "@testing-library/jest-dom";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { FileGrid } from "../components/file-grid";
+import { jest } from "@jest/globals";
 
 // Mock the file handlers
 jest.mock("../lib/file-handlers", () => ({
@@ -9,7 +10,7 @@ jest.mock("../lib/file-handlers", () => ({
   handleMove: jest.fn(),
   handleDelete: jest.fn(),
   handleShare: jest.fn(),
-}))
+}));
 
 describe("FileGrid", () => {
   const mockFiles = [
@@ -32,7 +33,7 @@ describe("FileGrid", () => {
       modifiedAt: "2023-01-25T10:30:00Z",
       thumbnail: "/placeholder.svg?height=100&width=100",
     },
-  ]
+  ];
 
   const mockFolders = [
     {
@@ -51,7 +52,7 @@ describe("FileGrid", () => {
       modifiedAt: "2023-03-25T12:15:00Z",
       hasChildren: false,
     },
-  ]
+  ];
 
   const defaultProps = {
     files: mockFiles,
@@ -60,67 +61,71 @@ describe("FileGrid", () => {
     currentFolderName: "Documents",
     navigateToFolder: jest.fn(),
     navigateToParent: jest.fn(),
-  }
+  };
 
   beforeEach(() => {
-    jest.clearAllMocks()
-  })
+    jest.clearAllMocks();
+  });
 
   it("renders files and folders in grid view", () => {
-    render(<FileGrid {...defaultProps} />)
+    render(<FileGrid {...defaultProps} />);
 
     // Check if folder names are rendered
-    expect(screen.getByText("Work")).toBeInTheDocument()
-    expect(screen.getByText("Personal")).toBeInTheDocument()
+    expect(screen.getByText("Work")).toBeInTheDocument();
+    expect(screen.getByText("Personal")).toBeInTheDocument();
 
     // Check if file names are rendered
-    expect(screen.getByText("Document.docx")).toBeInTheDocument()
-    expect(screen.getByText("Image.jpg")).toBeInTheDocument()
+    expect(screen.getByText("Document.docx")).toBeInTheDocument();
+    expect(screen.getByText("Image.jpg")).toBeInTheDocument();
 
     // Check if back button is rendered
-    expect(screen.getByText("Back")).toBeInTheDocument()
-    expect(screen.getByText("Documents")).toBeInTheDocument()
-  })
+    expect(screen.getByText("Back")).toBeInTheDocument();
+    expect(screen.getByText("Documents")).toBeInTheDocument();
+  });
 
   it("navigates to parent folder when back button is clicked", () => {
-    render(<FileGrid {...defaultProps} />)
+    render(<FileGrid {...defaultProps} />);
 
     // Click back button
-    fireEvent.click(screen.getByText("Back"))
+    fireEvent.click(screen.getByText("Back"));
 
     // Verify navigateToParent was called
-    expect(defaultProps.navigateToParent).toHaveBeenCalled()
-  })
+    expect(defaultProps.navigateToParent).toHaveBeenCalled();
+  });
 
   it("navigates to folder when folder is clicked", () => {
-    render(<FileGrid {...defaultProps} />)
+    render(<FileGrid {...defaultProps} />);
 
     // Click on a folder
-    fireEvent.click(screen.getByText("Work"))
+    fireEvent.click(screen.getByText("Work"));
 
     // Verify navigateToFolder was called with correct folder ID
-    expect(defaultProps.navigateToFolder).toHaveBeenCalledWith("folder-2")
-  })
+    expect(defaultProps.navigateToFolder).toHaveBeenCalledWith("folder-2");
+  });
 
   it("displays empty state when no files or folders", () => {
-    render(<FileGrid {...defaultProps} files={[]} folders={[]} />)
+    render(<FileGrid {...defaultProps} files={[]} folders={[]} />);
 
     // Check if empty state is rendered
-    expect(screen.getByText("This folder is empty")).toBeInTheDocument()
-    expect(screen.getByText("Files and folders you add to this location will appear here")).toBeInTheDocument()
-  })
+    expect(screen.getByText("This folder is empty")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Files and folders you add to this location will appear here"
+      )
+    ).toBeInTheDocument();
+  });
 
   it("renders different icons for different file types", () => {
-    render(<FileGrid {...defaultProps} />)
+    render(<FileGrid {...defaultProps} />);
 
     // Check if document has document icon (SVG)
-    const documentItem = screen.getByText("Document.docx").closest(".group")
-    expect(documentItem).toBeInTheDocument()
+    const documentItem = screen.getByText("Document.docx").closest(".group");
+    expect(documentItem).toBeInTheDocument();
 
     // Check if image has image thumbnail
-    const imageItem = screen.getByText("Image.jpg").closest(".group")
-    expect(imageItem).toBeInTheDocument()
-    const imageElement = imageItem?.querySelector("img")
-    expect(imageElement).toBeInTheDocument()
-  })
-})
+    const imageItem = screen.getByText("Image.jpg").closest(".group");
+    expect(imageItem).toBeInTheDocument();
+    const imageElement = imageItem?.querySelector("img");
+    expect(imageElement).toBeInTheDocument();
+  });
+});

@@ -1,7 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { DownloadManager } from "../components/download-manager"
-import { GetNodeService } from "@/IpcService/GetNodeService"
-import { jest } from "@jest/globals"
+import "@testing-library/jest-dom";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { DownloadManager } from "../components/download-manager";
+import { GetNodeService } from "@/IpcService/GetNodeService";
+import { jest } from "@jest/globals";
 
 // Mock the backendService
 jest.mock("@/IpcService/GetNodeService", () => ({
@@ -19,7 +20,7 @@ jest.mock("@/IpcService/GetNodeService", () => ({
           totalBytes: 1048576, // 1MB
           status: "active",
           fileName: "document.pdf",
-        })
+        });
       } else if (downloadId === "download-2") {
         return Promise.resolve({
           fileId: "file-2",
@@ -27,7 +28,7 @@ jest.mock("@/IpcService/GetNodeService", () => ({
           totalBytes: 1048576, // 1MB
           status: "completed",
           fileName: "image.jpg",
-        })
+        });
       } else {
         return Promise.resolve({
           fileId: downloadId,
@@ -35,7 +36,7 @@ jest.mock("@/IpcService/GetNodeService", () => ({
           totalBytes: 0,
           status: "failed",
           fileName: "Unknown file",
-        })
+        });
       }
     }),
     getAllActiveDownloads: jest.fn().mockReturnValue(
@@ -72,64 +73,88 @@ jest.mock("@/IpcService/GetNodeService", () => ({
             containerGuid: "container-1",
           },
         ],
-      ]),
+      ])
     ),
   },
-}))
+}));
 
 describe("DownloadManager", () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    jest.useFakeTimers()
-  })
+    jest.clearAllMocks();
+    jest.useFakeTimers();
+  });
 
   afterEach(() => {
-    jest.useRealTimers()
-  })
+    jest.useRealTimers();
+  });
 
   it("renders the download manager when open is true", () => {
-    render(<DownloadManager open={true} onOpenChange={() => {}} activeDownloadIds={[]} />)
-    expect(screen.getByText("Transfer Manager")).toBeInTheDocument()
-  })
+    render(
+      <DownloadManager
+        open={true}
+        onOpenChange={() => {}}
+        activeDownloadIds={[]}
+      />
+    );
+    expect(screen.getByText("Transfer Manager")).toBeInTheDocument();
+  });
 
   it("does not render the download manager when open is false", () => {
-    render(<DownloadManager open={false} onOpenChange={() => {}} activeDownloadIds={[]} />)
-    expect(screen.queryByText("Transfer Manager")).not.toBeInTheDocument()
-  })
+    render(
+      <DownloadManager
+        open={false}
+        onOpenChange={() => {}}
+        activeDownloadIds={[]}
+      />
+    );
+    expect(screen.queryByText("Transfer Manager")).not.toBeInTheDocument();
+  });
 
   it("displays active downloads", async () => {
-    render(<DownloadManager open={true} onOpenChange={() => {}} activeDownloadIds={["download-1", "download-2"]} />)
+    render(
+      <DownloadManager
+        open={true}
+        onOpenChange={() => {}}
+        activeDownloadIds={["download-1", "download-2"]}
+      />
+    );
 
     // Wait for downloads to be displayed
     await waitFor(() => {
-      expect(screen.getByText("document.pdf")).toBeInTheDocument()
-      expect(screen.getByText("image.jpg")).toBeInTheDocument()
-    })
+      expect(screen.getByText("document.pdf")).toBeInTheDocument();
+      expect(screen.getByText("image.jpg")).toBeInTheDocument();
+    });
 
     // Verify download status is displayed
-    expect(screen.getByText("Downloading")).toBeInTheDocument()
-    expect(screen.getByText("Completed")).toBeInTheDocument()
+    expect(screen.getByText("Downloading")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
 
     // Verify progress information is displayed
-    expect(screen.getByText("50%")).toBeInTheDocument()
-    expect(screen.getByText("100%")).toBeInTheDocument()
-  })
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("100%")).toBeInTheDocument();
+  });
 
   it("displays data usage statistics", async () => {
-    render(<DownloadManager open={true} onOpenChange={() => {}} activeDownloadIds={[]} />)
+    render(
+      <DownloadManager
+        open={true}
+        onOpenChange={() => {}}
+        activeDownloadIds={[]}
+      />
+    );
 
     // Switch to stats tab
-    fireEvent.click(screen.getByRole("tab", { name: "Data Usage" }))
+    fireEvent.click(screen.getByRole("tab", { name: "Data Usage" }));
 
     // Wait for data usage to be displayed
     await waitFor(() => {
-      expect(screen.getByText("Data Usage Summary")).toBeInTheDocument()
-      expect(screen.getByText("5 MB")).toBeInTheDocument() // Downloaded
-      expect(screen.getByText("1 MB")).toBeInTheDocument() // Uploaded
-      expect(screen.getByText("6 MB")).toBeInTheDocument() // Total
-    })
-  })
-/*
+      expect(screen.getByText("Data Usage Summary")).toBeInTheDocument();
+      expect(screen.getByText("5 MB")).toBeInTheDocument(); // Downloaded
+      expect(screen.getByText("1 MB")).toBeInTheDocument(); // Uploaded
+      expect(screen.getByText("6 MB")).toBeInTheDocument(); // Total
+    });
+  });
+  /*
   it("sorts downloads based on selected criteria", async () => {
     render(<DownloadManager open={true} onOpenChange={() => {}} activeDownloadIds={["download-1", "download-2"]} />)
 
@@ -154,11 +179,17 @@ describe("DownloadManager", () => {
   })*/
 
   it("shows empty state when no downloads are active", async () => {
-    render(<DownloadManager open={true} onOpenChange={() => {}} activeDownloadIds={[]} />)
+    render(
+      <DownloadManager
+        open={true}
+        onOpenChange={() => {}}
+        activeDownloadIds={[]}
+      />
+    );
 
     // Wait for empty state to be displayed
     await waitFor(() => {
-      expect(screen.getByText("No active downloads")).toBeInTheDocument()
-    })
-  })
-})
+      expect(screen.getByText("No active downloads")).toBeInTheDocument();
+    });
+  });
+});
