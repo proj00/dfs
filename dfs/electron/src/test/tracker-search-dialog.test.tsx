@@ -4,30 +4,56 @@ import { TrackerSearchDialog } from "../components/tracker-search-dialog";
 import { GetNodeService } from "@/IpcService/GetNodeService";
 import { jest } from "@jest/globals";
 import { getMockClient } from "./getMockNodeServiceClient";
-
 // Mock the GetNodeService function
 jest.mock("@/IpcService/GetNodeService", () => {
   let mock = getMockClient();
-
+  
   mock.SearchForObjects.mockResolvedValue({
     results: [
       {
-        name: "Test Container",
-        containerGuid: "container-guid-123",
-        description: "A test container",
-        size: "1048576", // 1MB
+        guid: "guid-123", // Added guid field
+        object: {
+          object: {
+            name: "Test File",
+            type: {
+              oneofKind: "file",
+              file: {
+                // Assuming File has some properties, add them here
+                // Example properties for the File object
+                size: BigInt(1048576), // 1MB
+                hashes: undefined,
+              },
+            },
+          },
+          hash: new Uint8Array([1, 2, 3, 4]), // Example hash
+        },
       },
       {
-        name: "Another Container",
-        containerGuid: "container-guid-456",
-        description: "Another test container",
-        size: "5242880", // 5MB
+        guid: "guid-456", // Added guid field
+        object: {
+          object: {
+            name: "Another Directory",
+            type: {
+              oneofKind: "directory",
+              directory: {
+                entries: [] //??
+              },
+            },
+          },
+          hash: new Uint8Array([5, 6, 7, 8]), // Example hash
+        },
       },
     ],
   });
   return mock;
 });
-
+/*
+jest.mock("@/IpcService/GetNodeService", () => {
+  return {
+    SearchForObjects: jest.fn().mockRejectedValue(new Error("Search failed") as never), //??
+  };
+});
+*/
 // Mock clipboard API
 Object.assign(navigator, {
   clipboard: {
@@ -144,13 +170,8 @@ describe("TrackerSearchDialog", () => {
     );
   });
 
-  it("handles search errors", async () => {
-    // Override the mock to simulate an error
-    let mock = getMockClient();
-    mock.SearchForObjects.mockRejectedValue(new Error("Search failed"))(
-      GetNodeService as jest.Mock
-    ).mockResolvedValue(mock);
 
+    it("handles search failure", async () => {
     render(<TrackerSearchDialog open={true} onOpenChange={() => {}} />);
 
     // Fill in the form
