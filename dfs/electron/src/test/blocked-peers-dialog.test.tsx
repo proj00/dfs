@@ -11,14 +11,15 @@ jest.mock("@/IpcService/GetNodeService", () => ({
     () =>
       ({
         GetBlockList: jest.fn().mockResolvedValue({
-          entries: [
+          BlockListEntries: [
             { url: "192.168.1.1", inWhitelist: false },
             { url: "10.0.0.0/24", inWhitelist: false },
             { url: "2001:db8::/64", inWhitelist: true },
           ],
-        } as any),
-        ModifyBlockListEntry: jest.fn().mockResolvedValue(undefined),
-      } as NodeServiceClient)
+        } as never),
+
+        ModifyBlockListEntry: jest.fn().mockResolvedValue(undefined as never),
+      } as unknown as NodeServiceClient)
   ),
 }));
 
