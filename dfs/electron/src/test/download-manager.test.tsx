@@ -1,15 +1,16 @@
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { DownloadManager } from "../components/download-manager";
-import { GetNodeService } from "@/IpcService/GetNodeService";
+import { NodeServiceClient } from "@/IpcService/GetNodeService";
+import { backendService } from "../IpcService/BackendService";
+import { getMockClient } from "./getMockNodeServiceClient";
 import { jest } from "@jest/globals";
 
 // Mock the backendService
 jest.mock("@/IpcService/GetNodeService", () => ({
   backendService: {
     GetDataUsage: jest.fn().mockResolvedValue({
-      totalBytesSent: 1048576, // 1MB
-      totalBytesReceived: 5242880, // 5MB
+
     }),
     GetDownloadProgress: jest.fn().mockImplementation((downloadId) => {
       // Return different progress for different download IDs
