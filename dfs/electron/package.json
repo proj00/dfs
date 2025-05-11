@@ -11,6 +11,7 @@
     "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
+
     "test-build": "npm run fix-proto && npx tsc -b",
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
@@ -58,6 +59,7 @@
     "@types/responselike": "^1.0.3",
     "@types/serve-static": "^1.15.7",
     "@types/stack-utils": "^2.0.3",
+    "@types/testing-library__jest-dom": "^5.14.9",
     "@types/yauzl": "^2.10.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
