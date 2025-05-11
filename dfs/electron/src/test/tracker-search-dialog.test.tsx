@@ -5,7 +5,9 @@ import { GetNodeService } from "@/IpcService/GetNodeService";
 import { jest } from "@jest/globals";
 import { getMockClient } from "./getMockNodeServiceClient";
 // Mock the GetNodeService function
-
+/**
+ * @jest-environment jsdom
+ */
 
  
 jest.mock("@/IpcService/GetNodeService", () => {

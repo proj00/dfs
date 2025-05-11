@@ -11,7 +11,6 @@
     "debug-no-build": "npx electron-forge start --inspect-electron",
     "lint": "eslint --ext .ts,.tsx .",
     "test": "jest",
-
     "test-build": "npm run fix-proto && npx tsc -b",
     "package-debug": "npm run publish-backend-debug && npm run fix-proto && npx electron-forge package",
     "publish-backend-debug": "powershell -ExecutionPolicy Bypass -File ./build_backend_debug.ps1",
@@ -73,6 +72,8 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "fork-ts-checker-webpack-plugin": "^7.3.0",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^26.1.0",
     "node-loader": "^2.1.0",
     "postcss": "^8.5.3",
     "postcss-loader": "^8.1.1",

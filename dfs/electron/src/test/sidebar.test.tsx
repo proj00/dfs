@@ -1,7 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Sidebar } from "../components/sidebar"; // adjust if needed
 import * as BackendModule from "../IpcService/BackendService";
-
+/**
+ * @jest-environment jsdom
+ */
 
 jest.mock("electron-log/renderer", () => ({
   error: jest.fn(),
