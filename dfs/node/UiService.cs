@@ -26,7 +26,6 @@ namespace node
     {
         private readonly NodeState state;
         private readonly Uri nodeURI;
-        private readonly ConcurrentDictionary<Guid, AsyncManualResetEvent> pauseEvents = new();
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
         public UiService(NodeState state, Uri nodeURI)
@@ -34,7 +33,7 @@ namespace node
             ShutdownEvent = new AsyncManualResetEvent(false);
             this.state = state;
             this.nodeURI = nodeURI;
-            this.state.Downloads.AddChunkUpdateCallback((chunk, token) => state.DownloadChunkAsync(chunk, nodeURI, token));
+            this.state.Downloads.AddChunkUpdateCallback((chunk, token) => state.Objects.DownloadChunkAsync(chunk, nodeURI, token));
         }
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
@@ -104,7 +103,7 @@ namespace node
             }
             chunkSize = Math.Clamp(chunkSize, Constants.maxChunkSize / 16, Constants.maxChunkSize);
 
-            (ObjectWithHash[] objects, ByteString rootHash) = await state.AddObjectFromDiskAsync(path, chunkSize);
+            (ObjectWithHash[] objects, ByteString rootHash) = await state.Objects.AddObjectFromDiskAsync(path, chunkSize);
 
             if (rootHash == ByteString.Empty)
             {
@@ -172,9 +171,8 @@ namespace node
             var tracker = state.ClientHandler.GetTrackerWrapper(new Uri(request.TrackerUri));
             var guid = Guid.Parse(request.ContainerGuid);
             var hash = await tracker.GetContainerRootHash(guid, CancellationToken.None);
-            await pauseEvents.GetOrAdd(guid, _ => new AsyncManualResetEvent(true));
 
-            await state.DownloadObjectByHashAsync(hash, guid, tracker, request.DestinationDir);
+            await state.Objects.DownloadObjectByHashAsync(hash, guid, tracker, request.DestinationDir);
 
             return new RpcCommon.Empty();
         }
