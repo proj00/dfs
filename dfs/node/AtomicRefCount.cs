@@ -29,7 +29,7 @@ namespace node
 
         public void Decrement(Action? cleanupCallback = null)
         {
-            Debug.Assert(count > 0);
+            Debug.Assert(count > 0); // non-atomic compare without Interlocked o_O
             if (Interlocked.Decrement(ref count) <= 0)
             {
                 cleanupCallback?.Invoke();
