@@ -70,6 +70,11 @@ namespace node
 
             for (int i = 0; i < total; i += subchunk)
             {
+                if (context.CancellationToken.IsCancellationRequested)
+                {
+                    state.Logger.LogInformation($"Request was cancelled");
+                    break;
+                }
                 var res = ByteString.CopyFrom(buffer, i, (int)Math.Min(subchunk, total - i));
                 used += res.Length;
 
@@ -79,11 +84,6 @@ namespace node
                 });
 
                 state.Logger.LogInformation($"Sent {res.Length} bytes to {context.Peer}");
-                if (context.CancellationToken.IsCancellationRequested)
-                {
-                    state.Logger.LogInformation($"Request was cancelled");
-                    break;
-                }
             }
             state.Logger.LogInformation($"Sent a total of {used} bytes to {context.Peer}");
 
