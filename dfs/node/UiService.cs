@@ -25,10 +25,12 @@ namespace node
     public class UiService : Ui.Ui.UiBase
     {
         private readonly NodeState state;
+        private readonly Uri nodeURI;
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state)
+        public UiService(NodeState state, Uri nodeURI)
         {
+            this.nodeURI = nodeURI;
             ShutdownEvent = new AsyncManualResetEvent(false);
             this.state = state;
         }

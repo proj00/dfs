@@ -54,8 +54,8 @@ namespace node
             var publicUrl = new Uri(publicServer.Urls.First());
 
             Uri nodeURI = new($"http://{IPstring}:{publicUrl.Port}");
-            UiService service = new(state);
             state.Downloads.AddChunkUpdateCallback((chunk, token) => state.Objects.DownloadChunkAsync(chunk, nodeURI, token));
+            UiService service = new(state, nodeURI);
 
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
             using CancellationTokenSource token = new();
