@@ -61,7 +61,9 @@ export function BlockedPeersDialog({
         (entry) => ({
           url: entry.url,
           inWhitelist: entry.inWhitelist,
+
         })
+
       );
 
       setBlockList(entries);

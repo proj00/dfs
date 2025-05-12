@@ -14,7 +14,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
+	<Target Name="PreBuildKillExecutables" BeforeTargets="Build">
+		<Exec Command="taskkill /F /IM node.exe 2&gt;nul || exit 0" />
+		<Exec Command="taskkill /F /IM tracker.exe 2&gt;nul || exit 0" />
+	</Target>
   <ItemGroup>
     <PackageReference Include="IronRe2" Version="2.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
@@ -22,7 +25,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
+	<ItemGroup>
+		<Using Remove="System.IO" />
+	</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\common\common.csproj" />
   </ItemGroup>

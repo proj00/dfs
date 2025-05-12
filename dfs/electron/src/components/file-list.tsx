@@ -6,13 +6,12 @@ import type { File, Folder } from "../lib/types";
 import { formatFileSize, formatDate } from "../lib/utils";
 import { FileActionMenu } from "./menus/file-action-menu";
 import { FolderActionMenu } from "./menus/folder-action-menu";
-import {
-  handleFileOpen,
-  handleRename,
-  handleMove,
-  handleDelete,
-  handleShare,
-} from "@/lib/file-handlers";
+import { handleFileOpen, handleMove as moveHandler } from "@/lib/file-handlers";
+import { useState } from "react";
+import { MoveDialog } from "./move-dialog";
+import { RenameDialog } from "./rename-dialog";
+import { DeleteDialog } from "./delete-dialog";
+import { handleRename, handleDelete } from "../lib/file-handlers";
 
 interface FileListProps {
   readonly files: File[];
@@ -31,8 +30,78 @@ export function FileList({
   navigateToFolder,
   navigateToParent,
 }: FileListProps) {
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToMove, setItemToMove] = useState<File | Folder | null>(null);
+  const [itemToRename, setItemToRename] = useState<File | Folder | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<File | Folder | null>(null);
+
+  const existingNames = [
+    ...files.map((file) => file.name),
+    ...folders.map((folder) => folder.name),
+  ];
+
+  const handleMove = async (
+    item: File | Folder,
+    destinationFolderId: string | null,
+  ): Promise<void> => {
+    if (destinationFolderId === null) {
+      await moveHandler(item, {
+        id: "",
+        name: "Root",
+        parentId: [],
+        hasChildren: false,
+        containerGuid: "",
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+      });
+    } else {
+      const destinationFolder = folders.find(
+        (f) => f.id === destinationFolderId,
+      );
+      if (destinationFolder) {
+        await moveHandler(item, destinationFolder);
+      }
+    }
+  };
+
+  const handleMoveClick = (item: File | Folder) => {
+    setItemToMove(item);
+    setMoveDialogOpen(true);
+  };
+
+  const handleRenameClick = (item: File | Folder) => {
+    setItemToRename(item);
+    setRenameDialogOpen(true);
+  };
+
+  const handleDeleteClick = (item: File | Folder) => {
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
   return (
     <div className="space-y-4">
+      <MoveDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        item={itemToMove}
+        folders={folders}
+        onMove={handleMove}
+      />
+      <RenameDialog
+        open={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        item={itemToRename}
+        onRename={handleRename}
+        existingNames={existingNames}
+      />
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        item={itemToDelete}
+        onDelete={handleDelete}
+      />
       <div className="flex items-center">
         {currentFolder && (
           <Button
@@ -113,10 +182,9 @@ export function FileList({
               <div className="opacity-0 group-hover:opacity-100">
                 <FolderActionMenu
                   folder={folder}
-                  onRenameClick={handleRename}
-                  onMoveClick={handleMove}
-                  onDeleteClick={handleDelete}
-                  onShareClick={handleShare}
+                  onRenameClick={() => handleRenameClick(folder)}
+                  onMoveClick={() => handleMoveClick(folder)}
+                  onDeleteClick={() => handleDeleteClick(folder)}
                 />
               </div>
             </div>
@@ -203,9 +271,9 @@ export function FileList({
                 <FileActionMenu
                   file={file}
                   onOpenClick={handleFileOpen}
-                  onRenameClick={handleRename}
-                  onMoveClick={handleMove}
-                  onDeleteClick={handleDelete}
+                  onRenameClick={() => handleRenameClick(file)}
+                  onMoveClick={() => handleMoveClick(file)}
+                  onDeleteClick={() => handleDeleteClick(file)}
                 />
               </div>
             </div>

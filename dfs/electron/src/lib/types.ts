@@ -34,18 +34,18 @@ export interface DownloadItem {
 }
 
 export interface BlockListEntry {
-  url: string
-  inWhitelist: boolean
+  url: string;
+  inWhitelist: boolean;
 }
 
 export interface BlockListRequest {
-  address: string
-  inWhitelist: boolean
-  shouldRemove: boolean
+  address: string;
+  inWhitelist: boolean;
+  shouldRemove: boolean;
 }
 
 export interface BlockListResponse {
-  entries: BlockListEntry[]
+  entries: BlockListEntry[];
 }
 
 export function FromObjectWithHash(
@@ -96,5 +96,4 @@ export function FromObjectWithHash(
     default:
       throw new Error("unsupported object type");
   }
-  
 }

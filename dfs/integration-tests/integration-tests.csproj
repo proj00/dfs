@@ -17,10 +17,7 @@
 		<Exec Command="taskkill /F /IM tracker.exe 2&gt;nul || exit 0" />
 	</Target>
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Bogus" Version="35.6.3" />
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -43,5 +40,9 @@
   <ItemGroup>
     <Using Include="NUnit.Framework" />
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cmd /c &quot;robocopy /E /XO ..\node\bin\Debug\net9.0-windows7.0 ..\node\bin\Debug\2-net9.0-windows7.0 || IF %25ERRORLEVEL%25 GEQ 8 EXIT /B %25ERRORLEVEL%25&quot;" />
+  </Target>
 
 </Project>

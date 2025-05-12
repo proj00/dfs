@@ -2,24 +2,26 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
-    <RootNamespace>node_unit_tests</RootNamespace>
+    <RootNamespace>unit_tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
-
+	<Target Name="PreBuildKillExecutables" BeforeTargets="Build">
+		<Exec Command="taskkill /F /IM node.exe 2&gt;nul || exit 0" />
+		<Exec Command="taskkill /F /IM tracker.exe 2&gt;nul || exit 0" />
+	</Target>
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Bogus" Version="35.6.3" />
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0-preview-25107-01" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.7.0">
       <PrivateAssets>all</PrivateAssets>

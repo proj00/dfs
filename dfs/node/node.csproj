@@ -13,11 +13,16 @@
     <Optimize>False</Optimize>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
+	<Target Name="PreBuildKillExecutables" BeforeTargets="Build">
+		<Exec Command="taskkill /F /IM node.exe 2&gt;nul || exit 0" />
+		<Exec Command="taskkill /F /IM tracker.exe 2&gt;nul || exit 0" />
+	</Target>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
+	<ItemGroup>
+		<Using Remove="System.IO" />
+	</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore.Web" Version="2.70.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
