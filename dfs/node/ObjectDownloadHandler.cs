@@ -113,7 +113,7 @@ namespace node
             {
                 var peerLock = peerLocks.GetOrAdd(peers[index], new AsyncLock());
                 Logger.LogInformation($"pending critical for {peers[index]}");
-                using (await peerLock.LockAsync())
+                using (await peerLock.LockAsync(CancellationToken.None))
                 {
                     await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
                     {

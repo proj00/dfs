@@ -61,7 +61,7 @@ namespace common
         public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
         {
             ArgumentNullException.ThrowIfNull(objects);
-            using (await _syncRoot.LockAsync())
+            using (await _syncRoot.LockAsync(CancellationToken.None))
             {
                 foreach (var obj in objects)
                 {
@@ -117,7 +117,7 @@ namespace common
 
         private async Task<List<ObjectWithHash>> GetContainerTree(Guid containerGuid, bool noLock)
         {
-            using (await _syncRoot.LockAsync(noLock))
+            using (await _syncRoot.LockAsync(CancellationToken.None, noLock))
             {
                 ByteString? root = await Container.TryGetValue(containerGuid);
                 if (root != null)
@@ -134,7 +134,7 @@ namespace common
         public async Task<(ByteString, List<ObjectWithHash>)> ModifyContainer(Ui.FsOperation operation)
         {
             ArgumentNullException.ThrowIfNull(operation);
-            using (await _syncRoot.LockAsync())
+            using (await _syncRoot.LockAsync(CancellationToken.None))
             {
                 var root = await Container.GetAsync(Guid.Parse(operation.ContainerGuid));
                 var objects = await GetObjectTree(root, true);
@@ -206,7 +206,7 @@ namespace common
 
         private async Task<List<ObjectWithHash>> GetObjectTree(ByteString root, bool noLock)
         {
-            using (await _syncRoot.LockAsync(noLock))
+            using (await _syncRoot.LockAsync(CancellationToken.None, noLock))
             {
                 Dictionary<ByteString, ObjectWithHash> obj = new(new ByteStringComparer());
                 async Task Traverse(ByteString hash)
