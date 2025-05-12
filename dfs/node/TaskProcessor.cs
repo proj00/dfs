@@ -14,9 +14,10 @@ namespace node
         private ActionBlock<Func<Task>> block { get; }
         private readonly CancellationTokenSource cts = new();
         private bool disposedValue;
-
-        public TaskProcessor(int maxConcurrency, int boundedCapacity = 100000)
+        private readonly AtomicRefCount taskCounter;
+        public TaskProcessor(AtomicRefCount taskCounter, int maxConcurrency, int boundedCapacity = 100000)
         {
+            this.taskCounter = taskCounter;
             var options = new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = maxConcurrency,
@@ -33,9 +34,25 @@ namespace node
             );
         }
 
-        public async Task<bool> AddAsync(Func<Task> taskFunc)
+        public async Task AddAsync(Func<Task> taskFunc)
         {
-            return await block.SendAsync(taskFunc);
+            taskCounter.Increment();
+            bool good = await block.SendAsync(async () =>
+            {
+                try
+                {
+                    await taskFunc();
+                }
+                finally
+                {
+                    taskCounter.Decrement();
+                }
+            });
+            if (!good)
+            {
+                taskCounter.Decrement();
+                throw new OperationCanceledException("TaskProcessor::AddAsync failed, already full");
+            }
         }
 
         protected virtual void Dispose(bool disposing)

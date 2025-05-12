@@ -76,7 +76,7 @@ class BackendService implements BackendServiceInterface {
   async GetDownloadProgress(fileId: string): Promise<DownloadProgress> {
     const service = await GetNodeService();
     const progress = await service.GetDownloadProgress(hashFromBase64(fileId));
-  
+
     const result: DownloadProgress = {
       fileId,
       receivedBytes: Number(progress.current),
@@ -84,17 +84,18 @@ class BackendService implements BackendServiceInterface {
       status: progress.total == progress.current ? "completed" : "active",
       fileName: fileId,
     };
-  
+
     const now = Date.now();
     const existing = this.activeDownloads.get(fileId);
-  
+
     if (existing) {
       const deltaBytes = result.receivedBytes - existing.progress.receivedBytes;
-      const lastUpdate = (existing as any).lastUpdate ?? existing.startTime.getTime();
+      const lastUpdate =
+        (existing as any).lastUpdate ?? existing.startTime.getTime();
       const deltaTime = (now - lastUpdate) / 1000;
-  
+
       const speed = deltaTime > 0 ? deltaBytes / deltaTime : 0;
-  
+
       this.activeDownloads.set(fileId, {
         ...existing,
         progress: result,
@@ -102,7 +103,7 @@ class BackendService implements BackendServiceInterface {
         lastUpdate: now, // <- naujas laukas (nebūtina tipizuoti – tik vidinei reikšmei)
       });
     }
-  
+
     return result;
   }
 
@@ -164,14 +165,14 @@ class BackendService implements BackendServiceInterface {
         startTime: now,
         speed: 0,
         progress: {
-                    fileId: id,
-                    receivedBytes: 0,
-                    totalBytes: 0,
-                    status: "active",
-                    fileName: id,
-                  },
-  });
-}
+          fileId: id,
+          receivedBytes: 0,
+          totalBytes: 0,
+          status: "active",
+          fileName: id,
+        },
+      });
+    }
     return IDs;
   }
 
@@ -221,13 +222,16 @@ class BackendService implements BackendServiceInterface {
     return this.activeDownloads;
   }
 
-  private activeDownloads = new Map<string, {
-    containerGuid: string;
-    startTime: Date;
-    speed: number;
-    progress: DownloadProgress;
-    lastUpdate?: number; // <- pridėtas čia
-  }>();
+  private activeDownloads = new Map<
+    string,
+    {
+      containerGuid: string;
+      startTime: Date;
+      speed: number;
+      progress: DownloadProgress;
+      lastUpdate?: number; // <- pridėtas čia
+    }
+  >();
 }
 
 // Export a singleton instance

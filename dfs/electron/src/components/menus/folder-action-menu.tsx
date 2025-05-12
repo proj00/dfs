@@ -21,8 +21,8 @@ interface FolderActionMenuProps {
   ) => Promise<void> | void;
   readonly onCopyClick?: (
     folder: Folder,
-    e: React.MouseEvent
-  ) => Promise<void> | void
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
   readonly onMoveClick?: (
     folder: Folder,
     e: React.MouseEvent,
@@ -76,8 +76,8 @@ export function FolderActionMenu({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={async (e) => {
-            e.stopPropagation()
-            if (onCopyClick) await onCopyClick(folder, e)
+            e.stopPropagation();
+            if (onCopyClick) await onCopyClick(folder, e);
           }}
         >
           Make a copy

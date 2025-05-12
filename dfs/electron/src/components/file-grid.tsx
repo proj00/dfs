@@ -5,13 +5,17 @@ import { Button } from "./ui/button";
 import type { File, Folder } from "../lib/types";
 import { FileActionMenu } from "./menus/file-action-menu";
 import { FolderActionMenu } from "./menus/folder-action-menu";
-import { handleFileOpen, handleMove as moveHandler, handleCopy as copyHandler } from "@/lib/file-handlers"
-import { useState } from "react"
-import { MoveDialog } from "./move-dialog"
-import { RenameDialog } from "./rename-dialog"
-import { DeleteDialog } from "./delete-dialog"
-import { CopyDialog } from "./copy-dialog"
-import { handleRename, handleDelete } from "../lib/file-handlers"
+import {
+  handleFileOpen,
+  handleMove as moveHandler,
+  handleCopy as copyHandler,
+} from "@/lib/file-handlers";
+import { useState } from "react";
+import { MoveDialog } from "./move-dialog";
+import { RenameDialog } from "./rename-dialog";
+import { DeleteDialog } from "./delete-dialog";
+import { CopyDialog } from "./copy-dialog";
+import { handleRename, handleDelete } from "../lib/file-handlers";
 
 interface FileGridProps {
   readonly files: File[];
@@ -30,28 +34,44 @@ export function FileGrid({
   navigateToFolder,
   navigateToParent,
 }: FileGridProps) {
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [itemToMove, setItemToMove] = useState<File | Folder | null>(null)
-  const [itemToRename, setItemToRename] = useState<File | Folder | null>(null)
-  const [itemToDelete, setItemToDelete] = useState<File | Folder | null>(null)
-  const [itemToCopy, setItemToCopy] = useState<File | Folder | null>(null)
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToMove, setItemToMove] = useState<File | Folder | null>(null);
+  const [itemToRename, setItemToRename] = useState<File | Folder | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<File | Folder | null>(null);
+  const [itemToCopy, setItemToCopy] = useState<File | Folder | null>(null);
 
-  const existingNames = [...files.map((file) => file.name), ...folders.map((folder) => folder.name)]
+  const existingNames = [
+    ...files.map((file) => file.name),
+    ...folders.map((folder) => folder.name),
+  ];
 
-  const handleMove = async (item: File | Folder, destinationFolderId: string | null): Promise<void> => {
+  const handleMove = async (
+    item: File | Folder,
+    destinationFolderId: string | null,
+  ): Promise<void> => {
     if (destinationFolderId === null) {
       // Handle root folder case
-      await moveHandler(item, { id: "", name: "Root", parentId: [], hasChildren: false, containerGuid: "", createdAt: new Date().toISOString(), modifiedAt: new Date().toISOString() })
+      await moveHandler(item, {
+        id: "",
+        name: "Root",
+        parentId: [],
+        hasChildren: false,
+        containerGuid: "",
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+      });
     } else {
-      const destinationFolder = folders.find((f) => f.id === destinationFolderId)
+      const destinationFolder = folders.find(
+        (f) => f.id === destinationFolderId,
+      );
       if (destinationFolder) {
-        await moveHandler(item, destinationFolder)
+        await moveHandler(item, destinationFolder);
       }
     }
-  }
+  };
 
   const handleCopy = async (
     item: File | Folder,
@@ -59,35 +79,45 @@ export function FileGrid({
   ): Promise<boolean> => {
     if (destinationFolderId === null) {
       // Handle root folder case
-      return await copyHandler(item, { id: "", name: "Root", parentId: [], hasChildren: false, containerGuid: "", createdAt: new Date().toISOString(), modifiedAt: new Date().toISOString() })
+      return await copyHandler(item, {
+        id: "",
+        name: "Root",
+        parentId: [],
+        hasChildren: false,
+        containerGuid: "",
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString(),
+      });
     } else {
-      const destinationFolder = folders.find((f) => f.id === destinationFolderId)
+      const destinationFolder = folders.find(
+        (f) => f.id === destinationFolderId,
+      );
       if (destinationFolder) {
-        return await copyHandler(item, destinationFolder)
+        return await copyHandler(item, destinationFolder);
       }
     }
-    return false
-  }
+    return false;
+  };
 
   const handleMoveClick = (item: File | Folder) => {
-    setItemToMove(item)
-    setMoveDialogOpen(true)
-  }
+    setItemToMove(item);
+    setMoveDialogOpen(true);
+  };
 
   const handleRenameClick = (item: File | Folder) => {
-    setItemToRename(item)
-    setRenameDialogOpen(true)
-  }
+    setItemToRename(item);
+    setRenameDialogOpen(true);
+  };
 
   const handleDeleteClick = (item: File | Folder) => {
-    setItemToDelete(item)
-    setDeleteDialogOpen(true)
-  }
+    setItemToDelete(item);
+    setDeleteDialogOpen(true);
+  };
 
   const handleCopyClick = (item: File | Folder) => {
-    setItemToCopy(item)
-    setCopyDialogOpen(true)
-  }
+    setItemToCopy(item);
+    setCopyDialogOpen(true);
+  };
   return (
     <div className="space-y-4">
       <MoveDialog

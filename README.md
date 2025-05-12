@@ -25,7 +25,7 @@ Now you should be able to run all tests (from VS's Test > Test Explorer menu) an
 
 ### Known problems
 
-1. Missing buf package 
+1. Missing buf package
    - Go to `../dfs/electron`
    - execute `npm i buf`
 2. Failing to launch project:

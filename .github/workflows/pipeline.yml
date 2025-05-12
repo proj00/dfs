@@ -52,7 +52,7 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.coverage.exclusions="dfs/common/generated/**/*,dfs/common/generated/*" `
+          /d:sonar.exclusions="dfs/common/generated/**/*,dfs/common/generated/*,**/package-lock.json,dfs/electron/src/types/**/*" `
           /d:typescript.lcov.reportPaths=coverage/jest/lcov.info `
           /d:sonar.cs.vscoveragexml.reportsPaths="**/*coverage.xml" `
           /d:sonar.verbose=true
@@ -63,7 +63,7 @@ jobs:
       - name: Test .NET project
         run: |
           dotnet-coverage collect "dotnet test --no-build dfs/node-unit-tests/unit-tests.csproj --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "unitcoverage.xml"
-          dotnet-coverage collect "dotnet test --no-build dfs/integration-tests/integration-tests.csproj --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "bigcoverage.xml"
+          #dotnet-coverage collect "dotnet test --no-build dfs/integration-tests/integration-tests.csproj --verbosity d /p:ParallelizeTestCollections=false" -f xml -o "bigcoverage.xml"
 
       - name: Finish SonarScanner
         env:

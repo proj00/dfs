@@ -84,9 +84,8 @@ export function Sidebar({
   const [activeDownloadIds, setActiveDownloadIds] = useState<string[]>([]);
   const [dataUsage, setDataUsage] = useState<DataUsage | null>(null);
 
-  
   // State for blocked peers dialog
-  const [blockedPeersDialogOpen, setBlockedPeersDialogOpen] = useState(false)
+  const [blockedPeersDialogOpen, setBlockedPeersDialogOpen] = useState(false);
 
   // Calculate download percentage
   const downloadPercentage = calculatePercentage(
@@ -265,19 +264,19 @@ export function Sidebar({
 
   // Handle opening logs
   const handleOpenLogs = async () => {
-    console.log("Opening logs via UI API...")
+    console.log("Opening logs via UI API...");
 
     try {
       // Mock UI API call
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      console.log("Logs opened successfully")
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      console.log("Logs opened successfully");
 
       // Show a notification to the user (in a real app, you'd use a toast notification)
-      alert("Logs opened successfully")
+      alert("Logs opened successfully");
     } catch (error) {
-      console.error("Failed to open logs:", error)
+      console.error("Failed to open logs:", error);
     }
-  }
+  };
   return (
     <div className="w-64 border-r bg-background p-4 hidden md:block">
       <div className="space-y-1">
@@ -333,12 +332,20 @@ export function Sidebar({
             </span>
           )}
         </Button>
-        <Button variant="outline" className="w-full justify-start" onClick={handleOpenLogs}>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={handleOpenLogs}
+        >
           <Scroll className="mr-2 h-4 w-4" />
           Open Logs
         </Button>
 
-        <Button variant="outline" className="w-full justify-start" onClick={() => setBlockedPeersDialogOpen(true)}>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={() => setBlockedPeersDialogOpen(true)}
+        >
           <Shield className="mr-2 h-4 w-4" />
           Blocked Peers
         </Button>
@@ -711,8 +718,11 @@ export function Sidebar({
         onOpenChange={setDownloadManagerOpen}
         activeDownloadIds={activeDownloadIds}
       />
-            {/* Blocked Peers Dialog */}
-            <BlockedPeersDialog open={blockedPeersDialogOpen} onOpenChange={setBlockedPeersDialogOpen} />
+      {/* Blocked Peers Dialog */}
+      <BlockedPeersDialog
+        open={blockedPeersDialogOpen}
+        onOpenChange={setBlockedPeersDialogOpen}
+      />
     </div>
   );
 }

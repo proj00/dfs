@@ -38,17 +38,13 @@ namespace node
         public sealed class FileContext
         {
             public CancellationTokenSource Source { get; } = new();
-            public int WaitingForPause;
             public AsyncManualResetEvent WaitingForStart { get; }
-            public AsyncManualResetEvent PauseEvent { get; }
+            public AtomicRefCount PauseEvent { get; }
 
-            public FileContext(int size)
+            public FileContext()
             {
-                WaitingForPause = 0;
-                WaitingForStart = new(true);
-                WaitingForStart.Reset();
-                PauseEvent = new(true);
-                PauseEvent.Reset();
+                WaitingForStart = new(false);
+                PauseEvent = new();
             }
         }
 
@@ -61,8 +57,7 @@ namespace node
         private readonly TaskProcessor downloadProcessor;
         private readonly TaskProcessor stateProcessor;
         private readonly IPersistentCache<ByteString, FileChunk> chunkTasks;
-        private readonly AsyncManualResetEvent shutdownEvent;
-        private int taskCount = 0;
+        private readonly AtomicRefCount taskCounter;
         private bool done = false;
         private readonly ILogger logger;
 
@@ -72,9 +67,10 @@ namespace node
             this.logger = logger;
             ArgumentException.ThrowIfNullOrWhiteSpace(dbPath);
             ArgumentOutOfRangeException.ThrowIfLessThan(taskCapacity, 0);
+            taskCounter = new();
 
-            downloadProcessor = new TaskProcessor(1024, taskCapacity);
-            stateProcessor = new TaskProcessor(1, taskCapacity);
+            downloadProcessor = new TaskProcessor(taskCounter, 1024, taskCapacity);
+            stateProcessor = new TaskProcessor(taskCounter, 1, taskCapacity);
             fileTokens = new(new ByteStringComparer());
             completedFiles = new(new ByteStringComparer());
 
@@ -82,9 +78,6 @@ namespace node
             ArgumentNullException.ThrowIfNull(chunkTasks);
             FileProgress = fileProgress;
             this.chunkTasks = chunkTasks;
-
-            shutdownEvent = new(true);
-            shutdownEvent.Reset();
         }
 
         public DownloadManager(ILoggerFactory factory, string dbPath, int taskCapacity = 100000)
@@ -122,13 +115,11 @@ namespace node
                 case DownloadStatus.Pending:
                     {
                         await HandlePendingAsync(message);
-
                         break;
                     }
                 case DownloadStatus.Paused:
                     {
                         await HandlePausedAsync(message);
-
                         break;
                     }
                 default:
@@ -146,15 +137,14 @@ namespace node
                 }
                 var chunk = message.Chunk[0];
                 logger.LogInformation($"chunk of file {chunk.DestinationDir} done");
-                if (Interlocked.Decrement(ref fileTokens[chunk.FileHash].WaitingForPause) <= 0)
+                fileTokens[chunk.FileHash].PauseEvent.Decrement(() =>
                 {
                     if (fileTokens.TryRemove(chunk.FileHash, out FileContext? context))
                     {
                         context.Source.Dispose();
-                        context.PauseEvent.Set();
                     }
                     completedFiles[chunk.FileHash] = chunk.FileHash;
-                }
+                });
                 await chunkTasks.Remove(HashUtils.GetChunkHash(chunk));
             }
             catch (Exception e)
@@ -175,14 +165,13 @@ namespace node
 
                     await chunkTasks.SetAsync(HashUtils.GetChunkHash(chunk), chunk);
 
-                    if (Interlocked.Decrement(ref fileTokens[chunk.FileHash].WaitingForPause) <= 0)
+                    fileTokens[chunk.FileHash].PauseEvent.Decrement(() =>
                     {
                         if (fileTokens.TryRemove(chunk.FileHash, out FileContext? context))
                         {
                             context.Source.Dispose();
-                            context.PauseEvent.Set();
                         }
-                    }
+                    });
                     return;
                 }
 
@@ -210,42 +199,22 @@ namespace node
 
                 if (!fileTokens.ContainsKey(message.Hash))
                 {
-                    fileTokens[message.Hash] = new FileContext(chunks.Count);
+                    fileTokens[message.Hash] = new FileContext();
                 }
                 var context = fileTokens[message.Hash];
                 foreach (var chunk in chunks)
                 {
-                    Interlocked.Increment(ref taskCount);
-                    shutdownEvent.Reset();
-                    bool b = await downloadProcessor.AddAsync(async () =>
+                    await downloadProcessor.AddAsync(async () =>
                     {
-                        try
-                        {
-                            Interlocked.Increment(ref context.WaitingForPause);
-                            context.WaitingForStart.Set();
-                            chunk.Status = DownloadStatus.Pending;
-                            await chunkTasks.SetAsync(HashUtils.GetChunkHash(chunk), chunk);
+                        context.PauseEvent.Increment();
+                        context.WaitingForStart.Set();
+                        chunk.Status = DownloadStatus.Pending;
+                        await chunkTasks.SetAsync(HashUtils.GetChunkHash(chunk), chunk);
 
-                            logger.LogInformation($"chunk of file {chunks[0].DestinationDir} updating");
+                        logger.LogInformation($"chunk of file {chunks[0].DestinationDir} updating");
 
-                            await UpdateAsync(chunk, context.Source.Token);
-                        }
-                        finally
-                        {
-                            if (Interlocked.Decrement(ref taskCount) <= 0)
-                            {
-                                shutdownEvent.Set();
-                            }
-                        }
+                        await UpdateAsync(chunk, context.Source.Token);
                     });
-                    if (!b)
-                    {
-                        if (Interlocked.Decrement(ref taskCount) <= 0)
-                        {
-                            shutdownEvent.Set();
-                        }
-                        throw new OperationCanceledException();
-                    }
                 }
             }
             catch (Exception e)
@@ -305,33 +274,13 @@ namespace node
                 return;
             }
 
-            Interlocked.Increment(ref taskCount);
-            shutdownEvent.Reset();
-            bool b = await stateProcessor.AddAsync(async () =>
+            await stateProcessor.AddAsync(async () =>
             {
-                try
-                {
-                    await HandleCommandAsync(
-                        state
-                    );
-                }
-                finally
-                {
-                    if (Interlocked.Decrement(ref taskCount) <= 0)
-                    {
-                        shutdownEvent.Set();
-                    }
-                }
+                await HandleCommandAsync(
+                    state
+                );
             }
             );
-            if (!b)
-            {
-                if (Interlocked.Decrement(ref taskCount) <= 0)
-                {
-                    shutdownEvent.Set();
-                }
-                throw new InvalidOperationException("enqueue failed");
-            }
         }
 
         public void AddChunkUpdateCallback(UpdateCallback callback)
@@ -372,7 +321,7 @@ namespace node
                 return;
             }
             (FileChunk[] chunks, IncompleteFile file) = GetIncompleteFile(obj, trackerUri, destinationDir);
-            fileTokens[obj.Hash] = new FileContext(chunks.Length);
+            fileTokens[obj.Hash] = new FileContext();
             await FileProgress.SetAsync(chunks[0].FileHash, new() { Current = 0, Total = file.Size });
             await EnqueueStateAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
         }
@@ -424,7 +373,7 @@ namespace node
                 if (fileTokens.ContainsKey(file.Hash))
                 {
                     var e = fileTokens[file.Hash].PauseEvent;
-                    await e.WaitAsync(token);
+                    await e.WaitForZeroAsync(token);
                 }
                 else
                 {
@@ -474,7 +423,7 @@ namespace node
             {
                 await EnqueueStateAsync(new() { NewStatus = DownloadStatus.Stop });
                 // this is screwed up but it works
-                await shutdownEvent.WaitAsync();
+                await taskCounter.WaitForZeroAsync(CancellationToken.None);
                 stateProcessor.Dispose();
                 downloadProcessor.Dispose();
                 chunkTasks.Dispose();
