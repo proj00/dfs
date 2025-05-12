@@ -119,7 +119,8 @@ jobs:
         with:
           node-version: "22.x"
           cache: 'npm'
-          cache-dependency-path: ./dfs/electron/package-lock.json
+          cache-dependency-path: |
+            '**/package-lock.json'
   
       - name: Install dependencies using npm ci
         working-directory: ./dfs/electron
