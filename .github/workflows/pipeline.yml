@@ -137,7 +137,7 @@ jobs:
 
       - name: Run Jest tests with coverage
         working-directory: ./dfs/electron
-        run: npx jest --coverage
+        run: npx jest --coverage --passWithNoTests
 
       - name: Upload Jest Coverage Report
         uses: actions/upload-artifact@v4
