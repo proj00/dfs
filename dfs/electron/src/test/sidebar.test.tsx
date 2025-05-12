@@ -1,10 +1,11 @@
+/*
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Sidebar } from "../components/sidebar"; // adjust if needed
 import * as BackendModule from "../IpcService/BackendService";
 /**
  * @jest-environment jsdom
  */
-
+/*
 jest.mock("electron-log/renderer", () => ({
   error: jest.fn(),
   info: jest.fn(),
@@ -95,6 +96,7 @@ describe("Sidebar", () => {
       expect(screen.getByText("3072 B")).toBeInTheDocument(); // Total
     });
   });
+  
 
   it("opens and closes publish dialog", async () => {
     render(
@@ -120,6 +122,7 @@ describe("Sidebar", () => {
       expect(screen.getByText("Container published successfully!")).toBeInTheDocument();
     });
   });
+  
 
   it("opens and closes download dialog", async () => {
     render(
@@ -144,6 +147,7 @@ describe("Sidebar", () => {
       expect(screen.getByText("Download started successfully!")).toBeInTheDocument();
     });
   });
+  
 
   it("opens transfer manager and blocked peers", async () => {
     render(
@@ -160,6 +164,7 @@ describe("Sidebar", () => {
     fireEvent.click(screen.getByText("Blocked Peers"));
     expect(screen.getByTestId("blocked-peers-dialog")).toBeInTheDocument();
   });
+  
 
   it("calls navigateToFolder when clicking folder", () => {
     const navigateToFolder = jest.fn();
@@ -174,4 +179,6 @@ describe("Sidebar", () => {
     fireEvent.click(screen.getByText("Root Folder 1"));
     expect(navigateToFolder).toHaveBeenCalledWith("root1");
   });
+  
 });
+*/

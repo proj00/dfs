@@ -1,3 +1,4 @@
+
 //import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { FileGrid } from "../components/file-grid"; // Adjust path as needed
@@ -5,6 +6,7 @@ import type { File, Folder } from "@/lib/types";
 /**
  * @jest-environment jsdom
  */
+
 jest.mock("../components/menus/file-action-menu", () => ({
   FileActionMenu: () => <div data-testid="file-action-menu" />,
 }));

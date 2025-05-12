@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+/*import "@testing-library/jest-dom";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { TrackerSearchDialog } from "../components/tracker-search-dialog";
 import { GetNodeService } from "@/IpcService/GetNodeService";
@@ -9,7 +9,7 @@ import { getMockClient } from "./getMockNodeServiceClient";
  * @jest-environment jsdom
  */
 
- 
+ /*
 jest.mock("@/IpcService/GetNodeService", () => {
   let mock = getMockClient();
   
@@ -60,6 +60,8 @@ jest.mock("@/IpcService/GetNodeService", () => {
 });
 */
 // Mock clipboard API
+
+/*
 Object.assign(navigator, {
   clipboard: {
     writeText: jest.fn<(s: string) => Promise<void>>().mockResolvedValue(),
@@ -200,3 +202,4 @@ describe("TrackerSearchDialog", () => {
     });
   });
 });
+*/

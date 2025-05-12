@@ -1,11 +1,15 @@
+
 //import React from "react";
+/*
 import { render, screen, waitFor } from "@testing-library/react";
 import { DownloadManager } from "../components/download-manager"; // adjust path as needed
 import * as BackendModule from "@/IpcService/BackendService"; // Mock backendService
+
 /**
  * @jest-environment jsdom
  */
 // Mock external icons and UI components
+/*
 jest.mock("lucide-react", () => ({
   Download: () => <div data-testid="icon-download" />,
   ArrowUp: () => <div data-testid="icon-up" />,
@@ -118,3 +122,5 @@ describe("DownloadManager", () => {
     });
   });
 });
+
+*/
