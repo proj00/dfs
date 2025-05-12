@@ -23,7 +23,7 @@ namespace Tests.Server.UnitTests.Helpers
     public class TestServerCallContext : ServerCallContext
     {
         private readonly Metadata _requestHeaders;
-        private readonly CancellationToken _cancellationToken;
+        public CancellationToken _cancellationToken;
         private readonly Metadata _responseTrailers;
         private readonly AuthContext _authContext;
         private readonly Dictionary<object, object> _userState;
