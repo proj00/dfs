@@ -1,78 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace node
 {
-    public class TaskProcessor : IAsyncDisposable, IDisposable
+    public class TaskProcessor : IDisposable
     {
-        private readonly Channel<Func<Task>> channel;
-        private readonly SemaphoreSlim semaphore;
+        private ActionBlock<Func<Task>> block { get; }
         private readonly CancellationTokenSource cts = new();
-        private readonly Task cmdLoop;
         private bool disposedValue;
-
-        public TaskProcessor(int maxConcurrency, int boundedCapacity = 100000)
+        private readonly AtomicRefCount taskCounter;
+        public TaskProcessor(AtomicRefCount taskCounter, int maxConcurrency, int boundedCapacity = 100000)
         {
-            channel = Channel.CreateBounded<Func<Task>>(new BoundedChannelOptions(boundedCapacity)
+            this.taskCounter = taskCounter;
+            var options = new ExecutionDataflowBlockOptions
             {
-                FullMode = BoundedChannelFullMode.Wait,
-                SingleReader = true,
-                SingleWriter = false,
-            });
+                MaxDegreeOfParallelism = maxConcurrency,
+                BoundedCapacity = boundedCapacity,
+                CancellationToken = cts.Token
+            };
 
-            semaphore = new SemaphoreSlim(maxConcurrency);
-            cmdLoop = Task.Run(ProcessQueueAsync);
+            block = new ActionBlock<Func<Task>>(
+                async taskFunc =>
+                {
+                    await taskFunc();
+                },
+                options
+            );
         }
 
         public async Task AddAsync(Func<Task> taskFunc)
         {
-            await channel.Writer.WriteAsync(taskFunc);
-        }
-
-        private async Task ProcessQueueAsync()
-        {
-            try
+            taskCounter.Increment();
+            bool good = await block.SendAsync(async () =>
             {
-                await foreach (var taskFunc in channel.Reader.ReadAllAsync(cts.Token))
+                try
                 {
-                    await semaphore.WaitAsync(cts.Token);
-
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await taskFunc();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Task error: {ex}");
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    });
+                    await taskFunc();
                 }
-            }
-            catch (OperationCanceledException)
+                finally
+                {
+                    taskCounter.Decrement();
+                }
+            });
+            if (!good)
             {
+                taskCounter.Decrement();
+                throw new OperationCanceledException("TaskProcessor::AddAsync failed, already full");
             }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await cts.CancelAsync();
-            channel.Writer.Complete();
-            await cmdLoop.WaitAsync(CancellationToken.None);
-            semaphore.Dispose();
-            cts.Dispose();
         }
 
         protected virtual void Dispose(bool disposing)
@@ -81,12 +61,11 @@ namespace node
             {
                 if (disposing)
                 {
+                    block.Complete();
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+                    block.Completion.Wait();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
                     cts.Cancel();
-                    channel.Writer.Complete();
-#pragma warning disable VSTHRD002
-                    cmdLoop.Wait();
-#pragma warning restore VSTHRD002
-                    semaphore.Dispose();
                     cts.Dispose();
                 }
 

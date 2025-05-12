@@ -3,6 +3,8 @@ using Google.Protobuf;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,68 +12,50 @@ using Tracker;
 
 namespace common
 {
-    public sealed class FilesystemManager : IDisposable
+    public class FilesystemManager : IFilesystemManager
     {
         private readonly AsyncLock _syncRoot = new();
-        public PersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
-        public PersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
-        public PersistentCache<Guid, ByteString> Container { get; private set; }
-        public PersistentCache<ByteString, RpcCommon.HashList> Parent { get; private set; }
-        public PersistentCache<ByteString, ByteString> NewerVersion { get; private set; }
+        private bool disposedValue;
+
+        public IPersistentCache<ByteString, ObjectWithHash> ObjectByHash { get; private set; }
+        public IPersistentCache<ByteString, RpcCommon.HashList> ChunkParents { get; private set; }
+        public IPersistentCache<Guid, ByteString> Container { get; private set; }
+        public IPersistentCache<ByteString, RpcCommon.HashList> Parent { get; private set; }
+        public IPersistentCache<ByteString, ByteString> NewerVersion { get; private set; }
         public string DbPath { get; private set; }
 
         public FilesystemManager(string dbBasePath)
         {
             DbPath = dbBasePath;
             ObjectByHash = new PersistentCache<ByteString, ObjectWithHash>(
-                Path.Combine(DbPath, "ObjectByHash"),
-                keySerializer: bs => bs.ToByteArray(),
-                keyDeserializer: bytes => ByteString.CopyFrom(bytes),
-                valueSerializer: o => o.ToByteArray(),
-                valueDeserializer: bytes => ObjectWithHash.Parser.ParseFrom(bytes)
+                System.IO.Path.Combine(DbPath, "ObjectByHash"),
+                new ByteStringSerializer(),
+                new Serializer<ObjectWithHash>()
             );
 
             ChunkParents = new PersistentCache<ByteString, RpcCommon.HashList>(
-                Path.Combine(DbPath, "ChunkParents"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                list => list.ToByteArray(),
-                RpcCommon.HashList.Parser.ParseFrom
+                System.IO.Path.Combine(DbPath, "ChunkParents"),
+                new ByteStringSerializer(),
+                new Serializer<RpcCommon.HashList>()
             );
 
             Container = new PersistentCache<Guid, ByteString>(
-                Path.Combine(DbPath, "Container"),
-                guid => guid.ToByteArray(),
-                bytes => new Guid(bytes),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes)
+                System.IO.Path.Combine(DbPath, "Container"),
+                new GuidSerializer(),
+                new ByteStringSerializer()
             );
 
             Parent = new PersistentCache<ByteString, RpcCommon.HashList>(
-                Path.Combine(DbPath, "Parent"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                list => list.ToByteArray(),
-                RpcCommon.HashList.Parser.ParseFrom
+                System.IO.Path.Combine(DbPath, "Parent"),
+                new ByteStringSerializer(),
+                new Serializer<RpcCommon.HashList>()
             );
 
             NewerVersion = new PersistentCache<ByteString, ByteString>(
-                Path.Combine(DbPath, "NewerVersion"),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes),
-                bs => bs.ToByteArray(),
-                bytes => ByteString.CopyFrom(bytes)
+                System.IO.Path.Combine(DbPath, "NewerVersion"),
+                new ByteStringSerializer(),
+                new ByteStringSerializer()
             );
-        }
-
-        public void Dispose()
-        {
-            ChunkParents.Dispose();
-            ObjectByHash.Dispose();
-            Container.Dispose();
-            Parent.Dispose();
-            NewerVersion.Dispose();
-            _syncRoot.Dispose();
         }
 
         public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
@@ -153,7 +137,9 @@ namespace common
             using (await _syncRoot.LockAsync())
             {
                 var root = await Container.GetAsync(Guid.Parse(operation.ContainerGuid));
-                var objects = await GetObjectTree(root);
+                var objects = await GetObjectTree(root, true);
+                Dictionary<ByteString, ObjectWithHash> removalDiff = new(new ByteStringComparer());
+
                 ObjectWithHash? extracted = null;
 
                 if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Create)
@@ -165,10 +151,17 @@ namespace common
                         extracted.Hash = HashUtils.GetHash(extracted.Object);
                     }
 
-                    var diff = FilesystemUtils.RemoveObjectFromTree(objects, root, operation.Parent.Data, operation.Target.Data);
-                    root = diff[root].Hash;
-                    objects.RemoveAll(o => diff.ContainsKey(o.Hash));
-                    objects.AddRange(diff.Values);
+                    removalDiff = FilesystemUtils
+                        .RemoveObjectFromTree(objects, root, operation.Target.Data, operation.Parent.Data)
+                        .ToDictionary(new ByteStringComparer());
+
+                    root = removalDiff[root].Hash;
+
+                    if (extracted != null)
+                        objects.RemoveAll(o => o.Hash == operation.Target.Data);
+
+                    objects.RemoveAll(o => removalDiff.ContainsKey(o.Hash));
+                    objects.AddRange(removalDiff.Values);
                 }
 
                 if (operation.Type != Ui.OperationType.Delete)
@@ -186,10 +179,16 @@ namespace common
                     var newParent = operation.Type == Ui.OperationType.Move || operation.Type == Ui.OperationType.Copy
                         ? operation.NewParent.Data
                         : operation.Parent.Data;
-                    var diff = FilesystemUtils.AddObjectToTree(objects, root, operation.Target.Data, newParent);
+
+                    if (removalDiff.TryGetValue(newParent, out ObjectWithHash? value))
+                    {
+                        newParent = value.Hash;
+                    }
+
+                    var diff = FilesystemUtils.AddObjectToTree(objects, root, extracted == null ? operation.Target.Data : extracted.Hash, newParent);
                     root = diff[root].Hash;
                     objects.RemoveAll(o => diff.ContainsKey(o.Hash));
-
+                    objects.AddRange(diff.Values);
                     if (operation.Type != Ui.OperationType.Copy && operation.Type != Ui.OperationType.Move)
                     {
                         objects.AddRange(toAdd.Data);
@@ -253,6 +252,37 @@ namespace common
 
                 await ChunkParents.SetAsync(chunkHash, new RpcCommon.HashList() { Data = { parentHash } });
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    ChunkParents.Dispose();
+                    ObjectByHash.Dispose();
+                    Container.Dispose();
+                    Parent.Dispose();
+                    NewerVersion.Dispose();
+                    _syncRoot.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        ~FilesystemManager()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

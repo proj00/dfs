@@ -1,4 +1,5 @@
-﻿using Grpc.Net.Client;
+﻿using Grpc.Core;
+using Grpc.Net.Client;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Concurrent;
@@ -9,13 +10,15 @@ using System.Threading.Tasks;
 
 namespace common
 {
+    using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, ChannelBase>;
     public sealed class ChannelCache : IDisposable
     {
         private readonly MemoryCache cache;
         private readonly TimeSpan timeToLive;
-
-        public ChannelCache(TimeSpan timeToLive)
+        private readonly GrpcChannelFactory createChannel;
+        public ChannelCache(TimeSpan timeToLive, GrpcChannelFactory createChannel)
         {
+            this.createChannel = createChannel;
             cache = new MemoryCache(new MemoryCacheOptions());
             this.timeToLive = timeToLive;
         }
@@ -25,12 +28,12 @@ namespace common
             cache.Dispose();
         }
 
-        public GrpcChannel GetOrCreate(Uri uri, GrpcChannelOptions? options = null)
+        public ChannelBase GetOrCreate(Uri uri, GrpcChannelOptions? options = null)
         {
             return cache.GetOrCreate(uri, entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = timeToLive;
-                return GrpcChannel.ForAddress(uri, options ?? new GrpcChannelOptions());
+                return createChannel(uri, options ?? new GrpcChannelOptions());
             }) ?? throw new ArgumentException("Failed to fetch channel from cache");
         }
     }

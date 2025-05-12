@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "integration-tests": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
