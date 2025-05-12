@@ -26,7 +26,9 @@ namespace node
         {
 #if DEBUG
             LogLevel level = LogLevel.Debug;
+            string IPstring = "localhost";
 #else
+            string IPstring = GetLocalIPv4() ?? "localhost";
             LogLevel level = LogLevel.Information;
 #endif
             AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
@@ -51,7 +53,10 @@ namespace node
             var publicServer = await StartPublicNodeServerAsync(rpc, loggerFactory);
             var publicUrl = new Uri(publicServer.Urls.First());
 
-            UiService service = new(state, new Uri($"http://{/*GetLocalIPv4() ?? */"localhost"}:{publicUrl.Port}"));
+            Uri nodeURI = new($"http://{IPstring}:{publicUrl.Port}");
+            UiService service = new(state);
+            state.Downloads.AddChunkUpdateCallback((chunk, token) => state.Objects.DownloadChunkAsync(chunk, nodeURI, token));
+
             var pipeStreams = new ConcurrentDictionary<string, NamedPipeServerStream>();
             using CancellationTokenSource token = new();
             var privateServer = await StartGrpcWebServerAsync(service, pipeGuid, parentPid, pipeStreams, loggerFactory, token.Token, debugPort);
@@ -219,8 +224,6 @@ namespace node
             await app.StartAsync(cancellationToken);
             return app;
         }
-
-
 
         static bool IsAncestor(uint ancestorPid, uint childPid)
         {

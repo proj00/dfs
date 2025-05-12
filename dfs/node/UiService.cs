@@ -25,15 +25,12 @@ namespace node
     public class UiService : Ui.Ui.UiBase
     {
         private readonly NodeState state;
-        private readonly Uri nodeURI;
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state, Uri nodeURI)
+        public UiService(NodeState state)
         {
             ShutdownEvent = new AsyncManualResetEvent(false);
             this.state = state;
-            this.nodeURI = nodeURI;
-            this.state.Downloads.AddChunkUpdateCallback((chunk, token) => state.Objects.DownloadChunkAsync(chunk, nodeURI, token));
         }
         public override async Task<Ui.Path> GetObjectPath(RpcCommon.Hash request, ServerCallContext context)
         {
