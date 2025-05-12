@@ -31,8 +31,7 @@ namespace node
 
         public UiService(NodeState state, Uri nodeURI)
         {
-            ShutdownEvent = new AsyncManualResetEvent(true);
-            ShutdownEvent.Reset();
+            ShutdownEvent = new AsyncManualResetEvent(false);
             this.state = state;
             this.nodeURI = nodeURI;
             this.state.Downloads.AddChunkUpdateCallback((chunk, token) => state.DownloadChunkAsync(chunk, nodeURI, token));
