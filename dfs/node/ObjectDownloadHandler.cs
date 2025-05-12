@@ -18,7 +18,7 @@ namespace node
     {
         private readonly IFileSystem fs;
         private ILogger Logger { get; }
-        private FilePathHandler PathHandler { get; }
+        private IFilePathHandler PathHandler { get; }
         public GrpcClientHandler ClientHandler { get; }
         private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
         private readonly ConcurrentDictionary<string, AsyncLock> peerLocks = new();
@@ -28,7 +28,7 @@ namespace node
 
         public ObjectDownloadHandler(IFileSystem fs,
             ILogger logger,
-            FilePathHandler pathHandler,
+            IFilePathHandler pathHandler,
             GrpcClientHandler clientHandler,
             IDownloadManager downloads,
             IAsyncIOWrapper asyncIO,

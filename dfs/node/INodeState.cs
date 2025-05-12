@@ -13,7 +13,7 @@ namespace node
         string LogPath { get; }
         IFilesystemManager Manager { get; }
         ObjectDownloadHandler Objects { get; }
-        FilePathHandler PathHandler { get; }
+        IFilePathHandler PathHandler { get; }
         TransactionManager Transactions { get; }
     }
 }

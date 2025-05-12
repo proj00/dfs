@@ -24,7 +24,7 @@ namespace unit_tests.node
     {
         private static readonly Bogus.Faker faker = new();
         [Test]
-        [CancelAfter(30000)]
+        [CancelAfter(1000)]
         public async Task TestGetChunk_WritesToStreamAsync(CancellationToken token)
         {
             var obj = MockFsUtils.GenerateObject(faker);
@@ -85,7 +85,7 @@ namespace unit_tests.node
         }
 
         [Test]
-        [CancelAfter(30000)]
+        [CancelAfter(1000)]
         public async Task TestGetChunk_CancelledAsync(CancellationToken token)
         {
             var obj = MockFsUtils.GenerateObject(faker);
@@ -146,7 +146,7 @@ namespace unit_tests.node
         }
 
         [Test]
-        [CancelAfter(30000)]
+        [CancelAfter(1000)]
         public async Task TestGetChunk_IsInBlockList_ThrowsAsync(CancellationToken token)
         {
             var obj = MockFsUtils.GenerateObject(faker);
@@ -169,7 +169,7 @@ namespace unit_tests.node
         }
 
         [Test]
-        [CancelAfter(30000)]
+        [CancelAfter(1000)]
         public async Task TestGetChunk_NoChunkParentFound_ThrowsAsync(CancellationToken token)
         {
             var obj = MockFsUtils.GenerateObject(faker);
@@ -199,7 +199,7 @@ namespace unit_tests.node
         }
 
         [Test]
-        [CancelAfter(30000)]
+        [CancelAfter(1000)]
         public async Task TestGetChunk_InvalidObject_ThrowsAsync(CancellationToken token)
         {
             var obj = MockFsUtils.GenerateObject(faker);

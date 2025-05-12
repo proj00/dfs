@@ -7,7 +7,7 @@ using System.Net.WebSockets;
 
 namespace node
 {
-    public class FilePathHandler : IDisposable
+    public class FilePathHandler : IFilePathHandler
     {
         private readonly Action<string, string> StartProcess;
         private bool disposedValue;

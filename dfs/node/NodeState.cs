@@ -31,7 +31,7 @@ namespace node
 
         private readonly ILoggerFactory loggerFactory;
         public ILogger Logger { get; private set; }
-        public FilePathHandler PathHandler { get; }
+        public IFilePathHandler PathHandler { get; }
         public string LogPath { get; private set; }
         private bool disposedValue;
         public TransactionManager Transactions { get; }
@@ -41,9 +41,9 @@ namespace node
 
         public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
-            IPersistentCache<ByteString, string> pathByHash,
+            IFilePathHandler pathHandler,
             IBlockListHandler blockList,
-            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io, Action<string, string> startProcess)
+            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io)
         {
             this.AsyncIO = io;
             this.loggerFactory = loggerFactory;
@@ -53,7 +53,7 @@ namespace node
             Downloads = downloads;
 
             this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
-            this.PathHandler = new(pathByHash, startProcess);
+            this.PathHandler = pathHandler;
             BlockList = blockList;
             Transactions = new(Logger);
             Objects = new(fs, Logger, PathHandler, ClientHandler, Downloads, AsyncIO, Manager);
@@ -64,11 +64,12 @@ namespace node
 #pragma warning disable CA2000 // Dispose objects before losing scope
                   new FilesystemManager(dbPath),
                   new DownloadManager(loggerFactory, dbPath),
-                new PersistentCache<ByteString, string>(
+                  new FilePathHandler(new PersistentCache<ByteString, string>(
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
-                new StringSerializer()
-            ),
+                new StringSerializer()),
+                    (string name, string args) => Process.Start(name, args)
+                ),
             new BlockListHandler(
                     new PersistentCache<string, string>(
                     System.IO.Path.Combine(dbPath, "Whitelist"),
@@ -82,8 +83,8 @@ namespace node
             ),
 #pragma warning restore CA2000 // Dispose objects before losing scope
                 GrpcChannel.ForAddress,
-                new AsyncIOWrapper(),
-                (string name, string args) => Process.Start(name, args))
+                new AsyncIOWrapper()
+                )
         { }
 
         protected virtual void Dispose(bool disposing)
