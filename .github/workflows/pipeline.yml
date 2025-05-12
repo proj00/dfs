@@ -113,32 +113,25 @@ jobs:
     permissions: read-all
     steps:
       - uses: actions/checkout@v4
-
+  
       - name: Use Node.js (22.x)
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
-
-      - name: Cache npm dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-
-      - name: Restore npm dependencies
+          cache: 'npm' # Automatically caches ~/.npm
+  
+      - name: Install dependencies using npm ci
         working-directory: ./dfs/electron
         run: npm ci
-
+  
       - name: Build UI
         working-directory: ./dfs/electron
         run: npm run test-build
-
+  
       - name: Run Jest tests with coverage
         working-directory: ./dfs/electron
         run: npx jest --coverage --passWithNoTests
-
+  
       - name: Upload Jest Coverage Report
         uses: actions/upload-artifact@v4
         with:
