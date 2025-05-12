@@ -33,7 +33,6 @@ namespace node
         public ILogger Logger { get; private set; }
         public FilePathHandler PathHandler { get; }
         public string LogPath { get; private set; }
-        private readonly CancellationTokenSource cts = new CancellationTokenSource();
         private bool disposedValue;
         public TransactionManager Transactions { get; }
         public IAsyncIOWrapper AsyncIO { get; }
@@ -91,8 +90,6 @@ namespace node
             {
                 if (disposing)
                 {
-                    cts.Cancel();
-                    cts.Dispose();
                     ClientHandler.Dispose();
                     Manager.Dispose();
                     PathHandler.Dispose();
