@@ -118,7 +118,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
-          cache: 'npm' # Automatically caches ~/.npm
+  
+      - name: Get npm cache directory
+        id: npm-cache
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+  
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
   
       - name: Install dependencies using npm ci
         working-directory: ./dfs/electron
