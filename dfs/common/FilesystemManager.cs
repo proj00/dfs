@@ -58,6 +58,20 @@ namespace common
             );
         }
 
+        public FilesystemManager(IPersistentCache<ByteString, ObjectWithHash> objectByHash,
+            IPersistentCache<ByteString, RpcCommon.HashList> chunkParents,
+            IPersistentCache<Guid, ByteString> container,
+            IPersistentCache<ByteString, RpcCommon.HashList> parent,
+            IPersistentCache<ByteString, ByteString> newerVersion, string dbPath)
+        {
+            ObjectByHash = objectByHash;
+            ChunkParents = chunkParents;
+            Container = container;
+            Parent = parent;
+            NewerVersion = newerVersion;
+            DbPath = dbPath;
+        }
+
         public async Task<Guid> CreateObjectContainer(ObjectWithHash[] objects, ByteString rootObject, Guid container)
         {
             ArgumentNullException.ThrowIfNull(objects);
