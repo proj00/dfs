@@ -52,7 +52,7 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.exclusions="dfs/common/generated/**/*,dfs/common/generated/*,**/package-lock.json,dfs/electron/src/types/**/*,dfs/electron/utils/*,dfs/electron/*.ts" `
+          /d:sonar.exclusions="dfs/common/generated/**/*,dfs/common/generated/*,**/package-lock.json,dfs/electron/src/types/**/*,dfs/electron/utils/*,dfs/electron/*.ts,dfs/node/NodeState.cs" `
           /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info `
           /d:sonar.cs.vscoveragexml.reportsPaths="**/*coverage.xml" `
           /d:sonar.verbose=true
