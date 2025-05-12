@@ -25,7 +25,7 @@ interface TrackerSearchDialogProps {
   readonly onOpenChange: (open: boolean) => void;
   readonly onDownloadContainer?: (
     containerGuid: string,
-    trackerUri: string,
+    trackerUri: string
   ) => void;
 }
 
@@ -70,7 +70,7 @@ export function TrackerSearchDialog({
     } catch (err) {
       log.error("Search failed:", err);
       setError(
-        "Failed to search tracker. Please check the tracker URI and try again.",
+        "Failed to search tracker. Please check the tracker URI and try again."
       );
     } finally {
       setIsSearching(false);
