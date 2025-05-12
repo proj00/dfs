@@ -1,24 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Copy } from "lucide-react"
-import type { File, Folder } from "../lib/types"
-import { FileOperationDialog } from "./file-operation-dialog"
-import { Checkbox } from "./ui/checkbox"
+import { useState } from "react";
+import { Copy } from "lucide-react";
+import type { File, Folder } from "../lib/types";
+import { FileOperationDialog } from "./file-operation-dialog";
+import { Checkbox } from "./ui/checkbox";
 
 interface CopyDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  item: File | Folder | null
-  folders: Folder[]
-  onCopy: (item: File | Folder, destinationFolderId: string | null, keepOriginalName: boolean) => Promise<boolean>
-  existingNames?: string[] 
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: File | Folder | null;
+  folders: Folder[];
+  onCopy: (
+    item: File | Folder,
+    destinationFolderId: string | null,
+    keepOriginalName: boolean,
+  ) => Promise<boolean>;
+  existingNames?: string[];
 }
 
-export function CopyDialog({ open, onOpenChange, item, folders, onCopy }: CopyDialogProps) {
-  const [keepOriginalName, setKeepOriginalName] = useState(true)
+export function CopyDialog({
+  open,
+  onOpenChange,
+  item,
+  folders,
+  onCopy,
+}: CopyDialogProps) {
+  const [keepOriginalName, setKeepOriginalName] = useState(true);
 
-  const itemType = item ? (item.hasOwnProperty("size") ? "file" : "folder") : ""
+  const itemType = item
+    ? item.hasOwnProperty("size")
+      ? "file"
+      : "folder"
+    : "";
 
   const extraContent = (
     <div className="flex items-center space-x-2 pt-2">
@@ -34,7 +48,7 @@ export function CopyDialog({ open, onOpenChange, item, folders, onCopy }: CopyDi
         Keep original name
       </label>
     </div>
-  )
+  );
 
   return (
     <FileOperationDialog
@@ -55,5 +69,5 @@ export function CopyDialog({ open, onOpenChange, item, folders, onCopy }: CopyDi
       extraContent={extraContent}
       extraActionParams={[keepOriginalName]}
     />
-  )
+  );
 }

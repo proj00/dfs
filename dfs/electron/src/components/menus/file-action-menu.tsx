@@ -33,8 +33,8 @@ interface FileActionMenuProps {
   ) => Promise<void> | void;
   readonly onCopyClick?: (
     file: File,
-    e: React.MouseEvent
-  ) => Promise<void> | void
+    e: React.MouseEvent,
+  ) => Promise<void> | void;
 }
 
 export function FileActionMenu({
@@ -89,8 +89,8 @@ export function FileActionMenu({
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={async (e) => {
-            e.stopPropagation()
-            if (onCopyClick) await onCopyClick(file, e)
+            e.stopPropagation();
+            if (onCopyClick) await onCopyClick(file, e);
           }}
         >
           Make a copy
