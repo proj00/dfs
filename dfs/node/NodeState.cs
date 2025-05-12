@@ -23,11 +23,11 @@ namespace node
 {
     using GrpcChannelFactory = Func<Uri, GrpcChannelOptions, GrpcChannel>;
 
-    public partial class NodeState : IDisposable
+    public partial class NodeState : INodeState
     {
         public IFilesystemManager Manager { get; }
         public IDownloadManager Downloads { get; }
-        public BlockListHandler BlockList { get; }
+        public IBlockListHandler BlockList { get; }
 
         private readonly ILoggerFactory loggerFactory;
         public ILogger Logger { get; private set; }
@@ -42,8 +42,7 @@ namespace node
         public NodeState(IFileSystem fs, TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath,
             IFilesystemManager manager, IDownloadManager downloads,
             IPersistentCache<ByteString, string> pathByHash,
-            IPersistentCache<string, string> whitelist,
-            IPersistentCache<string, string> blacklist,
+            IBlockListHandler blockList,
             GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io, Action<string, string> startProcess)
         {
             this.AsyncIO = io;
@@ -55,7 +54,7 @@ namespace node
 
             this.ClientHandler = new(channelTtl, grpcChannelFactory, loggerFactory);
             this.PathHandler = new(pathByHash, startProcess);
-            BlockList = new BlockListHandler(whitelist, blacklist);
+            BlockList = blockList;
             Transactions = new(Logger);
             Objects = new(fs, Logger, PathHandler, ClientHandler, Downloads, AsyncIO, Manager);
         }
@@ -69,14 +68,17 @@ namespace node
                 System.IO.Path.Combine(dbPath, "PathByHash"),
                 new ByteStringSerializer(),
                 new StringSerializer()
-            ), new PersistentCache<string, string>(
-                System.IO.Path.Combine(dbPath, "Whitelist"),
-                new StringSerializer(),
-                new StringSerializer()
-            ), new PersistentCache<string, string>(
-                System.IO.Path.Combine(dbPath, "Blacklist"),
-                new StringSerializer(),
-                new StringSerializer()
+            ),
+            new BlockListHandler(
+                    new PersistentCache<string, string>(
+                    System.IO.Path.Combine(dbPath, "Whitelist"),
+                    new StringSerializer(),
+                    new StringSerializer()
+                ), new PersistentCache<string, string>(
+                    System.IO.Path.Combine(dbPath, "Blacklist"),
+                    new StringSerializer(),
+                    new StringSerializer()
+                )
             ),
 #pragma warning restore CA2000 // Dispose objects before losing scope
                 GrpcChannel.ForAddress,

@@ -45,7 +45,10 @@ namespace node
                 return;
             }
 
-            using NodeState state = new(TimeSpan.FromMinutes(1), loggerFactory, logPath, args.Length >= 3 ? args[2] : Path.Combine("./db", Guid.NewGuid().ToString()));
+            using INodeState state = new NodeState(TimeSpan.FromMinutes(1),
+                loggerFactory,
+                logPath,
+                args.Length >= 3 ? args[2] : Path.Combine("./db", Guid.NewGuid().ToString()));
 
             int debugPort = args.Length >= 4 ? int.Parse(args[3]) : 42069;
 

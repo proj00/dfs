@@ -16,8 +16,8 @@ namespace node
 {
     public class NodeRpc : NodeBase
     {
-        private readonly NodeState state;
-        public NodeRpc(NodeState state)
+        private readonly INodeState state;
+        public NodeRpc(INodeState state)
         {
             this.state = state;
         }

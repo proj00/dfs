@@ -24,11 +24,11 @@ namespace node
     [ComVisible(true)]
     public class UiService : Ui.Ui.UiBase
     {
-        private readonly NodeState state;
+        private readonly INodeState state;
         private readonly Uri nodeURI;
         public AsyncManualResetEvent ShutdownEvent { get; private set; }
 
-        public UiService(NodeState state, Uri nodeURI)
+        public UiService(INodeState state, Uri nodeURI)
         {
             this.nodeURI = nodeURI;
             ShutdownEvent = new AsyncManualResetEvent(false);
