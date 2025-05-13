@@ -94,28 +94,39 @@ export function Sidebar({
   );
 
   // Listen for custom event to open download dialog
-  useEffect(() => {
-    const handleOpenDownloadDialog = (event: CustomEvent) => {
-      const { containerGuid, trackerUri } = event.detail;
-      setDownloadContainerGuid(containerGuid);
-      setDownloadTrackerUri(trackerUri);
-      setDownloadDialogOpen(true);
-    };
+useEffect(() => {
+  const handleOpenDownloadDialog = (event: CustomEvent) => {
+    const { containerGuid, trackerUri } = event.detail;
+    setDownloadContainerGuid(containerGuid);
+    setDownloadTrackerUri(trackerUri);
+    setDownloadDialogOpen(true);
+  };
 
-    window.addEventListener(
+  window.addEventListener(
+    "openDownloadDialog",
+    handleOpenDownloadDialog as EventListener
+  );
+
+  return () => {
+    window.removeEventListener(
       "openDownloadDialog",
-      handleOpenDownloadDialog as EventListener,
+      handleOpenDownloadDialog as EventListener
     );
+  };
+}, []);
 
-    return () => {
-      window.removeEventListener(
-        "openDownloadDialog",
-        handleOpenDownloadDialog as EventListener,
-      );
-    };
-  }, []);
-  // Fetch data usage periodically
-  const fetchDataUsage = async () => {
+  // // Fetch data usage periodically
+  // const fetchDataUsage = async () => {
+  //   try {
+  //     const usage = await backendService.GetDataUsage();
+  //     setDataUsage(usage);
+  //   } catch (error) {
+  //     log.error("Failed to fetch data usage:", error);
+  //   }
+  // };
+
+useEffect(() => {
+  const fetchData = async () => {
     try {
       const usage = await backendService.GetDataUsage();
       setDataUsage(usage);
@@ -124,7 +135,13 @@ export function Sidebar({
     }
   };
 
-  useEffect(createPollCallback(fetchDataUsage, 1000), []);
+  fetchData(); // Initial call
+  const intervalId = setInterval(fetchData, 1000);
+
+  return () => {
+    clearInterval(intervalId); // Cleanup: clear the interval
+  };
+}, []); 
 
   const fetchProgress = async () => {
     try {

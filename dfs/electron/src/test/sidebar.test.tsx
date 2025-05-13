@@ -1,12 +1,12 @@
 test.todo('write some tests');
-/*
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { Sidebar } from "../components/sidebar"; // adjust if needed
 import * as BackendModule from "../IpcService/BackendService";
 /**
  * @jest-environment jsdom
  */
-/*
+
 jest.mock("electron-log/renderer", () => ({
   error: jest.fn(),
   info: jest.fn(),
@@ -107,18 +107,23 @@ describe("Sidebar", () => {
         folders={mockFolders}
       />,
     );
-
-    fireEvent.click(screen.getByText("Publish to Tracker"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Publish to Tracker"));
+  });
     expect(screen.getByText("Publish to Tracker")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByDisplayValue(""), {
-      target: { value: "guid1" },
+await act(async () => {
+  fireEvent.change(screen.getByDisplayValue(""), {
+    target: { value: "guid1" },
+  });
     });
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker://uri" },
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
+        target: { value: "tracker://uri" },
+  });
     });
-
-    fireEvent.click(screen.getByText("Publish"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Publish"));
+  });
     await waitFor(() => {
       expect(screen.getByText("Container published successfully!")).toBeInTheDocument();
     });
@@ -133,17 +138,22 @@ describe("Sidebar", () => {
         folders={mockFolders}
       />,
     );
-
-    fireEvent.click(screen.getByText("Download Container"));
-
-    fireEvent.change(screen.getByPlaceholderText("Enter container GUID"), {
-      target: { value: "guid1" },
+await act(async () => {
+  fireEvent.click(screen.getByText("Download Container"));
+  });
+await act(async () => {
+  fireEvent.change(screen.getByPlaceholderText("Enter container GUID"), {
+    target: { value: "guid1" },
+  });
     });
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker://uri" },
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
+        target: { value: "tracker://uri" },
+  });
     });
-
-    fireEvent.click(screen.getByText("Download"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Download"));
+  });
     await waitFor(() => {
       expect(screen.getByText("Download started successfully!")).toBeInTheDocument();
     });
@@ -158,16 +168,18 @@ describe("Sidebar", () => {
         folders={mockFolders}
       />,
     );
-
-    fireEvent.click(screen.getByText("Transfer Manager"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Transfer Manager"));
+  });
     expect(screen.getByTestId("download-manager")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("Blocked Peers"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Blocked Peers"));
+  });
     expect(screen.getByTestId("blocked-peers-dialog")).toBeInTheDocument();
   });
   
 
-  it("calls navigateToFolder when clicking folder", () => {
+  it("calls navigateToFolder when clicking folder",async () => {
     const navigateToFolder = jest.fn();
     render(
       <Sidebar
@@ -176,10 +188,11 @@ describe("Sidebar", () => {
         folders={mockFolders}
       />,
     );
-
-    fireEvent.click(screen.getByText("Root Folder 1"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Root Folder 1"));
+   });
     expect(navigateToFolder).toHaveBeenCalledWith("root1");
   });
   
 });
-*/
+

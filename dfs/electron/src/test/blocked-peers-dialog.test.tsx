@@ -1,35 +1,35 @@
 import "@testing-library/jest-dom";
-import { render, screen/*, fireEvent, waitFor*/, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { jest } from "@jest/globals";
-//import { GetNodeService } from "@/IpcService/GetNodeService";
+import { GetNodeService } from "@/IpcService/GetNodeService";
 import { BlockedPeersDialog } from "@/components/blocked-peers-dialog";
 import { NodeServiceClient } from "@/types/wrap/NodeServiceClient";
 
 // Mock the GetNodeService function
-/**
- * @jest-environment jsdom
- */
-
 jest.mock("@/IpcService/GetNodeService", () => ({
   GetNodeService: jest.fn(
     () =>
       ({
         GetBlockList: jest.fn().mockResolvedValue({
-          BlockListEntries: [
+          // Make sure this matches the structure your component expects for 'entries'
+          entries: [ // Changed from BlockListEntries to entries based on component code
             { url: "192.168.1.1", inWhitelist: false },
             { url: "10.0.0.0/24", inWhitelist: false },
             { url: "2001:db8::/64", inWhitelist: true },
           ],
         } as never),
-
-        ModifyBlockListEntry: jest.fn().mockResolvedValue(undefined as never),
+        ModifyBlockListEntry: jest.fn().mockResolvedValue(undefined as never), // Simplified mockResolvedValue
       } as unknown as NodeServiceClient)
   ),
 }));
 
 describe("BlockedPeersDialog", () => {
-  beforeEach(() => {
+  let mockNodeService: NodeServiceClient;
+
+  beforeEach(async () => { // Make beforeEach async if GetNodeService is async
     jest.clearAllMocks();
+    // Get the mocked service instance to allow for more specific assertions if needed
+    mockNodeService = GetNodeService();
   });
 
   it("renders the dialog when open is true", async () => {
@@ -45,7 +45,7 @@ describe("BlockedPeersDialog", () => {
     });
     expect(screen.queryByText("Manage Blocked Peers")).not.toBeInTheDocument();
   });
-/*
+
   it("displays block list entries when loaded", async () => {
     render(<BlockedPeersDialog open={true} onOpenChange={() => {}} />);
 
@@ -144,6 +144,8 @@ describe("BlockedPeersDialog", () => {
     });
   });
 
+
+  //doesnt acctualy add the ip
   it("handles toggling whitelist status", async () => {
     await act(async () => {
       render(<BlockedPeersDialog open={true} onOpenChange={() => {}} />);
@@ -173,6 +175,41 @@ describe("BlockedPeersDialog", () => {
     });
     
   });
-  */
+  //===================
+  it("validates IP address input and adds a valid IP to the blacklist", async () => {
+    await act(async () => {
+      render(<BlockedPeersDialog open={true} onOpenChange={() => {}} />);
+    });
+
+    const input = screen.getByPlaceholderText("Enter IP address or CIDR range");
+    const addButton = screen.getByRole("button", { name: /add/i }); // More resilient selector
+
+    // Test 1: Attempt to add an invalid IP
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "invalid-ip" } });
+      fireEvent.click(addButton);
+    });
+
+    expect(await screen.findByText("Invalid IP address or CIDR range")).toBeInTheDocument();
+    expect(mockNodeService.ModifyBlockListEntry).not.toHaveBeenCalled();
+
+    // Test 2: Add a valid IPv4 address to blacklist (default)
+    const validIpToAdd = "192.168.1.5";
+    await act(async () => {
+      fireEvent.change(input, { target: { value: validIpToAdd } });
+      // Ensure validation message is gone if it was previously visible
+      expect(screen.queryByText("Invalid IP address or CIDR range")).not.toBeInTheDocument();
+      fireEvent.click(addButton);
+    });
+
+    // Wait for the async operation to complete
+    await waitFor(() => {
+      expect(mockNodeService.ModifyBlockListEntry).toHaveBeenCalledWith({
+        url: validIpToAdd,        // Corrected from 'address' to 'url'
+        inWhitelist: false,     // Default is blacklist
+        shouldRemove: false,
+      });
+    });
+  });
 });
 
