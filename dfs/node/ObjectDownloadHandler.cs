@@ -25,6 +25,7 @@ namespace node
         public IDownloadManager Downloads { get; }
         public IAsyncIOWrapper AsyncIO { get; }
         public IFilesystemManager Manager { get; }
+        private readonly INativeMethods nativeMethods;
 
         public ObjectDownloadHandler(IFileSystem fs,
             ILogger logger,
@@ -32,7 +33,7 @@ namespace node
             GrpcClientHandler clientHandler,
             IDownloadManager downloads,
             IAsyncIOWrapper asyncIO,
-            IFilesystemManager manager)
+            IFilesystemManager manager, INativeMethods nativeMethods)
         {
             this.fs = fs;
             Logger = logger;
@@ -41,6 +42,7 @@ namespace node
             Downloads = downloads;
             AsyncIO = asyncIO;
             Manager = manager;
+            this.nativeMethods = nativeMethods;
         }
 
         public async Task<(ObjectWithHash[] objects, ByteString rootHash)> AddObjectFromDiskAsync(string path, int chunkSize)
@@ -58,11 +60,17 @@ namespace node
             {
                 List<ObjectWithHash> dirObjects = [];
                 List<(ByteString, string)> paths = [];
-                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(fs, path, chunkSize, (hash, path, obj) =>
-                {
-                    dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
-                    paths.Add((hash, path));
-                });
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(
+                    fs,
+                    nativeMethods,
+                    path,
+                    chunkSize,
+                    (hash, path, obj) =>
+                        {
+                            dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
+                            paths.Add((hash, path));
+                        }
+                );
 
                 foreach (var (hash, p) in paths)
                 {
@@ -113,7 +121,7 @@ namespace node
             {
                 var peerLock = peerLocks.GetOrAdd(peers[index], new AsyncLock());
                 Logger.LogInformation($"pending critical for {peers[index]}");
-                using (await peerLock.LockAsync())
+                using (await peerLock.LockAsync(CancellationToken.None))
                 {
                     await foreach (var message in peerCall.ResponseStream.ReadAllAsync(token))
                     {
@@ -126,7 +134,7 @@ namespace node
             }
             catch (Exception e)
             {
-                Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
+                Logger.LogWarning(e, $"Download stopped for chunk, will attempt retries later: {e.Message}");
             }
             Logger.LogInformation($"reporting progress: {chunk.CurrentCount - start}");
             await Downloads.UpdateFileProgressAsync(chunk.FileHash, chunk.CurrentCount - start);

@@ -11,7 +11,7 @@ namespace common
             ArgumentNullException.ThrowIfNull(y);
             if (x.Length != y.Length)
             {
-                throw new ArgumentException("Compare failed; invalid arguments (null / mismatched lengths)");
+                throw new ArgumentException("Compare failed; invalid arguments (mismatched ByteString lengths)");
             }
 
             for (int i = 0; i < x.Length; i++)

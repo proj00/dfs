@@ -19,7 +19,7 @@ namespace unit_tests.node
 {
     class BlockListHandlerTests
     {
-        private static Bogus.Faker faker = new();
+        private static readonly Bogus.Faker faker = new();
         private MockPersistentCache<string, string> whitelist = new();
         private MockPersistentCache<string, string> blacklist = new();
 

@@ -50,7 +50,8 @@ namespace node
             Console.WriteLine(path);
             var root = Path.GetPathRoot(path) ?? "";
             path = path.Substring(root.Length);
-            var parts = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            char[] separators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+            var parts = path.Split(separators, StringSplitOptions.None);
             var chars = new HashSet<char>(Path.GetInvalidFileNameChars());
 
             foreach (var p in parts)
