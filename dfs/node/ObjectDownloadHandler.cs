@@ -25,6 +25,7 @@ namespace node
         public IDownloadManager Downloads { get; }
         public IAsyncIOWrapper AsyncIO { get; }
         public IFilesystemManager Manager { get; }
+        private readonly INativeMethods nativeMethods;
 
         public ObjectDownloadHandler(IFileSystem fs,
             ILogger logger,
@@ -32,7 +33,7 @@ namespace node
             GrpcClientHandler clientHandler,
             IDownloadManager downloads,
             IAsyncIOWrapper asyncIO,
-            IFilesystemManager manager)
+            IFilesystemManager manager, INativeMethods nativeMethods)
         {
             this.fs = fs;
             Logger = logger;
@@ -41,6 +42,7 @@ namespace node
             Downloads = downloads;
             AsyncIO = asyncIO;
             Manager = manager;
+            this.nativeMethods = nativeMethods;
         }
 
         public async Task<(ObjectWithHash[] objects, ByteString rootHash)> AddObjectFromDiskAsync(string path, int chunkSize)
@@ -60,7 +62,7 @@ namespace node
                 List<(ByteString, string)> paths = [];
                 rootHash = FilesystemUtils.GetRecursiveDirectoryObject(
                     fs,
-                    new NativeMethods(),
+                    nativeMethods,
                     path,
                     chunkSize,
                     (hash, path, obj) =>

@@ -43,7 +43,7 @@ namespace node
             IFilesystemManager manager, IDownloadManager downloads,
             IFilePathHandler pathHandler,
             IBlockListHandler blockList,
-            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io)
+            GrpcChannelFactory grpcChannelFactory, IAsyncIOWrapper io, INativeMethods nativeMethods)
         {
             this.AsyncIO = io;
             this.loggerFactory = loggerFactory;
@@ -56,7 +56,7 @@ namespace node
             this.PathHandler = pathHandler;
             BlockList = blockList;
             Transactions = new(Logger);
-            Objects = new(fs, Logger, PathHandler, ClientHandler, Downloads, AsyncIO, Manager);
+            Objects = new(fs, Logger, PathHandler, ClientHandler, Downloads, AsyncIO, Manager, nativeMethods);
         }
 
         public NodeState(TimeSpan channelTtl, ILoggerFactory loggerFactory, string logPath, string dbPath)
@@ -83,7 +83,8 @@ namespace node
             ),
 #pragma warning restore CA2000 // Dispose objects before losing scope
                 GrpcChannel.ForAddress,
-                new AsyncIOWrapper()
+                new AsyncIOWrapper(),
+                new NativeMethods()
                 )
         { }
 

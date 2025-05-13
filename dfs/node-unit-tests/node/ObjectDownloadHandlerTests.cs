@@ -38,7 +38,8 @@ namespace unit_tests.node
                 clientHandler,
                 new Mock<IDownloadManager>().Object,
                 new Mock<IAsyncIOWrapper>().Object,
-                new Mock<IFilesystemManager>().Object
+                new Mock<IFilesystemManager>().Object,
+                new Mock<INativeMethods>().Object
                 );
 
             var res = await handler.AddObjectFromDiskAsync("path.txt", 1024);
