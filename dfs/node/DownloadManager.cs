@@ -149,7 +149,7 @@ namespace node
             }
             catch (Exception e)
             {
-                logger.LogError(e, "HandleCompleteAsync");
+                logger.LogError(e, $"HandleCompleteAsync: {e.Message}");
                 throw;
             }
         }
@@ -183,7 +183,7 @@ namespace node
             }
             catch (Exception e)
             {
-                logger.LogError(e, "HandlePausedAsync");
+                logger.LogError(e, $"HandlePausedAsync {e.Message}");
                 throw;
             }
         }
@@ -219,7 +219,7 @@ namespace node
             }
             catch (Exception e)
             {
-                logger.LogError(e, "HandlePendingAsync");
+                logger.LogError(e, $"HandlePendingAsync {e.Message}");
                 throw;
             }
         }
@@ -355,7 +355,7 @@ namespace node
             }
             catch (OperationCanceledException e)
             {
-                logger.LogError($"pause cancelled : {e}");
+                logger.LogError(e, $"pause cancelled : {e.Message}");
                 throw;
             }
 
@@ -382,7 +382,7 @@ namespace node
             }
             catch (OperationCanceledException e)
             {
-                logger.LogError($"resume cancelled : {e}");
+                logger.LogError(e, $"resume cancelled : {e.Message}");
                 throw;
             }
             await EnqueueStateAsync(new StateChange { Hash = file.Hash, NewStatus = DownloadStatus.Pending });

@@ -126,7 +126,7 @@ namespace node
             }
             catch (Exception e)
             {
-                Logger.LogWarning("Download stopped for chunk {0}, will attempt retries later", e.StackTrace);
+                Logger.LogWarning(e, $"Download stopped for chunk, will attempt retries later: {e.Message}");
             }
             Logger.LogInformation($"reporting progress: {chunk.CurrentCount - start}");
             await Downloads.UpdateFileProgressAsync(chunk.FileHash, chunk.CurrentCount - start);
