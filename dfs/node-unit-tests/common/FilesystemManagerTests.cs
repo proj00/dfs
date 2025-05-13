@@ -125,7 +125,7 @@ namespace unit_tests.common
             var file = MockFsUtils.GenerateObject(faker, false);
             var parentObj = FilesystemUtils.GetDirectoryObject("dir", [file.Hash]);
             var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
-            var parent2Obj = FilesystemUtils.GetDirectoryObject("dir2", []);
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("dir2", [file.Hash]);
             var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
             var rootObj = FilesystemUtils.GetDirectoryObject("dir1", [parent.Hash, parent2.Hash]);
             var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
