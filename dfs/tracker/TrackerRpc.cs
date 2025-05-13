@@ -300,7 +300,7 @@ namespace tracker
 
             ByteString rootHash = ByteString.Empty;
             ValueTuple<System.Guid, long> transactionInfo = default;
-            System.Guid transactionGuid = default;
+            System.Guid transactionGuid = System.Guid.Empty;
             await foreach (var obj in requestStream.ReadAllAsync(context.CancellationToken))
             {
                 if (!found)

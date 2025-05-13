@@ -16,11 +16,11 @@ namespace common
             semaphore = new SemaphoreSlim(initialCount, maxCount);
         }
 
-        public async Task<IDisposable> LockAsync(bool noLock = false)
+        public async Task<IDisposable> LockAsync(CancellationToken token, bool noLock = false)
         {
             if (!noLock)
             {
-                await semaphore.WaitAsync();
+                await semaphore.WaitAsync(token);
             }
             return new Releaser(semaphore, noLock);
         }

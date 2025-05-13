@@ -59,7 +59,7 @@ namespace tracker
             }
             if (k != 'a' && k != 'A')
             {
-                source.Cancel();
+                await source.CancelAsync();
             }
 
             var usage = await rpc.GetTotalDataUsage();
