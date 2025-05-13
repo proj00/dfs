@@ -182,5 +182,230 @@ namespace unit_tests.common
                 }
             }
         }
+
+        [Test]
+        [CancelAfter(1000)]
+        public async Task TestModifyContainer_Delete_ReturnsAsync(CancellationToken token)
+        {
+            var file = MockFsUtils.GenerateObject(faker, false);
+            var parentObj = FilesystemUtils.GetDirectoryObject("left_child", [file.Hash]);
+            var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("right_child", [file.Hash]);
+            var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
+            var rootObj = FilesystemUtils.GetDirectoryObject("root_dir", [parent.Hash, parent2.Hash]);
+            var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
+            var list = new ObjectWithHash[] { root, parent, file, parent2 };
+
+            var guid = Guid.NewGuid();
+            await manager.CreateObjectContainer(list, root.Hash, guid);
+            var diff = await manager.ModifyContainer(
+                new()
+                {
+                    ContainerGuid = guid.ToString(),
+                    Parent = new() { Data = parent.Hash },
+                    Target = new() { Data = file.Hash },
+                    Type = Ui.OperationType.Delete
+                });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(diff.Item1, Is.Not.EqualTo(root.Hash));
+                Assert.That(diff.Item2, Has.Count.EqualTo(list.Length - 1));
+                Assert.That(diff.Item2, Does.Not.Contain(file));
+                Assert.That(diff.Item2, Does.Contain(parent2));
+
+                var new_root = diff.Item2.Find(o => o.Object.Name == "root_dir");
+                Assert.That(new_root, Is.Not.Null);
+                var new_left = diff.Item2.Find(o => o.Object.Name == "left_child");
+                Assert.That(new_left, Is.Not.Null);
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_left.Hash));
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(parent2.Hash));
+                Assert.That(new_left.Object.Directory.Entries, Does.Not.Contain(file.Hash));
+                Assert.That(parent2.Object.Directory.Entries, Does.Contain(file.Hash));
+            }
+        }
+
+        [Test]
+        [CancelAfter(1000)]
+        public async Task TestModifyContainer_Create_ReturnsAsync(CancellationToken token)
+        {
+            var file = MockFsUtils.GenerateObject(faker, false);
+            var parentObj = FilesystemUtils.GetDirectoryObject("left_child", []);
+            var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("right_child", [file.Hash]);
+            var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
+            var rootObj = FilesystemUtils.GetDirectoryObject("root_dir", [parent.Hash, parent2.Hash]);
+            var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
+            var list = new ObjectWithHash[] { root, parent, file, parent2 };
+
+            var guid = Guid.NewGuid();
+            await manager.CreateObjectContainer(list, root.Hash, guid);
+            var diff = await manager.ModifyContainer(
+                new()
+                {
+                    ContainerGuid = guid.ToString(),
+                    Parent = new() { Data = parent.Hash },
+                    Target = new() { Data = file.Hash },
+                    Type = Ui.OperationType.Create,
+                    Objects = new() { Data = { file } }
+                });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(diff.Item1, Is.Not.EqualTo(root.Hash));
+                Assert.That(diff.Item2, Has.Count.EqualTo(list.Length));
+                Assert.That(diff.Item2, Does.Not.Contain(root));
+                Assert.That(diff.Item2, Does.Not.Contain(parent));
+                Assert.That(diff.Item2, Does.Contain(parent2));
+
+                var new_root = diff.Item2.Find(o => o.Object.Name == "root_dir");
+                Assert.That(new_root, Is.Not.Null);
+                var new_left = diff.Item2.Find(o => o.Object.Name == "left_child");
+                Assert.That(new_left, Is.Not.Null);
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_left.Hash));
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(parent2.Hash));
+                Assert.That(new_left.Object.Directory.Entries, Does.Contain(file.Hash));
+                Assert.That(parent2.Object.Directory.Entries, Does.Contain(file.Hash));
+            }
+        }
+
+        [Test]
+        [CancelAfter(1000)]
+        public async Task TestModifyContainer_Move_ReturnsAsync(CancellationToken token)
+        {
+            var file = MockFsUtils.GenerateObject(faker, false);
+            var parentObj = FilesystemUtils.GetDirectoryObject("left_child", []);
+            var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("right_child", [file.Hash]);
+            var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
+            var rootObj = FilesystemUtils.GetDirectoryObject("root_dir", [parent.Hash, parent2.Hash]);
+            var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
+            var list = new ObjectWithHash[] { root, parent, file, parent2 };
+
+            var guid = Guid.NewGuid();
+            await manager.CreateObjectContainer(list, root.Hash, guid);
+            var diff = await manager.ModifyContainer(
+                new()
+                {
+                    ContainerGuid = guid.ToString(),
+                    Parent = new() { Data = parent2.Hash },
+                    Target = new() { Data = file.Hash },
+                    Type = Ui.OperationType.Move,
+                    NewParent = new() { Data = parent.Hash },
+                });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(diff.Item1, Is.Not.EqualTo(root.Hash));
+                Assert.That(diff.Item2, Has.Count.EqualTo(list.Length - 1));
+                Assert.That(diff.Item2, Does.Not.Contain(root));
+                Assert.That(diff.Item2, Does.Not.Contain(parent));
+                Assert.That(diff.Item2, Does.Not.Contain(parent2));
+
+                var new_root = diff.Item2.Find(o => o.Object.Name == "root_dir");
+                Assert.That(new_root, Is.Not.Null);
+                var new_left = diff.Item2.Find(o => o.Object.Name == "left_child");
+                Assert.That(new_left, Is.Not.Null);
+                var new_right = diff.Item2.Find(o => o.Object.Name == "right_child");
+                Assert.That(new_right, Is.Not.Null);
+
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_left.Hash));
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_right.Hash));
+
+                Assert.That(new_left.Object.Directory.Entries, Does.Contain(file.Hash));
+                Assert.That(new_right.Object.Directory.Entries, Does.Not.Contain(file.Hash));
+            }
+        }
+
+        [Test]
+        [CancelAfter(1000)]
+        public async Task TestModifyContainer_Copy_ReturnsAsync(CancellationToken token)
+        {
+            var file = MockFsUtils.GenerateObject(faker, false);
+            var parentObj = FilesystemUtils.GetDirectoryObject("left_child", []);
+            var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("right_child", [file.Hash]);
+            var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
+            var rootObj = FilesystemUtils.GetDirectoryObject("root_dir", [parent.Hash, parent2.Hash]);
+            var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
+            var list = new ObjectWithHash[] { root, parent, file, parent2 };
+
+            var guid = Guid.NewGuid();
+            await manager.CreateObjectContainer(list, root.Hash, guid);
+            var diff = await manager.ModifyContainer(
+                new()
+                {
+                    ContainerGuid = guid.ToString(),
+                    Parent = new() { Data = parent2.Hash },
+                    Target = new() { Data = file.Hash },
+                    Type = Ui.OperationType.Copy,
+                    NewParent = new() { Data = parent.Hash },
+                });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(diff.Item1, Is.Not.EqualTo(root.Hash));
+                Assert.That(diff.Item2, Has.Count.EqualTo(list.Length));
+                Assert.That(diff.Item2, Does.Not.Contain(root));
+                Assert.That(diff.Item2, Does.Not.Contain(parent));
+                Assert.That(diff.Item2, Does.Contain(parent2));
+
+                var new_root = diff.Item2.Find(o => o.Object.Name == "root_dir");
+                Assert.That(new_root, Is.Not.Null);
+                var new_left = diff.Item2.Find(o => o.Object.Name == "left_child");
+                Assert.That(new_left, Is.Not.Null);
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_left.Hash));
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(parent2.Hash));
+                Assert.That(new_left.Object.Directory.Entries, Does.Contain(file.Hash));
+                Assert.That(parent2.Object.Directory.Entries, Does.Contain(file.Hash));
+            }
+        }
+
+        [Test]
+        [CancelAfter(1000)]
+        public async Task TestModifyContainer_Rename_ReturnsAsync(CancellationToken token)
+        {
+            var file = MockFsUtils.GenerateObject(faker, false);
+            var parentObj = FilesystemUtils.GetDirectoryObject("left_child", []);
+            var parent = new ObjectWithHash() { Hash = HashUtils.GetHash(parentObj), Object = parentObj };
+            var parent2Obj = FilesystemUtils.GetDirectoryObject("right_child", [file.Hash]);
+            var parent2 = new ObjectWithHash() { Hash = HashUtils.GetHash(parent2Obj), Object = parent2Obj };
+            var rootObj = FilesystemUtils.GetDirectoryObject("root_dir", [parent.Hash, parent2.Hash]);
+            var root = new ObjectWithHash() { Hash = HashUtils.GetHash(rootObj), Object = rootObj };
+            var list = new ObjectWithHash[] { root, parent, file, parent2 };
+
+            var guid = Guid.NewGuid();
+            await manager.CreateObjectContainer(list, root.Hash, guid);
+            var actualFile = file.Clone();
+            var diff = await manager.ModifyContainer(
+                new()
+                {
+                    ContainerGuid = guid.ToString(),
+                    Parent = new() { Data = parent2.Hash },
+                    Target = new() { Data = file.Hash },
+                    Type = Ui.OperationType.Rename,
+                    NewName = "new_file"
+                });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(diff.Item1, Is.Not.EqualTo(root.Hash));
+                Assert.That(diff.Item2, Has.Count.EqualTo(list.Length));
+                Assert.That(diff.Item2, Does.Not.Contain(root));
+                Assert.That(diff.Item2, Does.Not.Contain(parent2));
+                Assert.That(diff.Item2, Does.Contain(parent));
+
+                var new_root = diff.Item2.Find(o => o.Object.Name == "root_dir");
+                Assert.That(new_root, Is.Not.Null);
+                var new_right = diff.Item2.Find(o => o.Object.Name == "right_child");
+                Assert.That(new_right, Is.Not.Null);
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(new_right.Hash));
+                Assert.That(new_root.Object.Directory.Entries, Does.Contain(parent.Hash));
+                Assert.That(new_right.Object.Directory.Entries, Does.Not.Contain(actualFile.Hash));
+                var new_file = diff.Item2.Find(o => o.Object.Name == "new_file");
+                Assert.That(new_file, Is.Not.Null);
+                Assert.That(new_right.Object.Directory.Entries, Does.Contain(new_file.Hash));
+            }
+        }
     }
 }

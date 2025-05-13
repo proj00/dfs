@@ -172,7 +172,7 @@ namespace common
                     root = removalDiff[root].Hash;
 
                     if (extracted != null)
-                        objects.RemoveAll(o => o.Hash == operation.Target.Data);
+                        objects.RemoveAll(o => o.Hash == extracted.Hash);
 
                     objects.RemoveAll(o => removalDiff.ContainsKey(o.Hash));
                     objects.AddRange(removalDiff.Values);
@@ -209,6 +209,7 @@ namespace common
                     }
                 }
 
+                objects = [.. objects.Distinct()];
                 return (root, objects);
             }
         }
