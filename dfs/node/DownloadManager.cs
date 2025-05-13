@@ -326,22 +326,6 @@ namespace node
             await EnqueueStateAsync(new StateChange { Hash = chunks[0].FileHash, NewStatus = DownloadStatus.Pending, Chunk = chunks });
         }
 
-        public async Task<ByteString[]> GetIncompleteFilesAsync()
-        {
-            List<ByteString> hashes = [];
-
-            await FileProgress.ForEach((k, v) =>
-            {
-                if (v.Current != v.Total)
-                {
-                    hashes.Add(k);
-                }
-                return true;
-            });
-
-            return [.. hashes];
-        }
-
         public async Task PauseDownloadAsync(ObjectWithHash file, CancellationToken token)
         {
             try
