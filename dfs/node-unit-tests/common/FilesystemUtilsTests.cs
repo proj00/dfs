@@ -51,7 +51,7 @@ namespace unit_tests.common
                 {
                     {"root_dir/subdir/file", new(contents) }
                 },
-                new MockFileSystemOptions());
+                new MockFileSystemOptions() { CurrentDirectory = "C:/" });
 
             List<Fs.FileSystemObject> objects = [];
             Action<ByteString, string, Fs.FileSystemObject> appender = (hash, path, obj) =>
@@ -59,11 +59,11 @@ namespace unit_tests.common
                 objects.Add(obj);
             };
 
-            var result = FilesystemUtils.GetRecursiveDirectoryObject(fs, new Mock<INativeMethods>().Object, ".", 1, appender);
+            var result = FilesystemUtils.GetRecursiveDirectoryObject(fs, new Mock<INativeMethods>().Object, "./root_dir", 1, appender);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(objects, Has.Count.EqualTo(5));
+                Assert.That(objects, Has.Count.EqualTo(3));
                 var root = objects.Find(o => o.Name == "root_dir");
                 var subdir = objects.Find(o => o.Name == "subdir");
                 var file = objects.Find(o => o.Name == "file");
