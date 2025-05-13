@@ -58,11 +58,17 @@ namespace node
             {
                 List<ObjectWithHash> dirObjects = [];
                 List<(ByteString, string)> paths = [];
-                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(fs, path, chunkSize, (hash, path, obj) =>
-                {
-                    dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
-                    paths.Add((hash, path));
-                });
+                rootHash = FilesystemUtils.GetRecursiveDirectoryObject(
+                    fs,
+                    new NativeMethods(),
+                    path,
+                    chunkSize,
+                    (hash, path, obj) =>
+                        {
+                            dirObjects.Add(new ObjectWithHash { Hash = hash, Object = obj });
+                            paths.Add((hash, path));
+                        }
+                );
 
                 foreach (var (hash, p) in paths)
                 {
