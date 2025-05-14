@@ -53,19 +53,21 @@ log.initialize({ spyRendererConsole: true });
 
 const createWindow = async (): Promise<void> => {
   const pipe: UUID = !isDev ? randomUUID() : NULL_UUID;
+  console.log("hi: " + pipe.toString());
   if (!isDev) {
     const exePath = path.join(
       app.isPackaged ? process.resourcesPath : path.join(__dirname, "..", ".."),
       "assets",
       "node.exe",
     );
+    console.log("hi: " + exePath);
     backendProcess = spawn(exePath, [pipe, process.pid.toString()], {
       detached: true,
       stdio: "inherit",
     });
   }
 
-  await waitForPipe(pipe, 5000);
+  await waitForPipe(pipe, 20000);
   grpcClient = new UiClient(
     `unix:\\\\.\\pipe\\${pipe}`,
     ChannelCredentials.createInsecure(),
