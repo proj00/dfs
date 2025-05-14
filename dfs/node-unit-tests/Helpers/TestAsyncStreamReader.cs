@@ -30,7 +30,7 @@ namespace Tests.Server.UnitTests.Helpers
 
         public TestAsyncStreamReader(ServerCallContext serverCallContext)
         {
-            _channel = Channel.CreateUnbounded<T>();
+            _channel = System.Threading.Channels.Channel.CreateUnbounded<T>();
             _serverCallContext = serverCallContext;
         }
 
