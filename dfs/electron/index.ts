@@ -13,8 +13,10 @@ import { access } from "fs/promises";
 import { LogCategory } from "@/types/rpc/uiservice";
 import log from "electron-log/main";
 
-import noFoo from './.eslint-custom-rules/rules/no-electron-log-src';
+import { LogMessage } from "electron-log/src";
+ 
 
+import noFoo from './custom-rules/no-console-log';
 export const rules = {
   'no-foo': noFoo,
 };

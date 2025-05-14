@@ -19,8 +19,7 @@
     "generate-rpc": "npx buf generate \"../common/proto\"",
     "generate-wrapper": "ts-node --compiler-options \"{\\\"noUnusedLocals\\\": false}\" utils/codegen.ts",
     "fix-proto": "npm run generate-rpc && npm run get-descriptor && npm run generate-wrapper",
-
-        "build": "tsc"
+    "build": "tsc"
   },
   "author": {
     "name": "http500"
@@ -72,6 +71,7 @@
     "electron": "35.1.5",
     "electron-devtools-installer": "^4.0.0",
     "eslint": "^8.57.1",
+    "eslint-define-config": "^2.1.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-local-rules": "^3.0.2",
     "eslint-plugin-react": "^7.37.5",
