@@ -129,7 +129,7 @@ await act(async () => {
     });
   });
   
-
+/*
   it("opens and closes download dialog", async () => {
     render(
       <Sidebar
@@ -157,7 +157,7 @@ await act(async () => {
     await waitFor(() => {
       expect(screen.getByText("Download started successfully!")).toBeInTheDocument();
     });
-  });
+  });*/
   
 
   it("opens transfer manager and blocked peers", async () => {

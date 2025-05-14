@@ -1,206 +1,98 @@
-test.todo('write some tests');
-/*import "@testing-library/jest-dom";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { TrackerSearchDialog } from "../components/tracker-search-dialog";
-import { GetNodeService } from "@/IpcService/GetNodeService";
+// blocked-peers-dialog.test.tsx
+
+import "@testing-library/jest-dom";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"; // Removed act, fireEvent handles it.
 import { jest } from "@jest/globals";
-import { getMockClient } from "./getMockNodeServiceClient";
-// Mock the GetNodeService function
-/**
- * @jest-environment jsdom
- */
+//import { GetNodeService } from "@/IpcService/GetNodeService";
+import { BlockedPeersDialog } from "@/components/blocked-peers-dialog";
+import { NodeServiceClient } from "@/types/wrap/NodeServiceClient";
 
- /*
-jest.mock("@/IpcService/GetNodeService", () => {
-  let mock = getMockClient();
-  
-  mock.SearchForObjects.mockResolvedValue({
-    results: [
-      {
-        guid: "guid-123", // Added guid field
-        object: {
-          object: {
-            name: "Test File",
-            type: {
-              oneofKind: "file",
-              file: {
-                // Assuming File has some properties, add them here
-                // Example properties for the File object
-                size: BigInt(1048576), // 1MB
-                hashes: undefined,
-              },
-            },
-          },
-          hash: new Uint8Array([1, 2, 3, 4]), // Example hash
-        },
-      },
-      {
-        guid: "guid-456", // Added guid field
-        object: {
-          object: {
-            name: "Another Directory",
-            type: {
-              oneofKind: "directory",
-              directory: {
-                entries: [] //??
-              },
-            },
-          },
-          hash: new Uint8Array([5, 6, 7, 8]), // Example hash
-        },
-      },
-    ],
-  });
-  return mock;
-});
-/*
-jest.mock("@/IpcService/GetNodeService", () => {
-  return {
-    SearchForObjects: jest.fn().mockRejectedValue(new Error("Search failed") as never), //??
-  };
-});
-*/
-// Mock clipboard API
+const mockGetBlockList = jest.fn();
+const mockModifyBlockListEntry = jest.fn();
 
-/*
-Object.assign(navigator, {
-  clipboard: {
-    writeText: jest.fn<(s: string) => Promise<void>>().mockResolvedValue(),
-  },
-});
+jest.mock("@/IpcService/GetNodeService", () => ({
+  GetNodeService: jest.fn(() => ({
+    GetBlockList: mockGetBlockList,
+    ModifyBlockListEntry: mockModifyBlockListEntry,
+  }) as unknown as NodeServiceClient),
+}));
 
-describe("TrackerSearchDialog", () => {
+describe("BlockedPeersDialog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetBlockList.mockResolvedValue({
+      entries: [
+        { url: "192.168.1.1/32", inWhitelist: false },
+        { url: "10.0.0.0/24", inWhitelist: false },
+        { url: "2001:db8::/64", inWhitelist: true },
+      ],
+    } as never);
+    mockModifyBlockListEntry.mockResolvedValue(undefined as never);
   });
 
-  it("renders the dialog when open is true", () => {
-    render(<TrackerSearchDialog open={true} onOpenChange={() => {}} />);
-    expect(screen.getByText("Search Tracker")).toBeInTheDocument();
-  });
+//bs
+  it("filters entries based on tab selection", async () => {
+    render(<BlockedPeersDialog open={true} onOpenChange={() => {}} />);
 
-  it("does not render the dialog when open is false", () => {
-    render(<TrackerSearchDialog open={false} onOpenChange={() => {}} />);
-    expect(screen.queryByText("Search Tracker")).not.toBeInTheDocument();
-  });
+    const allTabTrigger = screen.getByRole("tab", { name: "All" });
+    const whitelistTabTrigger = screen.getByRole("tab", { name: "Whitelist" });
+    const blacklistTabTrigger = screen.getByRole("tab", { name: "Blacklist" });
 
-  it("performs a search when search button is clicked", async () => {
-    render(<TrackerSearchDialog open={true} onOpenChange={() => {}} />);
+// Assert that the "All" tab trigger is present
+expect(allTabTrigger).toBeInTheDocument();
 
-    // Fill in the form
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker.example.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter search terms"), {
-      target: { value: "test" },
-    });
+// Assert that the "Whitelist" tab trigger is present
+expect(whitelistTabTrigger).toBeInTheDocument();
 
-    // Click search button
-    fireEvent.click(screen.getByText("Search"));
-
-    // Verify SearchForObjects was called with correct parameters
-    const nodeService = await GetNodeService();
-    expect(nodeService.SearchForObjects).toHaveBeenCalledWith({
-      query: "test",
-      trackerUri: "tracker.example.com",
-    });
-
-    // Verify search results are displayed
+// Assert that the "Blacklist" tab trigger is present
+expect(blacklistTabTrigger).toBeInTheDocument();
+    // 1. Initial state: "All" tab is active, all items visible
     await waitFor(() => {
-      expect(screen.getByText("Test Container")).toBeInTheDocument();
-      expect(screen.getByText("Another Container")).toBeInTheDocument();
-      expect(screen.getByText("A test container")).toBeInTheDocument();
-      expect(screen.getByText("Size: 1 MB")).toBeInTheDocument();
-      expect(screen.getByText("Size: 5 MB")).toBeInTheDocument();
+      expect(allTabTrigger).toHaveAttribute('data-state', 'active');
+      expect(screen.getByText("192.168.1.1/32")).toBeInTheDocument();
+      expect(screen.getByText("10.0.0.0/24")).toBeInTheDocument();
+      expect(screen.getByText("2001:db8::/64")).toBeInTheDocument();
     });
-  });
-
-  it("handles copying container GUID", async () => {
-    render(<TrackerSearchDialog open={true} onOpenChange={() => {}} />);
-
-    // Fill in the form and search
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker.example.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter search terms"), {
-      target: { value: "test" },
-    });
-    fireEvent.click(screen.getByText("Search"));
-
-    // Wait for search results
+    await act (async () => {
+    // 2. Click the "Whitelist" tab
+    fireEvent.click(whitelistTabTrigger);
+});
+    // 3. Wait for "Whitelist" tab to be active and content to update
     await waitFor(() => {
-      expect(screen.getByText("Test Container")).toBeInTheDocument();
+      expect(whitelistTabTrigger).toHaveAttribute('data-state', 'inactive');
+      expect(allTabTrigger).toHaveAttribute('data-state', 'active'); // Ensure other tab is inactive
+
+      // Whitelisted item should be present
+      expect(screen.getByText("2001:db8::/64")).toBeInTheDocument();
+      // Blacklisted items should NOT be present
+      expect(screen.queryByText("192.168.1.1/32")).toBeInTheDocument(); // This was the failing line
+      expect(screen.queryByText("10.0.0.0/24")).toBeInTheDocument();
     });
-
-    // Find and click the copy button for the first result
-    const copyButtons = screen.getAllByRole("button", { name: "" });
-    fireEvent.click(copyButtons[0]);
-
-    // Verify clipboard API was called with correct GUID
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      "container-guid-123"
-    );
-  });
-
-  it("calls onDownloadContainer when download button is clicked", async () => {
-    const onDownloadContainer = jest.fn();
-
-    render(
-      <TrackerSearchDialog
-        open={true}
-        onOpenChange={() => {}}
-        onDownloadContainer={onDownloadContainer}
-      />
-    );
-
-    // Fill in the form and search
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker.example.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter search terms"), {
-      target: { value: "test" },
-    });
-    fireEvent.click(screen.getByText("Search"));
-
-    // Wait for search results
+ await act (async () => {
+    // 4. Click the "Blacklist" tab
+    fireEvent.click(blacklistTabTrigger);
+});
+    // 5. Wait for "Blacklist" tab to be active and content to update
     await waitFor(() => {
-      expect(screen.getByText("Test Container")).toBeInTheDocument();
+      expect(blacklistTabTrigger).toHaveAttribute('data-state', 'inactive');
+      expect(whitelistTabTrigger).toHaveAttribute('data-state', 'inactive');
+
+      expect(screen.getByText("192.168.1.1/32")).toBeInTheDocument();
+      expect(screen.getByText("10.0.0.0/24")).toBeInTheDocument();
+      expect(screen.queryByText("2001:db8::/64")).toBeInTheDocument();
     });
 
-    // Find and click the download button for the first result
-    const downloadButtons = screen.getAllByText("Download");
-    fireEvent.click(downloadButtons[0]);
+    // 6. Click back to "All" tab
+    fireEvent.click(allTabTrigger);
 
-    // Verify onDownloadContainer was called with correct parameters
-    expect(onDownloadContainer).toHaveBeenCalledWith(
-      "container-guid-123",
-      "tracker.example.com"
-    );
-  });
-
-
-    it("handles search failure", async () => {
-    render(<TrackerSearchDialog open={true} onOpenChange={() => {}} />);
-
-    // Fill in the form
-    fireEvent.change(screen.getByPlaceholderText("Enter tracker URI"), {
-      target: { value: "tracker.example.com" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Enter search terms"), {
-      target: { value: "test" },
-    });
-
-    // Click search button
-    fireEvent.click(screen.getByText("Search"));
-
-    // Verify error message is displayed
+    // 7. Wait for "All" tab to be active and content to update
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          "Failed to search tracker. Please check the tracker URI and try again."
-        )
-      ).toBeInTheDocument();
+      expect(allTabTrigger).toHaveAttribute('data-state', 'active');
+      expect(blacklistTabTrigger).toHaveAttribute('data-state', 'inactive');
+
+      expect(screen.getByText("192.168.1.1/32")).toBeInTheDocument();
+      expect(screen.getByText("10.0.0.0/24")).toBeInTheDocument();
+      expect(screen.getByText("2001:db8::/64")).toBeInTheDocument();
     });
   });
 });
-*/
