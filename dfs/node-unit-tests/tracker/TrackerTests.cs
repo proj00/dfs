@@ -16,7 +16,6 @@ using tracker;
 using Tracker;
 using Guid = System.Guid;
 using NUnit.Framework;
-using Grpc.Core.Testing;
 
 
 
@@ -67,7 +66,7 @@ namespace unit_tests.tracker
             var responses = new List<PeerResponse>();
             var writer = new TestStreamWriter<PeerResponse>(responses);
 
-            var context = TestServerCallContext.Create(
+            var context = Grpc.Core.Testing.TestServerCallContext.Create(
                 method: "GetPeerList",
                 host: null,
                 deadline: DateTime.UtcNow.AddSeconds(30),
@@ -98,7 +97,7 @@ namespace unit_tests.tracker
             const string peerId = "peerB";
             var mk = new MarkRequest { Peer = peerId };
             mk.Hash.Add(hash);
-            var ctx1 = TestServerCallContext.Create(
+            var ctx1 = Grpc.Core.Testing.TestServerCallContext.Create(
                 method: "m1",
                 host: null,
                 deadline: DateTime.UtcNow.AddSeconds(30),
@@ -115,7 +114,7 @@ namespace unit_tests.tracker
 
             var responses = new List<PeerResponse>();
             var writer = new TestStreamWriter<PeerResponse>(responses);
-            var ctx2 = TestServerCallContext.Create(
+            var ctx2 = Grpc.Core.Testing.TestServerCallContext.Create(
                 method: "g2",
                 host: null,
                 deadline: DateTime.UtcNow.AddSeconds(30),
@@ -145,7 +144,7 @@ namespace unit_tests.tracker
             // Arrange
             var containerId = Guid.NewGuid().ToString();
             var req = new TransactionRequest { ContainerGuid = containerId };
-            var ctx = TestServerCallContext.Create(
+            var ctx = Grpc.Core.Testing.TestServerCallContext.Create(
                 method: "sd",
                 host: null,
                 deadline: DateTime.UtcNow.AddSeconds(30),
@@ -172,7 +171,7 @@ namespace unit_tests.tracker
         public async Task Shutdown_CancelsTokenSource()
         {
             // Arrange
-            var ctx = TestServerCallContext.Create(
+            var ctx = Grpc.Core.Testing.TestServerCallContext.Create(
                 method: "sd",
                 host: null,
                 deadline: DateTime.UtcNow.AddSeconds(30),
