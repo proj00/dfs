@@ -1,6 +1,6 @@
 
 //import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { FileGrid } from "../components/file-grid"; // Adjust path as needed
 import type { File, Folder } from "@/lib/types";
 /**
@@ -87,7 +87,7 @@ describe("FileGrid", () => {
     expect(screen.getByText("This folder is empty")).toBeInTheDocument();
   });
 
-  it("renders folders and triggers navigation", () => {
+  it("renders folders and triggers navigation",async () => {
     const navigateToFolder = jest.fn();
     render(
       <FileGrid
@@ -99,8 +99,9 @@ describe("FileGrid", () => {
         navigateToParent={jest.fn()}
       />,
     );
-
-    fireEvent.click(screen.getByText("Folder One"));
+await act(async () => {
+  fireEvent.click(screen.getByText("Folder One"));
+   });
     expect(navigateToFolder).toHaveBeenCalledWith("folder-1");
     expect(screen.getByTestId("folder-action-menu")).toBeInTheDocument();
   });
@@ -125,7 +126,7 @@ describe("FileGrid", () => {
     expect(screen.getByRole("img")).toHaveAttribute("src", "data:image/png;base64,xyz");
   });
 
-  it("calls navigateToParent when Back is clicked", () => {
+  it("calls navigateToParent when Back is clicked",async () => {
     const navigateToParent = jest.fn();
     render(
       <FileGrid
@@ -137,8 +138,9 @@ describe("FileGrid", () => {
         navigateToParent={navigateToParent}
       />,
     );
-
-    fireEvent.click(screen.getByText("Back"));
+   await act(async () => {
+     fireEvent.click(screen.getByText("Back"));
+   });
     expect(navigateToParent).toHaveBeenCalled();
   });
 });
