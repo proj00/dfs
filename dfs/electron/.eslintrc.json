@@ -1,16 +1,21 @@
 {
-  "env": {
-    "browser": true,
-    "es6": true,
-    "node": true
+  "parser": "@typescript-eslint/parser", // Specifies the ESLint parser
+  "parserOptions": {
+    "ecmaVersion": 2020, // Allows for modern ECMAScript features
+    "sourceType": "module", // Allows for the use of imports
+    "project": "./tsconfig.json" // Specify it if you want type-aware linting
   },
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:import/recommended",
-    "plugin:import/electron",
-    "plugin:import/typescript"
+    "plugin:@typescript-eslint/recommended" // Uses the recommended rules from @typescript-eslint
   ],
-  "parser": "@typescript-eslint/parser"
+  "plugins": ["local-rules"],
+  "rules": {
+    "local-rules/require-const-uppercase": "warn"
+  },
+  "settings": {
+    "local-rules": {
+      "directory": "./custom-rules"
+    }
+  }
 }
