@@ -15,26 +15,33 @@ namespace tracker
 {
     public class TrackerRpc : Tracker.Tracker.TrackerBase, IDisposable
     {
-        private readonly FilesystemManager _filesystemManager;
-        private readonly ConcurrentDictionary<string, HashSet<string>> _peers = new();
-        private readonly IPersistentCache<string, DataUsage> dataUsage;
-        private readonly ILogger logger;
-        private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions =
+        private readonly IFilesystemManager filesystemManager = default!;
+        private readonly ConcurrentDictionary<string, HashSet<string>> peers = new();
+        private readonly IPersistentCache<string, DataUsage> dataUsage = default!;
+        private readonly ILogger logger = default!;
+        private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> _transactions =
             new();
-        private bool disposedValue;
-        const int trackerResponseLimit = 30000;
-        private readonly CancellationTokenSource source;
+        private bool _disposedValue;
+        const int _trackerResponseLimit = 30000;
+        private readonly CancellationTokenSource source = default!;
 
-        public TrackerRpc(ILogger logger, string dbPath, CancellationTokenSource source)
+#pragma warning disable CS8618 // Non-nullable 
+        public TrackerRpc(ILogger logger, IFilesystemManager manager, IPersistentCache<string, DataUsage> dataUsage, CancellationTokenSource source)
+#pragma warning restore CS8618 // Non-nullable
         {
-            _filesystemManager = new FilesystemManager(dbPath);
-            dataUsage = new PersistentCache<string, DataUsage>(
-                System.IO.Path.Combine(_filesystemManager.DbPath, "DataUsage"),
+            filesystemManager = manager ?? throw new ArgumentNullException(nameof(manager));
+            this.dataUsage = dataUsage ?? throw new ArgumentNullException(nameof(dataUsage));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.source = source ?? throw new ArgumentNullException(nameof(source));
+
+        }
+
+        public TrackerRpc(ILogger logger, string dbPath, CancellationTokenSource source) : this(logger, new FilesystemManager(dbPath), new PersistentCache<string, DataUsage>(
+                System.IO.Path.Combine(dbPath, "DataUsage"),
                 new StringSerializer(),
                 new Serializer<DataUsage>()
-            );
-            this.logger = logger;
-            this.source = source;
+            ), source)
+        {
         }
 
         public override async Task<Hash> GetContainerRootHash(
