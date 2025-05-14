@@ -219,7 +219,7 @@ namespace unit_tests.tracker
         {
             var hash = ByteString.CopyFromUtf8("obj");
             var item = new ObjectWithHash { /* minimal init */ };
-            _fs.Setup(m => m.ObjectByHash.ContainsKey(ByteString.CopyFromUtf8(hash.ToBase64()))).ReturnsAsync(true);
+            _fs.Setup(m => m.ObjectByHash.ContainsKey(hash)).ReturnsAsync(true);
             // Fix for CS1929: Adjust the setup to use the correct type for ReturnsAsync
             _fs.Setup(m => m.GetObjectTree(It.IsAny<ByteString>()))
                .ReturnsAsync(new List<ObjectWithHash> { item });
@@ -232,7 +232,7 @@ namespace unit_tests.tracker
         public void GetObjectTree_ThrowsNotFound_WhenMissing()
         {
             var hash = ByteString.CopyFromUtf8("obj");
-            _fs.Setup(m => m.ObjectByHash.ContainsKey(ByteString.CopyFromUtf8(hash.ToBase64()))).ReturnsAsync(false);
+            _fs.Setup(m => m.ObjectByHash.ContainsKey(hash)).ReturnsAsync(false);
             Assert.ThrowsAsync<RpcException>(() => _tracker.GetObjectTree(new Hash { Data = hash }, new TestStreamWriter<ObjectWithHash>(new List<ObjectWithHash>()), CreateContext()));
         }
 
