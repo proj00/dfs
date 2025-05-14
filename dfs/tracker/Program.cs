@@ -66,27 +66,78 @@ namespace tracker
         {
             try
             {
-                if (await _filesystemManager.ObjectByHash.ContainsKey(request.Data))
-                {
-                    foreach (var o in await _filesystemManager.GetObjectTree(request.Data))
-                    {
-                        if (context.CancellationToken.IsCancellationRequested)
-                        {
-                            break;
-                        }
-                        await responseStream.WriteAsync(o);
-                    }
-                }
-                else
-                {
-                    throw new RpcException(new Status(StatusCode.NotFound, "Object not found."));
-                }
+                k = Console.ReadKey(true).KeyChar;
             }
-            catch (Exception ex)
+            catch { }
+            if (k == (char)0)
             {
-                _logger.LogError($"Error in GetObjectTree method: {ex.Message}");
-                throw;
+                await Task.Delay(3000);
+                return;
             }
+            if (k != 'a' && k != 'A')
+            {
+                await source.CancelAsync();
+            }
+
+            var usage = await rpc.GetTotalDataUsage();
+            (string path, ILoggerFactory factory) = InternalLogger.CreateLoggerFactory("logs/usage", level);
+            var usageLogger = factory.CreateLogger("DataUsage");
+
+            string output = "";
+
+            output += "Data usage: \n";
+            if (usage.Length == 0)
+            {
+                output += "No data usage found.\n";
+            }
+            else
+            {
+                foreach (var (key, u) in usage)
+                {
+                    output += $"URL: {key}, Up/Down: {u.Upload}/{u.Download} bytes\n";
+                }
+            }
+            usageLogger.LogInformation(output);
+            logger.LogInformation($"Usage logs written to {path}");
+        }
+
+        private static async Task<WebApplication> StartPublicServerAsync(TrackerRpc rpc, int port, ILoggerFactory loggerFactory)
+        {
+            var builder = WebApplication.CreateBuilder();
+
+            // Define the CORS policy
+            string policyName = "AllowAll";
+            builder.Services.AddGrpc();
+            builder.Services.AddSingleton(loggerFactory);
+            builder.Services.AddLogging();
+
+            builder.Services.AddCors(o => o.AddPolicy(policyName, policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+            }));
+
+            builder.Services.AddSingleton(rpc);
+
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(port, o =>
+                {
+                    o.Protocols = HttpProtocols.Http2;
+                });
+            });
+
+            var app = builder.Build();
+
+            app.UseRouting();
+            app.UseCors(policyName);
+
+            app.MapGrpcService<TrackerRpc>().RequireCors(policyName);
+
+            await app.StartAsync();
+            return app;
         }
 
         // Other methods remain unchanged but should use `_logger` and `_dataUsage` where applicable.  

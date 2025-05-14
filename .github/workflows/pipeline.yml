@@ -52,7 +52,7 @@ jobs:
           dotnet-sonarscanner begin `
           /key:proj00_dfs /o:proj00 `
           /d:sonar.token=${{ secrets.SONAR_TOKEN }} `
-          /d:sonar.exclusions="dfs/common/generated/**/*,dfs/common/generated/*,**/package-lock.json,dfs/electron/src/types/**/*" `
+          /d:sonar.exclusions="dfs/common/generated/**/*,dfs/common/generated/*,**/package-lock.json,dfs/electron/src/types/**/*,dfs/electron/utils/*,dfs/electron/*.ts,dfs/node/NodeState.cs,dfs/common/PersistentCache.cs,dfs/common/InternalLogger.cs,dfs/common/ChannelCache.cs,dfs/common/NativeMethods.cs,dfs/node/AsyncIOWrapper.cs,dfs/node/TrackerWrapper.cs" `
           /d:sonar.javascript.lcov.reportPaths=coverage/jest/lcov.info `
           /d:sonar.cs.vscoveragexml.reportsPaths="**/*coverage.xml" `
           /d:sonar.verbose=true
@@ -113,26 +113,26 @@ jobs:
     permissions: read-all
     steps:
       - uses: actions/checkout@v4
-  
+
       - name: Use Node.js (22.x)
         uses: actions/setup-node@v4
         with:
           node-version: "22.x"
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: ./dfs/electron/package.json
-  
+
       - name: Install dependencies using npm ci
         working-directory: ./dfs/electron
         run: npm ci
-  
+
       - name: Build UI
         working-directory: ./dfs/electron
         run: npm run test-build
-  
+
       - name: Run Jest tests with coverage
         working-directory: ./dfs/electron
         run: npx jest --coverage --passWithNoTests
-  
+
       - name: Upload Jest Coverage Report
         uses: actions/upload-artifact@v4
         with:

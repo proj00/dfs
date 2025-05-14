@@ -56,42 +56,46 @@ namespace common
             INativeMethods nativeMethods)
         {
             ArgumentNullException.ThrowIfNull(nativeMethods);
-            using var handle = nativeMethods.GetFileHandle(path);
-            if (handle.IsInvalid)
-            {
-                return null;
-            }
+            ArgumentException.ThrowIfNullOrEmpty(path);
+            return null;
+            /// unsupported by frontend :(
+            //
+            //using var handle = nativeMethods.GetFileHandle(path);
+            //if (handle.IsInvalid)
+            //{
+            //    return null;
+            //}
 
-            byte[]? buffer = nativeMethods.GetReparsePoint(handle);
-            if (buffer == null)
-            {
-                return null;
-            }
+            //byte[]? buffer = nativeMethods.GetReparsePoint(handle);
+            //if (buffer == null)
+            //{
+            //    return null;
+            //}
 
-            int tag = BitConverter.ToInt32(buffer, 0);
-            if (tag != INativeMethods.IO_REPARSE_TAG_SYMLINK)
-            {
-                return null;
-            }
+            //int tag = BitConverter.ToInt32(buffer, 0);
+            //if (tag != INativeMethods.IO_REPARSE_TAG_SYMLINK)
+            //{
+            //    return null;
+            //}
 
-            int targetOffset = BitConverter.ToInt16(buffer, 8);
-            int targetLength = BitConverter.ToInt16(buffer, 10);
-            string targetPath = Encoding.Unicode.GetString(buffer, targetOffset + 20, targetLength);
+            //int targetOffset = BitConverter.ToInt16(buffer, 8);
+            //int targetLength = BitConverter.ToInt16(buffer, 10);
+            //string targetPath = Encoding.Unicode.GetString(buffer, targetOffset + 20, targetLength);
 
-            if (targetPath.StartsWith(@"\\?\", System.StringComparison.Ordinal))
-            {
-                targetPath = targetPath.Substring(4);
-            }
+            //if (targetPath.StartsWith(@"\\?\", System.StringComparison.Ordinal))
+            //{
+            //    targetPath = targetPath.Substring(4);
+            //}
 
-            return targetPath;
+            //return targetPath;
         }
 
-        public static Fs.FileSystemObject GetLinkObject(string path)
+        public static Fs.FileSystemObject GetLinkObject(string path, INativeMethods methods)
         {
             var obj = new Fs.FileSystemObject();
             obj.Name = System.IO.Path.GetFileName(path);
 
-            var target = GetLinkTarget(path, new NativeMethods());
+            var target = GetLinkTarget(path, methods);
             if (target == null)
             {
                 throw new System.IO.FileNotFoundException("GetLinkObject didn't receive symlink");
@@ -182,11 +186,17 @@ namespace common
             return h.Hash;
         }
 
-        public static ByteString GetRecursiveDirectoryObject(IFileSystem fs, string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
+        public static ByteString GetRecursiveDirectoryObject(IFileSystem fs, INativeMethods methods, string path, int chunkSize, Action<ByteString, string, Fs.FileSystemObject> appendHashPathObj)
         {
             ArgumentNullException.ThrowIfNull(fs);
+            HashSet<string> paths = [];
             void Add(ByteString hash, string path, Fs.FileSystemObject obj)
             {
+                if (paths.Contains(path))
+                {
+                    return;
+                }
+                paths.Add(path);
                 appendHashPathObj(hash, path, obj);
             }
 
@@ -196,9 +206,9 @@ namespace common
 
                 foreach (var file in info.GetFiles())
                 {
-                    var obj = GetLinkTarget(file.FullName, new NativeMethods()) == null
+                    var obj = GetLinkTarget(file.FullName, methods) == null
                         ? GetFileObject(fs, file.FullName, chunkSize)
-                        : GetLinkObject(file.FullName);
+                        : GetLinkObject(file.FullName, methods);
 
                     var hash = HashUtils.GetHash(obj);
 
@@ -208,9 +218,9 @@ namespace common
 
                 foreach (var dir in info.GetDirectories())
                 {
-                    if (GetLinkTarget(dir.FullName, new NativeMethods()) != null)
+                    if (GetLinkTarget(dir.FullName, methods) != null)
                     {
-                        var obj = GetLinkObject(dir.FullName);
+                        var obj = GetLinkObject(dir.FullName, methods);
                         var hash = HashUtils.GetHash(obj);
 
                         children.Add(new ObjectWithHash { Hash = hash, Object = obj });

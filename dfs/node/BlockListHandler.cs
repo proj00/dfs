@@ -4,7 +4,7 @@ using Ui;
 
 namespace node
 {
-    public class BlockListHandler : IDisposable
+    public class BlockListHandler : IBlockListHandler
     {
         private bool disposedValue;
 

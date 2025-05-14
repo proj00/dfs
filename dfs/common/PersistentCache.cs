@@ -112,7 +112,7 @@ namespace common
 
         public async Task<TValue> GetAsync(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 var v = db.Get(keySerializer.Serialize(key));
                 if (v == null)
@@ -128,7 +128,7 @@ namespace common
             {
                 throw new InvalidOperationException();
             }
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 db.Put(keySerializer.Serialize(key), valueSerializer.Serialize(value));
             }
@@ -138,7 +138,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(mutate);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 var result = db.Get(keySerializer.Serialize(key));
                 if (result == null)
@@ -158,7 +158,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(mutate);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 var result = db.Get(keySerializer.Serialize(key));
                 TValue? newValue = null;
@@ -185,7 +185,7 @@ namespace common
 
         public async Task<long> CountEstimate()
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 return db.GetProperty("rocksdb-estimate-num-keys") == null
                     ? 0
@@ -195,7 +195,7 @@ namespace common
 
         public async Task<bool> ContainsKey(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 return db.HasKey(keySerializer.Serialize(key));
             }
@@ -203,13 +203,13 @@ namespace common
 
         public async Task Remove(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
                 db.Remove(keySerializer.Serialize(key));
         }
 
         public async Task<TValue?> TryGetValue(TKey key)
         {
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 var result = db.Get(keySerializer.Serialize(key));
                 if (result == null)
@@ -226,7 +226,7 @@ namespace common
         {
             ArgumentNullException.ThrowIfNull(action);
 
-            using (await dbLock.LockAsync())
+            using (await dbLock.LockAsync(CancellationToken.None))
             {
                 using var it = db.NewIterator();
                 for (it.SeekToFirst(); it.Valid(); it.Next())
