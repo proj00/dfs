@@ -49,7 +49,7 @@ namespace tracker
             ServerCallContext context
         )
         {
-            var rootHash = await _filesystemManager.Container.TryGetValue(
+            var rootHash = await filesystemManager.Container.TryGetValue(
                 System.Guid.Parse(request.Guid_)
             );
             if (rootHash != null)
@@ -69,9 +69,9 @@ namespace tracker
         {
             try
             {
-                if (await _filesystemManager.ObjectByHash.ContainsKey(request.Data))
+                if (await filesystemManager.ObjectByHash.ContainsKey(request.Data))
                 {
-                    foreach (var o in await _filesystemManager.GetObjectTree(request.Data))
+                    foreach (var o in await filesystemManager.GetObjectTree(request.Data))
                     {
                         if (context.CancellationToken.IsCancellationRequested)
                         {
@@ -101,7 +101,7 @@ namespace tracker
             try
             {
                 string chunkHashBase64 = request.ChunkHash.ToBase64();
-                if (_peers.TryGetValue(chunkHashBase64, out var peerList))
+                if (peers.TryGetValue(chunkHashBase64, out var peerList))
                 {
                     foreach (var peer in peerList)
                     {
@@ -132,13 +132,13 @@ namespace tracker
                     foreach (var req in request.Hash)
                     {
                         string hashBase64 = req.ToBase64();
-                        if (_peers.TryGetValue(hashBase64, out HashSet<string>? value))
+                        if (peers.TryGetValue(hashBase64, out HashSet<string>? value))
                         {
                             value.Add(request.Peer);
                         }
                         else
                         {
-                            _peers[hashBase64] = [request.Peer];
+                            peers[hashBase64] = [request.Peer];
                         }
                     }
                     return new Empty();
@@ -165,7 +165,7 @@ namespace tracker
                     foreach (var req in request.Hash)
                     {
                         string hashBase64 = req.ToBase64();
-                        _peers[hashBase64].Remove(request.Peer);
+                        peers[hashBase64].Remove(request.Peer);
                     }
                     return new Empty();
                 }
@@ -198,7 +198,7 @@ namespace tracker
                 {
                     re = new IronRe2.Regex(request.Query);
                     // collect all container GUIDs
-                    await _filesystemManager.Container.ForEach(
+                    await filesystemManager.Container.ForEach(
                         (guid, bs) =>
                         {
                             allContainers.Add(guid);
@@ -209,7 +209,7 @@ namespace tracker
 
                 foreach (var container in allContainers)
                 {
-                    var matches = (await _filesystemManager.GetContainerTree(container))
+                    var matches = (await filesystemManager.GetContainerTree(container))
                         .Where(o => re == null || re.IsMatch(o.Object.Name))
                         .Select(o => new SearchResponse { Guid = container.ToString(), Object = o })
                         .ToList();
@@ -312,13 +312,13 @@ namespace tracker
             {
                 if (!found)
                 {
-                    if (!transactions.TryGetValue(System.Guid.Parse(obj.TransactionGuid), out transactionInfo))
+                    if (!_transactions.TryGetValue(System.Guid.Parse(obj.TransactionGuid), out transactionInfo))
                     {
                         throw new RpcException(new Status(StatusCode.Cancelled, "invalid transaction id"));
                     }
-                    if (TimeSpan.FromTicks(Now - transactionInfo.Item2).TotalMilliseconds > trackerResponseLimit)
+                    if (TimeSpan.FromTicks(Now - transactionInfo.Item2).TotalMilliseconds > _trackerResponseLimit)
                     {
-                        transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
+                        _transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
                             (
                             System.Guid.Parse(obj.TransactionGuid),
                             transactionInfo)
@@ -334,13 +334,13 @@ namespace tracker
                     rootHash = obj.Object.Hash;
             }
 
-            await _filesystemManager.CreateObjectContainer(
+            await filesystemManager.CreateObjectContainer(
                 objects.Select(o => o.Object).ToArray(),
                 rootHash,
                 transactionInfo.Item1
             );
 
-            transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
+            _transactions.TryRemove(new KeyValuePair<System.Guid, (System.Guid, long)>
                             (
                             transactionGuid,
                             transactionInfo)
@@ -359,9 +359,9 @@ namespace tracker
 
                 try
                 {
-                    var info = transactions.First(t => t.Value.Item1 == containerGuid);
+                    var info = _transactions.First(t => t.Value.Item1 == containerGuid);
                     if (info.Value.Item2 != 0
-                    && TimeSpan.FromTicks(DateTime.Now.Ticks - info.Value.Item2).TotalMilliseconds < trackerResponseLimit)
+                    && TimeSpan.FromTicks(DateTime.Now.Ticks - info.Value.Item2).TotalMilliseconds < _trackerResponseLimit)
                     {
                         return new TransactionStartResponse()
                         {
@@ -372,34 +372,34 @@ namespace tracker
                         };
                     }
 
-                    transactions.TryRemove(info);
+                    _transactions.TryRemove(info);
                 }
                 // this is fine transactions.First will throw if there is no match, and i don't care at all
                 catch { }
 
                 var currentGuid = System.Guid.NewGuid();
                 var time = DateTime.Now.Ticks;
-                transactions[currentGuid] = (containerGuid, time);
+                _transactions[currentGuid] = (containerGuid, time);
                 return new TransactionStartResponse()
                 {
                     ActualContainerGuid = request.ContainerGuid,
                     State = TransactionState.Ok,
                     TransactionGuid = currentGuid.ToString(),
-                    TtlMs = trackerResponseLimit,
+                    TtlMs = _trackerResponseLimit,
                 };
             });
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
-                    _filesystemManager.Dispose();
+                    filesystemManager.Dispose();
                     dataUsage.Dispose();
                 }
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 

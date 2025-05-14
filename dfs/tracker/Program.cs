@@ -1,69 +1,52 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
-using System.Text.RegularExpressions;
-using common;
-using Fs;
-using Google.Protobuf;
-using Grpc.Core;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
-using Microsoft.Extensions.Caching.Memory;
+﻿using common;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
-using RpcCommon;
-using Tracker;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.Runtime.InteropServices;
+using System.IO;
 
-#pragma warning disable CA2000
 namespace tracker
 {
-    public class TrackerRpc : Tracker.Tracker.TrackerBase, IDisposable
+    internal class Program
     {
-        private readonly IFilesystemManager _filesystemManager;
-        private readonly ConcurrentDictionary<string, HashSet<string>> _peers = new();
-        private readonly IPersistentCache<string, DataUsage> _dataUsage;
-        private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<System.Guid, (System.Guid, long)> transactions = new();
-        private bool disposedValue;
-        const int trackerResponseLimit = 30000;
-        private readonly CancellationTokenSource _source;
-
-        public TrackerRpc(ILogger logger, IFilesystemManager manager, IPersistentCache<string, DataUsage> dataUsage, CancellationTokenSource source)
+#if DEBUG
+        private static LogLevel level = LogLevel.Debug;
+#else
+        private static LogLevel level = LogLevel.Information;
+#endif
+        static async Task Main(string[] args)
         {
-            _filesystemManager = manager ?? throw new ArgumentNullException(nameof(manager));
-            _dataUsage = dataUsage ?? throw new ArgumentNullException(nameof(dataUsage));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _source = source ?? throw new ArgumentNullException(nameof(source));
-        }
-
-        public TrackerRpc(ILogger logger, string dbPath, CancellationTokenSource source) : this(logger, new FilesystemManager(dbPath), new PersistentCache<string, DataUsage>(
-                System.IO.Path.Combine(dbPath, "DataUsage"),
-                new StringSerializer(),
-                new Serializer<DataUsage>()
-            ), source)
-        {
-        }
-
-        public override async Task<Hash> GetContainerRootHash(
-            RpcCommon.Guid request,
-            ServerCallContext context
-        )
-        {
-            var rootHash = await _filesystemManager.Container.TryGetValue(
-                System.Guid.Parse(request.Guid_)
-            );
-            if (rootHash != null)
+            using CancellationTokenSource source = new();
+            using var handler = PosixSignalRegistration.Create(PosixSignal.SIGQUIT, _ =>
             {
-                return new Hash { Data = rootHash };
+                source.Cancel();
+            });
+
+            AppDomain.CurrentDomain.SetData("REGEX_DEFAULT_MATCH_TIMEOUT", TimeSpan.FromMilliseconds(100));
+            (string _, ILoggerFactory loggerFactory) = InternalLogger.CreateLoggerFactory(args.Length >= 1 ? args[0] + "\\logs" : "logs", level);
+            ILogger logger = loggerFactory.CreateLogger("Main");
+            using TrackerRpc rpc = new(logger, args.Length >= 1 ? args[0] : Path.Combine("./db", Guid.NewGuid().ToString()), source);
+            int port = args.Length >= 2 ? int.Parse(args[1]) : 50330;
+            var app = await StartPublicServerAsync(rpc, port, loggerFactory);
+
+            logger.LogInformation("Running...");
+            var boundPort = new Uri(app.Urls.First()).Port;
+
+            logger.LogInformation($"Server is listening on port {boundPort}");
+            logger.LogInformation("Press any key to quit; press a/A to view data usage...");
+            while (!source.IsCancellationRequested)
+            {
+                await ReadInput(source, rpc, logger);
             }
-            throw new RpcException(
-                new Status(StatusCode.NotFound, "Container root hash not found.")
-            );
+
+            await app.StopAsync();
         }
 
-        public override async Task GetObjectTree(
-            Hash request,
-            IServerStreamWriter<ObjectWithHash> responseStream,
-            ServerCallContext context
-        )
+        private static async Task ReadInput(CancellationTokenSource source, TrackerRpc rpc, ILogger logger)
         {
+            char k = (char)0;
             try
             {
                 k = Console.ReadKey(true).KeyChar;
@@ -140,7 +123,5 @@ namespace tracker
             return app;
         }
 
-        // Other methods remain unchanged but should use `_logger` and `_dataUsage` where applicable.  
     }
 }
-#pragma warning restore CA2000
