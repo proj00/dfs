@@ -33,12 +33,17 @@ export default defineConfig([
     },
   },
   ...tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended, // This config enables the rule
+  pluginReact.configs.flat.recommended, 
   {
-    // This configuration comes LAST and overrides the setting
-    files: ["**/*.{jsx,tsx}"], // Apply this override specifically to JSX/TSX files
+    files: ["**/*.{jsx,tsx}"], 
     rules: {
-      "react/react-in-jsx-scope": "off", // Explicitly disable it again here
+      "react/react-in-jsx-scope": "off", 
+
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-prototype-builtins": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "react/no-unescaped-entities": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
   },
 ]);

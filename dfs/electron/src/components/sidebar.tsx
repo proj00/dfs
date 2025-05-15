@@ -139,6 +139,7 @@ useEffect(() => {
   const intervalId = setInterval(fetchData, 1000);
 
   return () => {
+  
     clearInterval(intervalId); // Cleanup: clear the interval
   };
 }, []); 
@@ -155,7 +156,6 @@ useEffect(() => {
       // Fetch progress for each file in the container
       for (const downloadId of activeContainerDownloadIds) {
         const progress = await backendService.GetDownloadProgress(downloadId);
-
         filesTotal++;
         bytesTotal += progress.totalBytes;
         bytesReceived += progress.receivedBytes;
@@ -281,7 +281,7 @@ useEffect(() => {
 
   // Handle opening logs
   const handleOpenLogs = async () => {
-    console.log("Opening logs via UI API...");
+    console.log("Opening logs via UI API...");//example
 
     try {
       // Mock UI API call
