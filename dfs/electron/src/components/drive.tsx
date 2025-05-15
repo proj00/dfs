@@ -39,7 +39,6 @@ export function Drive() {
 
   // Initial data fetch
   useEffect(createPollCallback(fetchData, POLLING_INTERVAL), []);
-
   // Filter files based on current folder and search query
   const filteredFiles = files.filter((file) => {
     const matchesFolder = currentFolder
