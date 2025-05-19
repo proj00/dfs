@@ -17,6 +17,8 @@ using System.Security.Cryptography;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Org.BouncyCastle.Asn1.Ocsp;
+using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 
 namespace node
 {
@@ -233,7 +235,14 @@ namespace node
 
         public override async Task<RpcCommon.Empty> RevealLogFile(RpcCommon.Empty request, ServerCallContext context)
         {
-            state.PathHandler.RevealFile(state.LogPath);
+            var path = System.IO.Path.GetFullPath(state.LogPath);
+            Match fileName = Regex.Match(path, @"\\(log_.*.log$)");
+
+            string[] splits = Regex.Split(fileName.Groups[1].Value, @"[_\-\.]");
+
+            string ppath = Regex.Replace(path, fileName.Groups[1].Value, "log_" + splits[1] + "_" + splits[2] +"-" + splits[1] + ".log");
+
+            state.PathHandler.RevealFile(ppath);
             return await Task.FromResult(new RpcCommon.Empty());
         }
 

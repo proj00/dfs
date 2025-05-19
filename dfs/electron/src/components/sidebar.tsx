@@ -284,12 +284,9 @@ useEffect(() => {
     console.log("Opening logs via UI API...");//example
 
     try {
-      // Mock UI API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      console.log("Logs opened successfully");
 
-      // Show a notification to the user (in a real app, you'd use a toast notification)
-      alert("Logs opened successfully");
+      await backendService.RevealLogFile();
+
     } catch (error) {
       console.error("Failed to open logs:", error);
     }

@@ -31,7 +31,10 @@ export interface BackendServiceInterface {
   pauseDownload: (fileId: string) => Promise<void>;
   resumeDownload: (fileId: string) => Promise<void>;
   cancelDownload: (fileId: string) => Promise<void>; // Not implemented
+
+  RevealLogFile: () => Promise<void> //??
 }
+
 
 // Define the data structure
 export interface DriveData {
@@ -56,6 +59,12 @@ export interface DownloadProgress {
 
 class BackendService implements BackendServiceInterface {
   private trackerUris: string[] = [];
+
+  //??
+  async RevealLogFile(): Promise<void> {
+    const service = await GetNodeService();
+    await service.RevealLogFile();
+  }
 
   async GetDataUsage(): Promise<DataUsage> {
     //const service = await GetNodeService();
